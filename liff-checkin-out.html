@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TIDTANG — Check In / Out</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{
+  --off:#EBE7E4; --tan:#B0A79D; --graph:#424242; --deep:#191919;
+  --white:#fff; --border:rgba(66,66,66,0.14); --bm:rgba(66,66,66,0.22);
+  --teal:#0f766e; --teal-l:#f0fdfa; --red:#dc2626; --red-l:#fef2f2;
+  --amber:#d97706; --amber-l:#fffbeb; --green:#16a34a; --green-l:#f0fdf4;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100vh;color:var(--deep);}
+
+/* Loading */
+.ls{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .4s;}
+.ls.hide{opacity:0;pointer-events:none;}
+.ll{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--tan);margin-bottom:24px;}
+.lb{width:120px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden;}
+.lf{height:100%;background:var(--tan);animation:fill 1.4s ease forwards;}
+@keyframes fill{from{width:0}to{width:100%}}
+
+/* App */
+.app{display:flex;flex-direction:column;min-height:100vh;}
+
+/* Header */
+.hdr{background:var(--deep);padding:16px 20px;padding-top:calc(env(safe-area-inset-top)+16px);}
+.hdr-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tan);margin-bottom:4px;}
+.hdr-title{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.01em;}
+.hdr-sub{font-size:11px;color:rgba(176,167,157,.6);margin-top:2px;}
+
+/* User chip */
+.chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:2px;padding:10px 14px;margin:12px 20px 0;}
+.av{width:32px;height:32px;border-radius:50%;background:var(--tan);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--deep);flex-shrink:0;}
+.uname{font-size:13px;font-weight:700;color:var(--white);}
+.urole{font-size:10px;color:rgba(176,167,157,.7);letter-spacing:.04em;}
+
+/* Body */
+.body{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.sec-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tan);margin-bottom:8px;}
+
+/* Active card */
+.active-card{border-radius:2px;padding:16px;border:1.5px solid;}
+.active-office{background:var(--teal-l);border-color:var(--teal);}
+.active-onsite{background:var(--amber-l);border-color:var(--amber);}
+.ac-badge{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.ac-badge-office{color:var(--teal);}
+.ac-badge-onsite{color:var(--amber);}
+.ac-title{font-size:18px;font-weight:800;color:var(--deep);margin-bottom:2px;}
+.ac-time{font-size:12px;color:var(--tan);font-family:'IBM Plex Mono',monospace;}
+.ac-dist{font-size:11px;margin-top:6px;padding:6px 10px;border-radius:2px;background:rgba(0,0,0,.05);}
+
+/* Mode selector */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mode-btn{
+  padding:18px 12px;border-radius:2px;border:1.5px solid var(--bm);
+  background:var(--white);display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;font-family:'Anuphan',sans-serif;transition:all .15s;
+}
+.mode-btn:active{transform:scale(.97);}
+.mode-icon{font-size:28px;}
+.mode-name{font-size:13px;font-weight:700;color:var(--graph);}
+.mode-desc{font-size:10px;color:var(--tan);text-align:center;line-height:1.5;}
+.mode-btn.sel-office{border-color:var(--teal);background:var(--teal-l);}
+.mode-btn.sel-onsite{border-color:var(--amber);background:var(--amber-l);}
+
+/* GPS card */
+.gps-card{background:var(--deep);border-radius:2px;padding:20px;text-align:center;}
+.gps-icon{font-size:36px;margin-bottom:8px;}
+.gps-status{font-size:12px;color:var(--tan);margin-bottom:4px;}
+.gps-coords{font-size:10px;color:rgba(176,167,157,.5);font-family:'IBM Plex Mono',monospace;margin-bottom:14px;}
+.gps-btn{
+  padding:11px 22px;border:1.5px solid var(--tan);border-radius:2px;
+  background:transparent;color:var(--tan);font-size:12px;font-weight:700;
+  font-family:'Anuphan',sans-serif;cursor:pointer;letter-spacing:.04em;
+  transition:all .15s;
+}
+.gps-btn:active{background:rgba(176,167,157,.1);}
+.gps-btn.got{border-color:#22c55e;color:#22c55e;}
+.gps-btn:disabled{opacity:.5;pointer-events:none;}
+
+/* Distance meter */
+.dist-meter{border-radius:2px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.dist-ok{background:var(--green-l);border:1px solid var(--green);}
+.dist-err{background:var(--red-l);border:1px solid var(--red);}
+.dist-txt{font-size:12px;font-weight:600;}
+.dist-txt-ok{color:var(--green);}
+.dist-txt-err{color:var(--red);}
+
+/* Map link */
+.map-link{display:flex;align-items:center;gap:8px;background:var(--white);border-radius:2px;padding:11px 14px;border:1px solid var(--border);text-decoration:none;color:var(--deep);font-size:12px;font-weight:600;}
+
+/* Input */
+.f-input{width:100%;padding:11px 12px;background:var(--white);border:1.5px solid var(--bm);border-radius:2px;font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;outline:none;transition:border-color .15s;}
+.f-input:focus{border-color:var(--deep);}
+
+/* Time picker */
+.time-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.time-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tan);margin-bottom:5px;display:block;}
+
+/* Buttons */
+.btn{width:100%;padding:15px;border:none;border-radius:2px;font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-family:'Anuphan',sans-serif;cursor:pointer;transition:all .15s;}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.5;pointer-events:none;}
+.btn-office{background:var(--teal);color:var(--white);}
+.btn-onsite{background:var(--amber);color:var(--white);}
+.btn-checkout{background:var(--red);color:var(--white);}
+.btn-dark{background:var(--deep);color:var(--off);}
+
+/* Alert */
+.alert{border-radius:2px;padding:10px 14px;font-size:12px;line-height:1.6;font-weight:500;}
+.alert-err{background:var(--red-l);border-left:3px solid var(--red);color:#7f1d1d;}
+.alert-ok{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal);}
+.alert-warn{background:var(--amber-l);border-left:3px solid var(--amber);color:#92400e;}
+
+/* Success */
+.success{position:fixed;inset:0;background:var(--off);display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;}
+.success.show{display:flex;}
+.s-icon{font-size:56px;margin-bottom:20px;}
+.s-title{font-size:22px;font-weight:800;color:var(--deep);margin-bottom:8px;}
+.s-sub{font-size:13px;color:var(--tan);line-height:1.8;white-space:pre-line;}
+.s-close{margin-top:32px;padding:14px 32px;border:none;border-radius:2px;background:var(--deep);color:var(--off);font-size:13px;font-weight:700;letter-spacing:.06em;font-family:'Anuphan',sans-serif;cursor:pointer;}
+
+/* History strip */
+.history-strip{background:var(--white);border-radius:2px;padding:12px 14px;border:1px solid var(--border);}
+.hs-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;}
+.hs-key{color:var(--tan);font-weight:500;}
+.hs-val{font-weight:700;color:var(--graph);}
+
+.bottom-pad{height:env(safe-area-inset-bottom);min-height:20px;}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="ls" id="loading">
+  <div class="ll">TIDTANG STUDIO</div>
+  <div class="lb"><div class="lf"></div></div>
+</div>
+
+<!-- Success -->
+<div class="success" id="success">
+  <div class="s-icon" id="s-icon">✅</div>
+  <div class="s-title" id="s-title">Check In สำเร็จ</div>
+  <div class="s-sub" id="s-sub"></div>
+  <button class="s-close" onclick="closeLiff()">ปิดหน้านี้</button>
+</div>
+
+<!-- App -->
+<div class="app" id="app" style="display:none">
+
+  <div class="hdr">
+    <div class="hdr-label">TIDTANG STUDIO · Attendance</div>
+    <div class="hdr-title" id="hdr-title">Check In / Out</div>
+    <div class="hdr-sub" id="hdr-sub">บันทึกเวลาเข้า-ออกงาน</div>
+  </div>
+
+  <!-- User chip -->
+  <div class="chip" id="chip" style="display:none">
+    <div class="av" id="av">—</div>
+    <div>
+      <div class="uname" id="uname">—</div>
+      <div class="urole" id="urole">—</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Active checkin card -->
+    <div id="active-section" style="display:none">
+      <div class="sec-label">สถานะปัจจุบัน</div>
+      <div class="active-card" id="active-card">
+        <div class="ac-badge" id="ac-badge">กำลัง Check In อยู่</div>
+        <div class="ac-title" id="ac-title">—</div>
+        <div class="ac-time" id="ac-time">—</div>
+        <div class="ac-dist" id="ac-dist" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Mode selector (เฉพาะตอน check in) -->
+    <div id="mode-section">
+      <div class="sec-label">เลือกประเภท</div>
+      <div class="mode-grid">
+        <button class="mode-btn" id="btn-office" onclick="selMode('office')">
+          <span class="mode-icon">🏢</span>
+          <span class="mode-name">Office</span>
+          <span class="mode-desc">เข้างานที่ Tidtang Studio<br>รัศมี 300m</span>
+        </button>
+        <button class="mode-btn" id="btn-onsite" onclick="selMode('onsite')">
+          <span class="mode-icon">📍</span>
+          <span class="mode-name">On Site</span>
+          <span class="mode-desc">ประชุมนอกสถานที่<br>ปักหมุด GPS</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- GPS section -->
+    <div id="gps-section" style="display:none">
+      <div class="sec-label">ตำแหน่ง GPS</div>
+      <div class="gps-card">
+        <div class="gps-icon" id="gps-icon">📡</div>
+        <div class="gps-status" id="gps-status">กด "รับตำแหน่ง" ค่ะ</div>
+        <div class="gps-coords" id="gps-coords">รอสัญญาณ...</div>
+        <button class="gps-btn" id="gps-btn" onclick="getGPS()">📡 รับตำแหน่ง</button>
+      </div>
+    </div>
+
+    <!-- Distance check -->
+    <div id="dist-section" style="display:none">
+      <div class="dist-meter" id="dist-meter">
+        <span id="dist-emoji">📍</span>
+        <span class="dist-txt" id="dist-txt">—</span>
+      </div>
+    </div>
+
+    <!-- Map link (On Site) -->
+    <a id="map-link" style="display:none" target="_blank">
+      <span>🗺</span>
+      <span id="map-link-txt">ดูใน Google Maps</span>
+    </a>
+
+    <!-- Project name (On Site only) -->
+    <div id="project-section" style="display:none">
+      <div class="sec-label">ชื่อโครงการ / สถานที่</div>
+      <input class="f-input" type="text" id="project-name" placeholder="เช่น บ้านคุณสมชาย, สำนักงาน ABC...">
+    </div>
+
+    <!-- Alert -->
+    <div class="alert" id="alert-box" style="display:none"></div>
+
+    <!-- Check In Button -->
+    <button class="btn btn-dark" id="checkin-btn" onclick="doCheckin()" style="display:none">
+      Check In →
+    </button>
+
+    <!-- Check Out Button -->
+    <button class="btn btn-checkout" id="checkout-btn" onclick="doCheckout()" style="display:none">
+      🔴 Check Out →
+    </button>
+
+    <div class="bottom-pad"></div>
+  </div>
+</div>
+
+<script>
+const LIFF_ID    = "[LIFF_ID_ATTENDANCE]";
+const WEBAPP_URL = "[APPS_SCRIPT_URL]";
+const OFFICE_LAT = 13.7581196;
+const OFFICE_LNG = 100.5399864;
+const OFFICE_R   = 300;
+const ONSITE_R   = 500;
+
+let userId       = null;
+let empData      = null;
+let activeCheckin = null;
+let selectedMode = null;
+let lat = null, lng = null;
+
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    const res  = await fetch(`${WEBAPP_URL}?action=getAttendanceStatus&userId=${userId}`);
+    const data = await res.json();
+
+    if (!data.emp) { showUnregistered(); hideLoading(); return; }
+    empData = data.emp;
+
+    if (!data.canUse) { showNoPermission(); hideLoading(); return; }
+
+    renderChip();
+
+    if (data.activeCheckin) {
+      activeCheckin = data.activeCheckin;
+      showCheckoutMode();
+      // Auto-check GPS เพื่อดูว่าออกนอกรัศมีหรือยัง
+      autoCheckGPS();
+    } else {
+      showCheckinMode();
+    }
+
+  } catch(err) {
+    console.error(err);
+    showErr('เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ── Render chip ───────────────────────────────────────────────
+function renderChip() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('chip').style.display = 'flex';
+  document.getElementById('av').textContent = empData.nick.substring(0,2);
+  document.getElementById('uname').textContent = `${empData.nick} · ${empData.name}`;
+  document.getElementById('urole').textContent = `${empData.role} · ${empData.dept}`;
+}
+
+// ── Check In Mode ─────────────────────────────────────────────
+function showCheckinMode() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('mode-section').style.display = 'block';
+  document.getElementById('active-section').style.display = 'none';
+  document.getElementById('checkout-btn').style.display = 'none';
+  document.getElementById('hdr-title').textContent = 'Check In';
+  document.getElementById('hdr-sub').textContent = 'เลือกประเภทและรับตำแหน่ง GPS';
+}
+
+// ── Check Out Mode ────────────────────────────────────────────
+function showCheckoutMode() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('mode-section').style.display = 'none';
+  document.getElementById('gps-section').style.display = 'none';
+  document.getElementById('project-section').style.display = 'none';
+  document.getElementById('checkin-btn').style.display = 'none';
+  document.getElementById('active-section').style.display = 'block';
+  document.getElementById('checkout-btn').style.display = 'block';
+  document.getElementById('hdr-title').textContent = 'Check Out';
+  document.getElementById('hdr-sub').textContent = 'กด Check Out เมื่อเสร็จงาน';
+
+  const ac = activeCheckin;
+  const isOffice = ac.mode === 'office';
+  const card = document.getElementById('active-card');
+  const badge = document.getElementById('ac-badge');
+  card.className = `active-card ${isOffice ? 'active-office' : 'active-onsite'}`;
+  badge.className = `ac-badge ${isOffice ? 'ac-badge-office' : 'ac-badge-onsite'}`;
+  badge.textContent = isOffice ? '🏢 Office' : '📍 On Site';
+  document.getElementById('ac-title').textContent = isOffice ? 'Tidtang Studio' : (ac.projectName || 'On Site');
+  document.getElementById('ac-time').textContent = `Check in เมื่อ ${ac.timeIn} น.`;
+}
+
+// ── Auto GPS Check (สำหรับ checkout auto) ────────────────────
+function autoCheckGPS() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const curLat = pos.coords.latitude;
+    const curLng = pos.coords.longitude;
+    const refLat = activeCheckin.mode === 'office' ? OFFICE_LAT : activeCheckin.lat;
+    const refLng = activeCheckin.mode === 'office' ? OFFICE_LNG : activeCheckin.lng;
+    const radius = activeCheckin.mode === 'office' ? OFFICE_R : ONSITE_R;
+    const dist   = getDistance(refLat, refLng, curLat, curLng);
+
+    const distEl = document.getElementById('ac-dist');
+    distEl.style.display = 'block';
+
+    if (dist > radius) {
+      distEl.textContent = `📍 ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบพร้อม Check Out อัตโนมัติค่ะ`;
+      distEl.style.background = 'rgba(220,38,38,0.1)';
+      distEl.style.color = '#dc2626';
+      // Auto check out
+      lat = curLat; lng = curLng;
+      doCheckout(true);
+    } else {
+      distEl.textContent = `📍 ยังอยู่ในรัศมี ${Math.round(dist)}/${radius}m — กด Check Out เมื่อเสร็จงานค่ะ`;
+      distEl.style.background = 'rgba(15,118,110,0.1)';
+      distEl.style.color = '#0f766e';
+    }
+  }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// ── Select Mode ───────────────────────────────────────────────
+function selMode(mode) {
+  selectedMode = mode;
+  lat = null; lng = null;
+
+  document.getElementById('btn-office').className = `mode-btn${mode==='office'?' sel-office':''}`;
+  document.getElementById('btn-onsite').className = `mode-btn${mode==='onsite'?' sel-onsite':''}`;
+
+  document.getElementById('gps-section').style.display = 'block';
+  document.getElementById('project-section').style.display = mode === 'onsite' ? 'block' : 'none';
+  document.getElementById('checkin-btn').style.display = 'none';
+  document.getElementById('alert-box').style.display = 'none';
+  document.getElementById('dist-section').style.display = 'none';
+  document.getElementById('map-link').style.display = 'none';
+
+  // รีเซ็ต GPS
+  document.getElementById('gps-icon').textContent = '📡';
+  document.getElementById('gps-status').textContent = 'กด "รับตำแหน่ง" ค่ะ';
+  document.getElementById('gps-coords').textContent = 'รอสัญญาณ...';
+  document.getElementById('gps-btn').textContent = '📡 รับตำแหน่ง';
+  document.getElementById('gps-btn').className = 'gps-btn';
+  document.getElementById('gps-btn').disabled = false;
+
+  const btn = document.getElementById('checkin-btn');
+  btn.className = `btn btn-${mode === 'office' ? 'office' : 'onsite'}`;
+  btn.textContent = mode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+}
+
+// ── Get GPS ───────────────────────────────────────────────────
+function getGPS() {
+  const btn = document.getElementById('gps-btn');
+  btn.textContent = '⏳ กำลังรับ...';
+  btn.disabled = true;
+  document.getElementById('gps-icon').textContent = '⏳';
+  document.getElementById('gps-status').textContent = 'กำลังรับสัญญาณ GPS...';
+
+  if (!navigator.geolocation) {
+    document.getElementById('gps-status').textContent = 'ไม่รองรับ GPS ค่ะ';
+    btn.textContent = '❌ ไม่รองรับ';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
+
+      document.getElementById('gps-icon').textContent = '📍';
+      document.getElementById('gps-status').textContent = `ได้รับตำแหน่งแล้วค่ะ (±${acc}m)`;
+      document.getElementById('gps-coords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      btn.textContent = '✓ รับแล้ว';
+      btn.className = 'gps-btn got';
+      btn.disabled = false;
+
+      // เช็คระยะ
+      checkDistance();
+    },
+    () => {
+      document.getElementById('gps-icon').textContent = '❌';
+      document.getElementById('gps-status').textContent = 'กรุณาเปิด Location ในมือถือค่ะ';
+      btn.textContent = '🔄 ลองใหม่';
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+// ── Check Distance ────────────────────────────────────────────
+function checkDistance() {
+  const distSec = document.getElementById('dist-section');
+  const distEl  = document.getElementById('dist-meter');
+  const distTxt = document.getElementById('dist-txt');
+  distSec.style.display = 'block';
+
+  if (selectedMode === 'office') {
+    const dist = getDistance(OFFICE_LAT, OFFICE_LNG, lat, lng);
+    const ok   = dist <= OFFICE_R;
+    distEl.className = `dist-meter ${ok ? 'dist-ok' : 'dist-err'}`;
+    document.getElementById('dist-emoji').textContent = ok ? '✅' : '❌';
+    distTxt.className = `dist-txt ${ok ? 'dist-txt-ok' : 'dist-txt-err'}`;
+    distTxt.textContent = ok
+      ? `อยู่ใน Office รัศมี · ${Math.round(dist)}m จาก Tidtang Studio ✓`
+      : `อยู่นอกรัศมี Office · ${Math.round(dist)}m (ต้องอยู่ภายใน ${OFFICE_R}m)`;
+
+    if (ok) {
+      document.getElementById('checkin-btn').style.display = 'block';
+    } else {
+      showErr(`ไม่สามารถ Check In ได้ค่ะ\nอยู่ห่าง ${Math.round(dist)}m จาก Office (ต้องอยู่ภายใน ${OFFICE_R}m)`);
+    }
+  } else {
+    // On Site → แสดง Map link + ปุ่ม Check In เสมอ
+    distEl.className = 'dist-meter dist-ok';
+    document.getElementById('dist-emoji').textContent = '📍';
+    distTxt.className = 'dist-txt dist-txt-ok';
+    distTxt.textContent = `ปักหมุดตำแหน่งแล้วค่ะ`;
+
+    const mapLink = document.getElementById('map-link');
+    mapLink.href = `https://maps.google.com/?q=${lat},${lng}`;
+    mapLink.style.display = 'flex';
+    document.getElementById('map-link-txt').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)} — ดูใน Google Maps`;
+
+    document.getElementById('checkin-btn').style.display = 'block';
+  }
+}
+
+// ── Check In ─────────────────────────────────────────────────
+async function doCheckin() {
+  if (!lat || !lng || !selectedMode) return;
+  if (selectedMode === 'onsite' && !document.getElementById('project-name').value.trim()) {
+    showErr('กรุณาระบุชื่อโครงการ/สถานที่ค่ะ'); return;
+  }
+
+  const btn = document.getElementById('checkin-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลัง Check In...';
+
+  const now  = new Date();
+  const time = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'attendanceCheckin',
+        userId, lat, lng,
+        mode: selectedMode,
+        projectName: document.getElementById('project-name').value.trim(),
+        timeIn: time
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showSuccess(
+        selectedMode === 'office' ? '🏢' : '📍',
+        'Check In สำเร็จ!',
+        `${selectedMode === 'office' ? 'Tidtang Studio' : document.getElementById('project-name').value.trim()}\n${time} น.\n\nเปิดหน้านี้อีกครั้งเพื่อ Check Out ค่ะ`
+      );
+    } else {
+      showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
+      btn.disabled = false;
+      btn.textContent = selectedMode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+    }
+  } catch(err) {
+    showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
+    btn.disabled = false;
+    btn.textContent = selectedMode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+  }
+}
+
+// ── Check Out ─────────────────────────────────────────────────
+async function doCheckout(isAuto = false) {
+  const btn = document.getElementById('checkout-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลัง Check Out...';
+
+  const now  = new Date();
+  const time = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+  // รับ GPS ถ้ายังไม่มี
+  if (!lat || !lng) {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      await sendCheckout(time, isAuto, btn);
+    }, async () => {
+      await sendCheckout(time, isAuto, btn);
+    }, { enableHighAccuracy: true, timeout: 8000 });
+  } else {
+    await sendCheckout(time, isAuto, btn);
+  }
+}
+
+async function sendCheckout(time, isAuto, btn) {
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'attendanceCheckout',
+        userId,
+        lat: lat || (activeCheckin.mode === 'office' ? OFFICE_LAT : activeCheckin.lat),
+        lng: lng || (activeCheckin.mode === 'office' ? OFFICE_LNG : activeCheckin.lng),
+        timeOut: time
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const mode = activeCheckin.mode;
+      showSuccess(
+        mode === 'office' ? '🏢' : '✅',
+        `Check Out${isAuto ? ' อัตโนมัติ' : ''} สำเร็จ!`,
+        `${mode === 'office' ? 'Tidtang Studio' : (activeCheckin.projectName || 'On Site')}\n${activeCheckin.timeIn}–${time} น.\n${data.hours} ชั่วโมง · ${data.method}`
+      );
+    } else {
+      showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
+      btn.disabled = false;
+      btn.textContent = '🔴 Check Out →';
+    }
+  } catch(err) {
+    showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
+    btn.disabled = false;
+    btn.textContent = '🔴 Check Out →';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const d1 = lat1*Math.PI/180, d2 = lat2*Math.PI/180;
+  const dl = (lat2-lat1)*Math.PI/180, dg = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dl/2)**2 + Math.cos(d1)*Math.cos(d2)*Math.sin(dg/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function showSuccess(icon, title, sub) {
+  document.getElementById('s-icon').textContent = icon;
+  document.getElementById('s-title').textContent = title;
+  document.getElementById('s-sub').textContent   = sub;
+  document.getElementById('success').classList.add('show');
+}
+
+function showErr(msg) {
+  const el = document.getElementById('alert-box');
+  el.className = 'alert alert-err';
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showUnregistered() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('hdr-title').textContent = 'ยังไม่ได้ลงทะเบียน';
+  document.getElementById('hdr-sub').textContent = 'กรุณาติดต่อ HR (Ploy) ค่ะ';
+}
+
+function showNoPermission() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('hdr-title').textContent = 'ไม่มีสิทธิ์ใช้งาน';
+  document.getElementById('hdr-sub').textContent = 'ระบบ Check In/Out สำหรับพนักงาน, Admin และ Draftman ค่ะ';
+}
+
+function hideLoading() {
+  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1300);
+}
+
+function closeLiff() { liff.closeWindow(); }
+
+window.addEventListener('DOMContentLoaded', function() {
+  // รอ LIFF SDK โหลดเสร็จก่อน
+  function waitForLiff(callback) {
+    if (typeof liff !== 'undefined') {
+      callback();
+    } else {
+      setTimeout(() => waitForLiff(callback), 100);
+    }
+  }
+  waitForLiff(init);
+});
+</script>
+</body>
+</html>

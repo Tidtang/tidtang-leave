@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TIDTANG LEAVE — On Site GPS</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{
+  --off-white:#EBE7E4;--warm-tan:#B0A79D;--graphite:#424242;
+  --deep:#191919;--white:#FFFFFF;--border:rgba(66,66,66,0.14);
+  --teal:#0f766e;--teal-l:#f0fdfa;--red:#dc2626;--red-l:#fef2f2;
+  --amber:#d97706;--amber-l:#fffbeb;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-height:100vh;color:var(--deep);}
+.loading-screen{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .4s;}
+.loading-screen.hide{opacity:0;pointer-events:none;}
+.loading-logo{font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:24px;}
+.loading-bar{width:120px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;}
+.loading-fill{height:100%;background:var(--warm-tan);animation:fill 1.5s ease forwards;}
+@keyframes fill{from{width:0}to{width:100%}}
+
+.app{display:flex;flex-direction:column;min-height:100vh;}
+.header{background:var(--deep);padding:16px 20px;padding-top:calc(env(safe-area-inset-top) + 16px);}
+.header-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:4px;}
+.header-title{font-size:20px;font-weight:800;color:var(--white);}
+.header-sub{font-size:11px;color:rgba(176,167,157,0.6);margin-top:2px;}
+
+.body{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.section-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:8px;}
+
+/* GPS Card */
+.gps-card{background:var(--deep);border-radius:2px;padding:20px;text-align:center;}
+.gps-icon{font-size:40px;margin-bottom:10px;}
+.gps-status{font-size:13px;color:var(--warm-tan);margin-bottom:4px;}
+.gps-coords{font-size:11px;color:rgba(176,167,157,0.5);font-family:monospace;margin-bottom:16px;word-break:break-all;}
+.gps-btn{
+  padding:12px 24px;border:1.5px solid var(--warm-tan);border-radius:2px;
+  background:transparent;color:var(--warm-tan);font-size:13px;font-weight:700;
+  font-family:'Anuphan',sans-serif;cursor:pointer;letter-spacing:.04em;
+}
+.gps-btn:active{background:rgba(176,167,157,0.1);}
+.gps-btn.got{border-color:#22c55e;color:#22c55e;}
+
+/* Map link */
+.map-link{
+  display:flex;align-items:center;gap:8px;background:var(--white);
+  border-radius:2px;padding:12px 14px;border:1px solid var(--border);
+  text-decoration:none;color:var(--deep);font-size:12px;font-weight:600;
+}
+.map-link:active{background:var(--off-white);}
+
+/* Input */
+.f-input{
+  width:100%;padding:11px 12px;background:var(--white);
+  border:1.5px solid rgba(66,66,66,0.22);border-radius:2px;
+  font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;outline:none;
+}
+.f-input:focus{border-color:var(--deep);}
+
+/* State cards */
+.state-card{border-radius:2px;padding:16px;display:none;}
+.state-card.show{display:block;}
+.state-checkin{background:var(--teal-l);border:1.5px solid var(--teal);}
+.state-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:6px;}
+.state-project{font-size:16px;font-weight:800;color:var(--deep);margin-bottom:2px;}
+.state-time{font-size:12px;color:var(--warm-tan);}
+
+/* Buttons */
+.btn-primary{
+  width:100%;padding:15px;border:none;border-radius:2px;
+  font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  font-family:'Anuphan',sans-serif;cursor:pointer;
+  background:var(--deep);color:var(--off-white);transition:all .15s;
+}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:disabled{opacity:.5;pointer-events:none;}
+.btn-checkout{background:var(--red);color:var(--white);}
+
+.alert{border-radius:2px;padding:10px 14px;font-size:12px;line-height:1.6;font-weight:500;}
+.alert-err{background:var(--red-l);border-left:3px solid var(--red);color:#7f1d1d;}
+.alert-ok{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal);}
+.alert-warn{background:var(--amber-l);border-left:3px solid var(--amber);color:#92400e;}
+
+.success-screen{position:fixed;inset:0;background:var(--off-white);display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;}
+.success-screen.show{display:flex;}
+.success-icon{font-size:56px;margin-bottom:20px;}
+.success-title{font-size:22px;font-weight:800;color:var(--deep);margin-bottom:8px;}
+.success-sub{font-size:13px;color:var(--warm-tan);line-height:1.7;}
+.success-close{margin-top:32px;padding:14px 32px;border:none;border-radius:2px;background:var(--deep);color:var(--off-white);font-size:13px;font-weight:700;letter-spacing:.06em;font-family:'Anuphan',sans-serif;cursor:pointer;}
+.bottom-pad{height:env(safe-area-inset-bottom);min-height:20px;}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-logo">TIDTANG STUDIO</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<div class="success-screen" id="success-screen">
+  <div class="success-icon" id="success-icon">📍</div>
+  <div class="success-title" id="success-title">Check In แล้วค่ะ</div>
+  <div class="success-sub" id="success-sub">บันทึก GPS เรียบร้อยแล้ว<br>กด Check Out เมื่อเสร็จงานค่ะ</div>
+  <button class="success-close" onclick="closeLiff()">ปิดหน้านี้</button>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <div class="header">
+    <div class="header-label">TIDTANG STUDIO · On Site</div>
+    <div class="header-title" id="header-title">On Site GPS</div>
+    <div class="header-sub">บันทึกตำแหน่งประชุมนอกสถานที่</div>
+  </div>
+
+  <div class="body">
+
+    <!-- Active Check In State -->
+    <div class="state-card state-checkin" id="active-checkin">
+      <div class="state-label">📍 กำลัง On Site อยู่</div>
+      <div class="state-project" id="active-project">—</div>
+      <div class="state-time" id="active-time">Check in เมื่อ —</div>
+    </div>
+
+    <!-- GPS -->
+    <div id="gps-section">
+      <div class="section-label">ตำแหน่ง GPS</div>
+      <div class="gps-card">
+        <div class="gps-icon" id="gps-icon">📡</div>
+        <div class="gps-status" id="gps-status">กด "รับตำแหน่ง" เพื่อปักหมุดค่ะ</div>
+        <div class="gps-coords" id="gps-coords">รอรับสัญญาณ GPS...</div>
+        <button class="gps-btn" id="gps-btn" onclick="getGPS()">📡 รับตำแหน่ง</button>
+      </div>
+    </div>
+
+    <!-- Map Link -->
+    <a id="map-link" style="display:none" target="_blank">
+      <span>🗺</span>
+      <span id="map-link-text">ดูใน Google Maps</span>
+    </a>
+
+    <!-- Distance check (for checkout) -->
+    <div class="alert" id="distance-alert" style="display:none"></div>
+
+    <!-- Project Name -->
+    <div id="project-section" style="display:none">
+      <div class="section-label">ชื่อโครงการ / สถานที่</div>
+      <input class="f-input" type="text" id="project-name" placeholder="เช่น บ้าน คุณสมชาย, สำนักงาน ABC...">
+    </div>
+
+    <!-- Alert -->
+    <div class="alert" id="alert-box" style="display:none"></div>
+
+    <!-- Check In Button -->
+    <button class="btn-primary" id="checkin-btn" onclick="doCheckin()" style="display:none">
+      📍 Check In ที่นี่ →
+    </button>
+
+    <!-- Check Out Button -->
+    <button class="btn-primary btn-checkout" id="checkout-btn" onclick="doCheckout()" style="display:none">
+      🔴 Check Out →
+    </button>
+
+    <div class="bottom-pad"></div>
+  </div>
+</div>
+
+<script>
+const LIFF_ID   = "[LIFF_ID_ONSITE]";
+const WEBAPP_URL = "[APPS_SCRIPT_URL]";
+
+let userId   = null;
+let empData  = null;
+let lat      = null;
+let lng      = null;
+let activeCheckin = null; // ข้อมูล checkin ที่ยังค้างอยู่
+
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    // ดึงข้อมูลพนักงาน + เช็ค active checkin
+    const res = await fetch(`${WEBAPP_URL}?action=getOnSiteStatus&userId=${userId}`);
+    const data = await res.json();
+
+    if (data.emp) {
+      empData = data.emp;
+    }
+
+    if (data.activeCheckin) {
+      // มี checkin ค้างอยู่ → แสดง checkout mode
+      activeCheckin = data.activeCheckin;
+      showCheckoutMode();
+    } else {
+      showCheckinMode();
+    }
+
+  } catch(err) {
+    console.error(err);
+    showError('เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');
+  } finally {
+    hideLoading();
+  }
+}
+
+function showCheckinMode() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('header-title').textContent = 'On Site Check In';
+  document.getElementById('project-section').style.display = 'block';
+}
+
+function showCheckoutMode() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('header-title').textContent = 'On Site Check Out';
+
+  // แสดง active state
+  const ac = activeCheckin;
+  document.getElementById('active-checkin').classList.add('show');
+  document.getElementById('active-project').textContent = ac.projectName;
+  document.getElementById('active-time').textContent = `Check in เมื่อ ${ac.timeIn} น.`;
+
+  // ซ่อน project input
+  document.getElementById('project-section').style.display = 'none';
+
+  // แสดงปุ่ม checkout
+  document.getElementById('checkout-btn').style.display = 'block';
+  document.getElementById('checkin-btn').style.display = 'none';
+
+  // รับ GPS เพื่อเช็คระยะ
+  getGPS(true);
+}
+
+async function getGPS(isCheckout = false) {
+  const btn   = document.getElementById('gps-btn');
+  const icon  = document.getElementById('gps-icon');
+  const status = document.getElementById('gps-status');
+  const coords = document.getElementById('gps-coords');
+
+  btn.textContent = '⏳ กำลังรับสัญญาณ...';
+  btn.disabled = true;
+  icon.textContent = '⏳';
+
+  if (!navigator.geolocation) {
+    status.textContent = 'เบราว์เซอร์ไม่รองรับ GPS ค่ะ';
+    btn.textContent = '❌ ไม่รองรับ';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
+
+      icon.textContent = '📍';
+      status.textContent = `ได้รับตำแหน่งแล้วค่ะ (±${acc}m)`;
+      coords.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      btn.textContent = '✓ รับตำแหน่งแล้ว';
+      btn.className = 'gps-btn got';
+      btn.disabled = false;
+
+      // แสดง Map link
+      const mapLink = document.getElementById('map-link');
+      mapLink.href = `https://maps.google.com/?q=${lat},${lng}`;
+      mapLink.style.display = 'flex';
+      document.getElementById('map-link-text').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)} — ดูใน Google Maps`;
+
+      if (isCheckout && activeCheckin) {
+        // คำนวณระยะ
+        const dist = getDistance(activeCheckin.lat, activeCheckin.lng, lat, lng);
+        const distAlert = document.getElementById('distance-alert');
+        if (dist > 500) {
+          distAlert.className = 'alert alert-ok';
+          distAlert.textContent = `✓ ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบจะ Check Out อัตโนมัติค่ะ`;
+          distAlert.style.display = 'block';
+        } else {
+          distAlert.className = 'alert alert-warn';
+          distAlert.textContent = `ยังอยู่ในรัศมี ${Math.round(dist)}m — กด Check Out ด้วยตนเองได้ค่ะ`;
+          distAlert.style.display = 'block';
+        }
+      } else {
+        // checkin mode — แสดงปุ่ม checkin
+        document.getElementById('checkin-btn').style.display = 'block';
+      }
+    },
+    (err) => {
+      icon.textContent = '❌';
+      status.textContent = 'ไม่สามารถรับตำแหน่งได้ กรุณาเปิด Location ค่ะ';
+      btn.textContent = '🔄 ลองใหม่';
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+async function doCheckin() {
+  const project = document.getElementById('project-name').value.trim();
+  if (!lat || !lng) {
+    showAlertBox('กรุณารับตำแหน่ง GPS ก่อนค่ะ', 'err'); return;
+  }
+  if (!project) {
+    showAlertBox('กรุณาระบุชื่อโครงการ/สถานที่ค่ะ', 'err'); return;
+  }
+
+  const btn = document.getElementById('checkin-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+
+  const now  = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'onSiteCheckin',
+        userId, lat, lng, projectName: project, timeIn: time
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('success-icon').textContent = '📍';
+      document.getElementById('success-title').textContent = 'Check In แล้วค่ะ!';
+      document.getElementById('success-sub').textContent =
+        `${project}\n${time} น.\n\nเปิดหน้านี้อีกครั้งเมื่อเสร็จงาน เพื่อ Check Out ค่ะ`;
+      document.getElementById('success-screen').classList.add('show');
+    } else {
+      showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
+      btn.disabled = false;
+      btn.textContent = '📍 Check In ที่นี่ →';
+    }
+  } catch(err) {
+    showAlertBox('ไม่สามารถเชื่อมต่อได้ค่ะ', 'err');
+    btn.disabled = false;
+    btn.textContent = '📍 Check In ที่นี่ →';
+  }
+}
+
+async function doCheckout() {
+  const btn = document.getElementById('checkout-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+
+  const now  = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'onSiteCheckout',
+        userId, lat: lat || activeCheckin.lat, lng: lng || activeCheckin.lng, timeOut: time
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('success-icon').textContent = '✅';
+      document.getElementById('success-title').textContent = 'Check Out แล้วค่ะ!';
+      document.getElementById('success-sub').textContent =
+        `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${time} น.\nวิธี: ${data.method || 'Manual'}`;
+      document.getElementById('success-screen').classList.add('show');
+    } else {
+      showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
+      btn.disabled = false;
+      btn.textContent = '🔴 Check Out →';
+    }
+  } catch(err) {
+    showAlertBox('ไม่สามารถเชื่อมต่อได้ค่ะ', 'err');
+    btn.disabled = false;
+    btn.textContent = '🔴 Check Out →';
+  }
+}
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const d1 = lat1*Math.PI/180, d2 = lat2*Math.PI/180;
+  const dl = (lat2-lat1)*Math.PI/180, dg = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dl/2)**2 + Math.cos(d1)*Math.cos(d2)*Math.sin(dg/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function showAlertBox(msg, type) {
+  const el = document.getElementById('alert-box');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showError(msg) {
+  document.getElementById('app').style.display = 'flex';
+  showAlertBox(msg, 'err');
+}
+
+function hideLoading() {
+  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1200);
+}
+
+function closeLiff() { liff.closeWindow(); }
+
+window.addEventListener("DOMContentLoaded", function() { function waitForLiff(cb) { if (typeof liff !== "undefined") { cb(); } else { setTimeout(function(){ waitForLiff(cb); }, 100); } } waitForLiff(init); });
+</script>
+</body>
+</html>
