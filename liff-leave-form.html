@@ -391,7 +391,7 @@ html,body{
 <script>
 // ── State ──────────────────────────────────────────────────────
 const LIFF_ID = "2010134572-IRYeubTe"; // ← ใส่ LIFF ID จาก LINE Developers
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7rKwPTCv7cjylJ0jvEr2OrrmN3c43CQyMO_6XBmoFzRJy53HplmCFzH2MkMO8sigAyQ/exec";  // ← ใส่ Apps Script Webhook URL
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxHR4QdXy0zo2uz_uNH2XTgYZvGuME1Jg7ida1LcuXjiLJqrTtuLP_B3ZyvtxSlT-3IAg/exec";  // ← ใส่ Apps Script Webhook URL
 
 let empData = null;
 let quotaData = null;
@@ -638,7 +638,6 @@ async function submitLeave() {
   try {
     const res = await fetch(WEBAPP_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     const data = await res.json();

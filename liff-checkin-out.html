@@ -248,7 +248,7 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100v
 
 <script>
 const LIFF_ID    = "2010134572-wIX4T0Wb";
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby7rKwPTCv7cjylJ0jvEr2OrrmN3c43CQyMO_6XBmoFzRJy53HplmCFzH2MkMO8sigAyQ/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxHR4QdXy0zo2uz_uNH2XTgYZvGuME1Jg7ida1LcuXjiLJqrTtuLP_B3ZyvtxSlT-3IAg/exec";
 const OFFICE_LAT = 13.7581196;
 const OFFICE_LNG = 100.5399864;
 const OFFICE_R   = 300;
@@ -490,7 +490,6 @@ async function doCheckin() {
   try {
     const res = await fetch(WEBAPP_URL, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         action: 'attendanceCheckin',
         userId, lat, lng,
@@ -546,7 +545,6 @@ async function sendCheckout(time, isAuto, btn) {
   try {
     const res = await fetch(WEBAPP_URL, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         action: 'attendanceCheckout',
         userId,
