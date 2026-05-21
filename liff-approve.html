@@ -363,23 +363,33 @@ async function init() {
   }
 }
 
-// ── Load pending requests ──────────────────────────────────────
+// ── Load pending requests — 2 phase ───────────────────────────
 async function loadPendingRequests() {
   try {
-    const res  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${userId}`);
-    const data = await res.json();
+    // Phase 1: โหลดเฉพาะ รออนุมัติ → แสดงทันที
+    const res1  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${userId}&filter=pending`);
+    const data1 = await res1.json();
 
-    if (!data.success) {
-      showError(data.msg || "โหลดคำขอไม่สำเร็จค่ะ");
-      return;
-    }
+    if (!data1.success) { showError(data1.msg || "โหลดคำขอไม่สำเร็จค่ะ"); return; }
 
-    requests = data.requests || [];
-    renderRequests();
+    requests = data1.requests || [];
     show("header");
     show("main-content");
     document.getElementById("main-content").style.display = "flex";
     document.getElementById("main-content").style.flexDirection = "column";
+    document.getElementById("tabs").style.display = "flex";
+    renderRequests();
+
+    // Phase 2: โหลด อนุมัติแล้ว → เพิ่ม background
+    const res2  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${userId}&filter=done`);
+    const data2 = await res2.json();
+    if (data2.success) {
+      requests = [...requests, ...(data2.requests || [])];
+      // อัปเดต header count
+      const pending = requests.filter(r => r.status === "รออนุมัติ").length;
+      document.getElementById("header-count").textContent =
+        pending > 0 ? `รอ ${pending} รายการ` : "ครบแล้ว ✅";
+    }
 
   } catch (err) {
     showError("เชื่อมต่อระบบไม่ได้ค่ะ");
