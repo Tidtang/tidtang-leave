@@ -204,6 +204,11 @@ body {
 .btn-info    { background: var(--mid); color: var(--amber); border: 1px solid var(--amber); flex: 0 0 auto; padding: 11px 14px; }
 
 /* Done badge */
+/* Tabs */
+.tabs { display:flex; background:var(--dark); border-bottom:1px solid var(--border); }
+.tab { flex:1; padding:12px 8px; text-align:center; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+.tab.active { color:var(--cream); border-bottom-color:var(--cream); }
+
 .done-badge {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px;
@@ -277,7 +282,11 @@ body {
     <div class="header-tag">TIDTANG STUDIO · APPROVE</div>
     <div class="header-count" id="header-count"></div>
   </div>
-  <div class="header-title">คำขอรออนุมัติ</div>
+  <div class="header-title">คำขอการลา</div>
+</div>
+<div class="tabs" id="tabs" style="display:none">
+  <div class="tab active" id="tab-pending" onclick="switchTab('pending')">⏳ รออนุมัติ</div>
+  <div class="tab" id="tab-approved" onclick="switchTab('approved')">✅ อนุมัติแล้ว</div>
 </div>
 
 <div id="main-content" style="display:none; flex:1; display:none; flex-direction:column;"></div>
