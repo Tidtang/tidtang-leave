@@ -391,26 +391,56 @@ async function loadPendingRequests() {
   }
 }
 
+let currentTab = "pending";
+
+function switchTab(tab) {
+  currentTab = tab;
+  renderRequests();
+}
+
 // ── Render ─────────────────────────────────────────────────────
 function renderRequests() {
-  const count = requests.filter(r => r.status === "รออนุมัติ").length;
-  document.getElementById("header-count").textContent = `${count} รายการ`;
+  const pendingCount = requests.filter(r => r.status === "รออนุมัติ").length;
+  document.getElementById("header-count").textContent =
+    pendingCount > 0 ? `รอ ${pendingCount} รายการ` : "ครบแล้ว ✅";
 
   const main = document.getElementById("main-content");
 
-  if (requests.length === 0) {
-    main.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">✅</div>
-        <div class="empty-text">ไม่มีคำขอรออนุมัติค่ะ<br>ทุกอย่างเรียบร้อยแล้ว</div>
-      </div>`;
+  // Filter ตาม tab
+  const filtered = currentTab === "pending"
+    ? requests.filter(r => r.status === "รออนุมัติ")
+    : requests.filter(r => r.status !== "รออนุมัติ");
+
+  if (filtered.length === 0) {
+    if (currentTab === "pending") {
+      main.innerHTML = `
+        <div class="empty">
+          <div class="empty-title">ไม่มีคำขอรออนุมัติค่ะ</div>
+          <button class="btn-history" onclick="switchTab('approved')">ดูคำขอที่อนุมัติแล้ว →</button>
+        </div>`;
+    } else {
+      main.innerHTML = `
+        <div class="empty">
+          <div class="empty-title">ยังไม่มีรายการที่ดำเนินการแล้วค่ะ</div>
+          <button class="btn-history" onclick="switchTab('pending')">← กลับ</button>
+        </div>`;
+    }
     return;
   }
 
   const list = document.createElement("div");
   list.className = "list";
 
-  requests.forEach((req, idx) => {
+  // Back button เมื่ออยู่ใน approved tab
+  if (currentTab === "approved") {
+    const backRow = document.createElement("div");
+    backRow.style.cssText = "padding:4px 0 8px;";
+    backRow.innerHTML = `<button onclick="switchTab('pending')" style="background:none;border:none;color:var(--cream);font-family:'Anuphan',sans-serif;font-size:13px;cursor:pointer;opacity:.6;padding:0;">← คำขอรออนุมัติ</button>`;
+    list.appendChild(backRow);
+  }
+
+  filtered.forEach(req => {
+    const idx = requests.indexOf(req);
     list.appendChild(buildCard(req, idx));
   });
 
