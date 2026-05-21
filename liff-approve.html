@@ -8,19 +8,19 @@
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root {
-  --deep:    #191919;
-  --dark:    #242424;
-  --mid:     #2e2e2e;
-  --border:  #383838;
-  --off:     #EBE7E4;
-  --cream:   #C8B8A2;
-  --muted:   #888;
-  --white:   #F5F2EE;
-  --green:   #4caf50;
-  --red:     #e03535;
-  --amber:   #e8a020;
-  --teal:    #5eead4;
-  --radius:  10px;
+  --deep:   #191919;
+  --dark:   #242424;
+  --mid:    #2e2e2e;
+  --border: #383838;
+  --off:    #EBE7E4;
+  --cream:  #C8B8A2;
+  --muted:  #888;
+  --white:  #F5F2EE;
+  --green:  #4caf50;
+  --red:    #e03535;
+  --amber:  #e8a020;
+  --teal:   #5eead4;
+  --radius: 10px;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -34,7 +34,7 @@ body {
   flex-direction: column;
 }
 
-/* ── Loading ── */
+/* Loading */
 .loading {
   position: fixed; inset: 0;
   background: var(--deep);
@@ -52,11 +52,11 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { font-size: 12px; color: var(--muted); letter-spacing: .1em; }
 
-/* ── Header ── */
+/* Header */
 .header {
   background: var(--dark);
   border-bottom: 1px solid var(--border);
-  padding: 16px 20px 14px;
+  padding: 16px 20px 0;
   position: sticky; top: 0; z-index: 10;
 }
 .header-top {
@@ -72,22 +72,45 @@ body {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px; color: var(--muted);
 }
-.header-title { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+.header-title { font-size: 22px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 14px; }
 
-/* ── Empty ── */
+/* Tabs */
+.tabs {
+  display: flex; gap: 0;
+  border-top: 1px solid var(--border);
+  margin: 0 -20px;
+}
+.tab-btn {
+  flex: 1; padding: 10px 0;
+  background: none; border: none;
+  font-family: 'Anuphan', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.tab-btn.active { color: var(--off); border-bottom-color: var(--cream); }
+
+/* List */
+.list { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Empty */
 .empty {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 12px; padding: 40px;
-  text-align: center;
+  gap: 12px; padding: 60px 40px; text-align: center;
 }
-.empty-icon { font-size: 48px; opacity: .4; }
+.empty-icon { font-size: 44px; opacity: .35; }
 .empty-text { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.btn-switch {
+  margin-top: 4px; padding: 10px 20px;
+  background: var(--mid); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--cream);
+  font-family: 'Anuphan', sans-serif; font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
 
-/* ── Request List ── */
-.list { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-
-/* ── Request Card ── */
+/* Card */
 .req-card {
   background: var(--dark);
   border: 1px solid var(--border);
@@ -95,9 +118,9 @@ body {
   overflow: hidden;
   transition: border-color .2s;
 }
-.req-card.approved { border-color: var(--green); opacity: .6; }
-.req-card.rejected { border-color: var(--red); opacity: .6; }
-.req-card.info-req  { border-color: var(--amber); opacity: .6; }
+.req-card.approved { border-color: var(--green); opacity: .65; }
+.req-card.rejected { border-color: var(--red); opacity: .65; }
+.req-card.info-req { border-color: var(--amber); opacity: .65; }
 
 .req-header {
   padding: 14px 16px 10px;
@@ -106,89 +129,66 @@ body {
 }
 .req-avatar {
   width: 40px; height: 40px;
-  background: var(--mid);
-  border-radius: 50%;
+  background: var(--mid); border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 800;
-  color: var(--cream); flex-shrink: 0;
-  border: 1px solid var(--border);
+  font-size: 15px; font-weight: 800; color: var(--cream);
+  flex-shrink: 0; border: 1px solid var(--border);
 }
 .req-meta { flex: 1; min-width: 0; }
 .req-name { font-size: 15px; font-weight: 700; }
 .req-pos  { font-size: 11px; color: var(--muted); margin-top: 1px; }
-.req-id   {
+.req-id {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9px; color: var(--muted);
   background: var(--mid); padding: 2px 7px;
-  border-radius: 3px; white-space: nowrap;
+  border-radius: 3px; white-space: nowrap; flex-shrink: 0;
 }
 
 .req-body { padding: 0 16px 14px; }
 
-/* Type badge */
 .type-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px; font-weight: 700;
-  margin-bottom: 12px;
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; margin-bottom: 12px;
 }
-.type-sick    { background: rgba(224,53,53,.15); color: #f87171; }
-.type-vacation{ background: rgba(94,234,212,.12); color: var(--teal); }
-.type-personal{ background: rgba(200,184,162,.12); color: var(--cream); }
-.type-wfh     { background: rgba(100,150,255,.12); color: #93bbff; }
-.type-over    { background: rgba(232,160,32,.12); color: var(--amber); }
-.type-lwp     { background: rgba(150,150,150,.12); color: #aaa; }
+.type-sick     { background: rgba(224,53,53,.15);   color: #f87171; }
+.type-vacation { background: rgba(94,234,212,.12);  color: var(--teal); }
+.type-personal { background: rgba(200,184,162,.12); color: var(--cream); }
+.type-wfh      { background: rgba(100,150,255,.12); color: #93bbff; }
+.type-over     { background: rgba(232,160,32,.12);  color: var(--amber); }
+.type-lwp      { background: rgba(150,150,150,.12); color: #aaa; }
 
 .req-info-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 10px; margin-bottom: 12px;
 }
-.req-info-item {}
 .req-info-label {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted);
-  margin-bottom: 3px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 3px;
 }
 .req-info-value { font-size: 13px; font-weight: 600; }
 
-/* Reason box */
 .req-reason {
-  background: var(--mid);
-  border-radius: 6px;
-  padding: 10px 12px;
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.6;
-  margin-bottom: 14px;
+  background: var(--mid); border-radius: 6px;
+  padding: 10px 12px; font-size: 12px;
+  color: var(--muted); line-height: 1.6; margin-bottom: 14px;
 }
 .req-reason-label {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9px; letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--cream); margin-bottom: 4px;
+  text-transform: uppercase; color: var(--cream); margin-bottom: 4px;
 }
 
-/* Quota mini */
 .req-quota {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 12px;
-  background: var(--mid);
-  border-radius: 6px;
-  font-size: 12px;
-  margin-bottom: 14px;
+  padding: 8px 12px; background: var(--mid);
+  border-radius: 6px; font-size: 12px; margin-bottom: 14px;
 }
-.req-quota-bar {
-  flex: 1; height: 4px;
-  background: var(--border); border-radius: 2px;
-  overflow: hidden;
-}
+.req-quota-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .req-quota-fill { height: 100%; border-radius: 2px; transition: width .3s; }
 
-/* Action buttons */
 .req-actions { display: flex; gap: 8px; }
-
 .btn-action {
   flex: 1; padding: 11px 8px;
   border: none; border-radius: 6px;
@@ -198,109 +198,106 @@ body {
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-action:active { transform: scale(.97); opacity: .8; }
-
 .btn-approve { background: var(--green); color: #fff; }
-.btn-reject  { background: var(--red); color: #fff; }
+.btn-reject  { background: var(--red);   color: #fff; }
 .btn-info    { background: var(--mid); color: var(--amber); border: 1px solid var(--amber); flex: 0 0 auto; padding: 11px 14px; }
 
-/* Done badge */
 .done-badge {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 10px;
-  border-radius: 6px;
+  padding: 10px; border-radius: 6px;
   font-size: 13px; font-weight: 700;
 }
-.done-approved { background: rgba(76,175,80,.12); color: var(--green); }
-.done-rejected { background: rgba(224,53,53,.12); color: var(--red); }
+.done-approved { background: rgba(76,175,80,.12);  color: var(--green); }
+.done-rejected { background: rgba(224,53,53,.12);  color: var(--red); }
 .done-info     { background: rgba(232,160,32,.12); color: var(--amber); }
 
-/* ── Info Request Modal ── */
+/* Modal */
 .modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.7);
-  display: flex; align-items: flex-end;
-  z-index: 50;
-  opacity: 0; pointer-events: none;
-  transition: opacity .2s;
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: flex-end; z-index: 50;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
 .modal {
-  width: 100%;
-  background: var(--dark);
-  border-radius: 16px 16px 0 0;
-  padding: 20px;
-  transform: translateY(100%);
-  transition: transform .3s ease;
+  width: 100%; background: var(--dark);
+  border-radius: 16px 16px 0 0; padding: 20px;
+  transform: translateY(100%); transition: transform .3s ease;
 }
 .modal-overlay.open .modal { transform: translateY(0); }
-.modal-title {
-  font-size: 16px; font-weight: 700;
-  margin-bottom: 16px;
-  display: flex; align-items: center; gap: 8px;
-}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
 .modal-textarea {
-  width: 100%;
-  background: var(--mid);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-  color: var(--off);
-  font-family: 'Anuphan', sans-serif;
-  font-size: 14px;
-  resize: none; height: 100px;
-  margin-bottom: 12px;
+  width: 100%; background: var(--mid);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; color: var(--off);
+  font-family: 'Anuphan', sans-serif; font-size: 14px;
+  resize: none; height: 100px; margin-bottom: 12px;
 }
 .modal-textarea:focus { outline: none; border-color: var(--cream); }
 .modal-actions { display: flex; gap: 10px; }
 .btn-modal-cancel { flex: 1; padding: 12px; background: var(--mid); border: none; border-radius: 8px; color: var(--off); font-family: 'Anuphan', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
 .btn-modal-send   { flex: 2; padding: 12px; background: var(--amber); border: none; border-radius: 8px; color: #191919; font-family: 'Anuphan', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
 
-/* ── Error ── */
+/* Error */
 .error-screen {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 12px; padding: 40px; text-align: center;
 }
 .error-screen h2 { font-size: 18px; }
-.error-screen p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.error-screen p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.error-detail {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--muted);
+  background: var(--mid); border-radius: 6px;
+  padding: 10px 14px; margin-top: 4px;
+  text-align: left; word-break: break-all;
+  max-width: 320px;
+}
 </style>
 </head>
 <body>
 
+<!-- Loading -->
 <div class="loading" id="loading">
   <div class="loading-dot"></div>
-  <div class="loading-text">กำลังโหลดคำขอ...</div>
+  <div class="loading-text" id="loading-text">กำลังโหลด...</div>
 </div>
 
+<!-- Header -->
 <div class="header" id="header" style="display:none">
   <div class="header-top">
     <div class="header-tag">TIDTANG STUDIO · APPROVE</div>
     <div class="header-count" id="header-count"></div>
   </div>
-  <div style="display:flex; align-items:center; gap:10px;">
-    <button id="back-btn" onclick="switchTab('pending')" style="display:none; background:none; border:none; color:var(--cream); font-family:'Anuphan',sans-serif; font-size:13px; cursor:pointer; padding:0;">← กลับ</button>
-    <div class="header-title" id="header-title-text">คำขอรออนุมัติ</div>
+  <div class="header-title" id="header-title-text">คำขอรออนุมัติ</div>
+  <!-- FIX C: tabs element มีอยู่จริงใน DOM -->
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" id="tab-pending" onclick="switchTab('pending')">รออนุมัติ</button>
+    <button class="tab-btn"        id="tab-done"    onclick="switchTab('done')">ดำเนินการแล้ว</button>
   </div>
 </div>
 
+<!-- FIX A: ลบ display:none ที่ซ้ำออก และ FIX B: ใช้ display:flex แทน block -->
+<div id="main-content" style="display:none; flex:1; flex-direction:column;"></div>
 
-<div id="main-content" style="display:none; flex:1; display:none; flex-direction:column;"></div>
-
+<!-- Modal ขอข้อมูลเพิ่ม -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
-    <div class="modal-title">💬 ขอข้อมูลเพิ่มเติม</div>
+    <div class="modal-title">ขอข้อมูลเพิ่มเติม</div>
     <textarea class="modal-textarea" id="modal-input" placeholder="ระบุข้อมูลที่ต้องการ..."></textarea>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn-modal-send" onclick="sendInfoRequest()">ส่งข้อความ</button>
+      <button class="btn-modal-send"   onclick="sendInfoRequest()">ส่งข้อความ</button>
     </div>
   </div>
 </div>
 
+<!-- Error -->
 <div class="error-screen" id="error-screen" style="display:none">
   <div style="font-size:40px">🔒</div>
   <h2>ไม่มีสิทธิ์เข้าถึง</h2>
   <p id="error-msg">ระบบ Approve สำหรับ Senior, Head และ HR เท่านั้นค่ะ</p>
+  <div class="error-detail" id="error-detail" style="display:none"></div>
 </div>
 
 <script>
@@ -310,135 +307,144 @@ const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyzyQ3I-Omw4gwLjVIUE
 let userId   = null;
 let approver = null;
 let requests = [];
+let currentTab = "pending";
 let currentInfoReqId = null;
 let currentInfoEmpId = null;
 
-// ── Type config ────────────────────────────────────────────────
 const TYPE_CONFIG = {
-  "ลาป่วย":         { cls: "type-sick",     icon: "🤒" },
-  "ลาพักร้อน":      { cls: "type-vacation", icon: "🏖" },
-  "ลากิจ":          { cls: "type-personal", icon: "📋" },
-  "WFH":             { cls: "type-wfh",      icon: "🏠" },
-  "ลาเกินโควต้า":   { cls: "type-over",     icon: "⚠️" },
-  "Leave Without Pay":{ cls: "type-lwp",    icon: "📌" },
+  "ลาป่วย":          { cls: "type-sick",     label: "ลาป่วย" },
+  "ลาพักร้อน":       { cls: "type-vacation", label: "ลาพักร้อน" },
+  "ลากิจ":           { cls: "type-personal", label: "ลากิจ" },
+  "WFH":              { cls: "type-wfh",      label: "WFH" },
+  "ลาเกินโควต้า":    { cls: "type-over",     label: "ลาเกินโควต้า" },
+  "Leave Without Pay":{ cls: "type-lwp",      label: "Leave Without Pay" },
 };
 
-// ── Init ───────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 async function init() {
   try {
+    setLoadingText("เชื่อมต่อ Line...");
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) { liff.login(); return; }
 
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    setLoadingText("ดึงข้อมูลผู้ใช้...");
     const profile = await liff.getProfile();
     userId = profile.userId;
 
-    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${userId}`);
+    setLoadingText("ตรวจสอบสิทธิ์...");
+    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
     const data = await res.json();
 
     if (!data.success || !data.emp) {
-      showError("ไม่พบข้อมูลพนักงานในระบบค่ะ");
+      // FIX D: แสดง error ที่ชัดเจนขึ้น + แสดง userId เพื่อให้ admin ช่วย debug
+      showError(
+        "ไม่พบข้อมูลในระบบค่ะ\nกรุณาติดต่อ HR เพื่อลงทะเบียน Line User ID",
+        `userId: ${userId}`
+      );
       return;
     }
 
     approver = data.emp;
-    // Head/HR/Senior/Admin เข้าได้ทั้งหมด (Admin ดูอย่างเดียว)
+
     const canEnter = ["Full Access","Senior","HR","Admin"].includes(approver.role);
     if (!canEnter) {
-      showError(`คุณ${approver.nick} (${approver.role}) ไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ`);
+      showError(`คุณ${approver.nick} (${approver.role})\nไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ`);
       return;
     }
 
-    await loadPendingRequests();
+    await loadRequests();
 
   } catch (err) {
-    console.error(err);
-    showError("เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ");
-  } finally {
-    hide("loading");
+    console.error("init error:", err);
+    showError("เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ", err.message);
   }
 }
 
-// ── Load pending requests — 2 phase ───────────────────────────
-async function loadPendingRequests() {
+// ── Load — 2 phase ───────────────────────────────────────────
+async function loadRequests() {
   try {
-    // Phase 1: โหลดเฉพาะ รออนุมัติ → แสดงทันที
-    const res1  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${userId}&filter=pending`);
+    // Phase 1: รออนุมัติ → แสดงทันที
+    setLoadingText("โหลดคำขอรออนุมัติ...");
+    const res1  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${encodeURIComponent(userId)}&filter=pending`);
     const data1 = await res1.json();
 
-    if (!data1.success) { showError(data1.msg || "โหลดคำขอไม่สำเร็จค่ะ"); return; }
+    if (!data1.success) {
+      showError(data1.msg || "โหลดคำขอไม่สำเร็จค่ะ", data1.debugUserId ? `userId: ${data1.debugUserId}` : "");
+      return;
+    }
 
     requests = data1.requests || [];
-    show("header");
-    show("main-content");
-    document.getElementById("main-content").style.display = "flex";
-    document.getElementById("main-content").style.flexDirection = "column";
-    document.getElementById("tabs").style.display = "flex";
+
+    // FIX B: แสดง main-content ด้วย display:flex
+    hide("loading");
+    showFlex("header");
+    showFlex("main-content");
     renderRequests();
 
-    // Phase 2: โหลด อนุมัติแล้ว → เพิ่ม background
-    const res2  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${userId}&filter=done`);
+    // Phase 2: ดำเนินการแล้ว → โหลด background
+    const res2  = await fetch(`${WEBAPP_URL}?action=getPendingRequests&userId=${encodeURIComponent(userId)}&filter=done`);
     const data2 = await res2.json();
     if (data2.success) {
       requests = [...requests, ...(data2.requests || [])];
-      // อัปเดต header count
-      const pending = requests.filter(r => r.status === "รออนุมัติ").length;
-      document.getElementById("header-count").textContent =
-        pending > 0 ? `รอ ${pending} รายการ` : "ครบแล้ว ✅";
+      updateCount();
     }
 
   } catch (err) {
-    showError("เชื่อมต่อระบบไม่ได้ค่ะ");
+    console.error("loadRequests error:", err);
+    // FIX C: ไม่มี getElementById("tabs") แล้ว → ไม่ crash
+    hide("loading");
+    showFlex("header");
+    showFlex("main-content");
+    document.getElementById("main-content").innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-text">โหลดไม่สำเร็จค่ะ<br>${err.message || "กรุณาลองใหม่"}</div>
+        <button class="btn-switch" onclick="location.reload()">โหลดใหม่</button>
+      </div>`;
   }
 }
 
-let currentTab = "pending";
+function updateCount() {
+  const pending = requests.filter(r => r.status === "รออนุมัติ").length;
+  document.getElementById("header-count").textContent =
+    pending > 0 ? `รอ ${pending} รายการ` : "ครบแล้ว";
+}
 
+// ── Tab switch ────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
+  document.getElementById("tab-pending").classList.toggle("active", tab === "pending");
+  document.getElementById("tab-done").classList.toggle("active", tab === "done");
   renderRequests();
 }
 
-// ── Render ─────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 function renderRequests() {
-  const pendingCount = requests.filter(r => r.status === "รออนุมัติ").length;
-  document.getElementById("header-count").textContent =
-    pendingCount > 0 ? `รอ ${pendingCount} รายการ` : "ครบแล้ว ✅";
-
+  updateCount();
   const main = document.getElementById("main-content");
 
-  // Filter ตาม tab
   const filtered = currentTab === "pending"
     ? requests.filter(r => r.status === "รออนุมัติ")
     : requests.filter(r => r.status !== "รออนุมัติ");
 
   if (filtered.length === 0) {
-    if (currentTab === "pending") {
-      main.innerHTML = `
-        <div class="empty">
-          <div class="empty-title">ไม่มีคำขอรออนุมัติค่ะ</div>
-          <button class="btn-history" onclick="switchTab('approved')">ดูคำขอที่อนุมัติแล้ว →</button>
-        </div>`;
-    } else {
-      main.innerHTML = `
-        <div class="empty">
-          <div class="empty-title">ยังไม่มีรายการที่ดำเนินการแล้วค่ะ</div>
-          <button class="btn-history" onclick="switchTab('pending')">← กลับ</button>
-        </div>`;
-    }
+    main.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">${currentTab === "pending" ? "✅" : "📋"}</div>
+        <div class="empty-text">${currentTab === "pending" ? "ไม่มีคำขอรออนุมัติค่ะ" : "ยังไม่มีรายการที่ดำเนินการแล้วค่ะ"}</div>
+        <button class="btn-switch" onclick="switchTab('${currentTab === "pending" ? "done" : "pending"}')">
+          ${currentTab === "pending" ? "ดูรายการที่ดำเนินการแล้ว" : "กลับ"}
+        </button>
+      </div>`;
     return;
   }
 
   const list = document.createElement("div");
   list.className = "list";
-
-  // Back button เมื่ออยู่ใน approved tab
-  if (currentTab === "approved") {
-    const backRow = document.createElement("div");
-    backRow.style.cssText = "padding:4px 0 8px;";
-    backRow.innerHTML = `<button onclick="switchTab('pending')" style="background:none;border:none;color:var(--cream);font-family:'Anuphan',sans-serif;font-size:13px;cursor:pointer;opacity:.6;padding:0;">← คำขอรออนุมัติ</button>`;
-    list.appendChild(backRow);
-  }
-
   filtered.forEach(req => {
     const idx = requests.indexOf(req);
     list.appendChild(buildCard(req, idx));
@@ -449,7 +455,7 @@ function renderRequests() {
 }
 
 function buildCard(req, idx) {
-  const tc       = TYPE_CONFIG[req.leaveType] || { cls: "type-wfh", icon: "📄" };
+  const tc      = TYPE_CONFIG[req.leaveType] || { cls: "type-wfh", label: req.leaveType };
   const isPending = req.status === "รออนุมัติ";
   const initials  = (req.empNick || "?").substring(0, 2).toUpperCase();
   const quota     = req.quota;
@@ -457,39 +463,44 @@ function buildCard(req, idx) {
   const barColor  = quotaPct > 50 ? "#4caf50" : quotaPct > 20 ? "#e8a020" : "#e03535";
 
   const card = document.createElement("div");
-  card.className = `req-card${!isPending ? " " + (req.status === "อนุมัติ" ? "approved" : req.status === "ไม่อนุมัติ" ? "rejected" : "info-req") : ""}`;
+  card.className = "req-card" +
+    (!isPending ? (req.status === "อนุมัติ" ? " approved" : req.status === "ไม่อนุมัติ" ? " rejected" : " info-req") : "");
   card.id = `card-${idx}`;
+
+  const actionHtml = isPending && req.canApprove ? `
+    <div class="req-actions">
+      <button class="btn-action btn-approve" onclick="approve(${idx})">อนุมัติ</button>
+      <button class="btn-action btn-reject"  onclick="reject(${idx})">ปฏิเสธ</button>
+      <button class="btn-action btn-info"    onclick="requestInfo(${idx})">💬</button>
+    </div>`
+    : isPending && !req.canApprove ? `
+    <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--cream)">
+      รออนุมัติจาก ${(req.approvers||[]).join(", ")}
+    </div>`
+    : `
+    <div class="done-badge ${req.status === "อนุมัติ" ? "done-approved" : req.status === "ไม่อนุมัติ" ? "done-rejected" : "done-info"}">
+      ${req.status === "อนุมัติ" ? "อนุมัติแล้ว" : req.status === "ไม่อนุมัติ" ? "ปฏิเสธแล้ว" : "ขอข้อมูลเพิ่ม"}
+      ${req.approvedBy ? `· ${req.approvedBy}` : ""}
+    </div>`;
 
   card.innerHTML = `
     <div class="req-header">
       <div class="req-avatar">${initials}</div>
       <div class="req-meta">
         <div class="req-name">${req.empNick || "—"}</div>
-        <div class="req-pos">${req.empPos || ""} · ${req.empDept || ""}</div>
+        <div class="req-pos">${[req.empPos, req.empDept].filter(Boolean).join(" · ")}</div>
       </div>
       <div class="req-id">${req.reqId || ""}</div>
     </div>
 
     <div class="req-body">
-      <div class="type-badge ${tc.cls}">${tc.icon} ${req.leaveType}</div>
+      <div class="type-badge ${tc.cls}">${tc.label}</div>
 
       <div class="req-info-grid">
-        <div class="req-info-item">
-          <div class="req-info-label">วันที่</div>
-          <div class="req-info-value">${req.dateRange || "—"}</div>
-        </div>
-        <div class="req-info-item">
-          <div class="req-info-label">จำนวน</div>
-          <div class="req-info-value">${req.days || "—"} วัน</div>
-        </div>
-        <div class="req-info-item">
-          <div class="req-info-label">ส่งเมื่อ</div>
-          <div class="req-info-value">${req.submittedAt || "—"}</div>
-        </div>
-        <div class="req-info-item">
-          <div class="req-info-label">ผู้อนุมัติ</div>
-          <div class="req-info-value">${(req.approvers || []).join(", ") || "—"}</div>
-        </div>
+        <div><div class="req-info-label">วันที่</div><div class="req-info-value">${req.dateRange || "—"}</div></div>
+        <div><div class="req-info-label">จำนวน</div><div class="req-info-value">${req.days || "—"} วัน</div></div>
+        <div><div class="req-info-label">ส่งเมื่อ</div><div class="req-info-value">${req.submittedAt || "—"}</div></div>
+        <div><div class="req-info-label">ผู้อนุมัติ</div><div class="req-info-value">${(req.approvers||[]).join(", ") || "—"}</div></div>
       </div>
 
       ${req.reason ? `
@@ -506,34 +517,22 @@ function buildCard(req, idx) {
         </div>
       </div>` : ""}
 
-      ${isPending && req.canApprove ? `
-      <div class="req-actions">
-        <button class="btn-action btn-approve" onclick="approve(${idx})">✓ อนุมัติ</button>
-        <button class="btn-action btn-reject"  onclick="reject(${idx})">✗ ปฏิเสธ</button>
-        <button class="btn-action btn-info"    onclick="requestInfo(${idx})">💬</button>
-      </div>` : isPending && !req.canApprove ? `
-      <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--cream)">
-        👁 รออนุมัติจาก ${(req.approvers||[]).join(", ")}
-      </div>` : `
-      <div class="done-badge ${req.status === "อนุมัติ" ? "done-approved" : req.status === "ไม่อนุมัติ" ? "done-rejected" : "done-info"}">
-        ${req.status === "อนุมัติ" ? "✅ อนุมัติแล้ว" : req.status === "ไม่อนุมัติ" ? "✗ ปฏิเสธแล้ว" : "💬 ขอข้อมูลเพิ่ม"}
-        ${req.approvedBy ? `· ${req.approvedBy}` : ""}
-      </div>`}
+      ${actionHtml}
     </div>`;
 
   return card;
 }
 
-// ── Actions ────────────────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────
 async function approve(idx) {
   const req = requests[idx];
   if (!confirm(`อนุมัติการลาของ ${req.empNick}?\n${req.leaveType} · ${req.dateRange}`)) return;
-  await submitDecision(idx, "approve", "");
+  await submitDecision(idx, "approveLeave", "");
 }
 
 async function reject(idx) {
   const reason = prompt(`เหตุผลในการปฏิเสธ (${requests[idx].empNick}):`) || "";
-  await submitDecision(idx, "reject", reason);
+  await submitDecision(idx, "rejectLeave", reason);
 }
 
 function requestInfo(idx) {
@@ -558,6 +557,7 @@ async function sendInfoRequest() {
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "requestMoreInfo",
         userId, reqId: currentInfoReqId,
@@ -569,6 +569,8 @@ async function sendInfoRequest() {
       const req = requests.find(r => r.reqId === currentInfoReqId);
       if (req) { req.status = "ขอข้อมูลเพิ่ม"; renderRequests(); }
       alert("ส่งข้อความแล้วค่ะ");
+    } else {
+      alert(data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
   } catch (err) {
     alert("เกิดข้อผิดพลาดค่ะ");
@@ -576,15 +578,16 @@ async function sendInfoRequest() {
 }
 
 async function submitDecision(idx, action, reason) {
-  const req = requests[idx];
+  const req  = requests[idx];
   const card = document.getElementById(`card-${idx}`);
-  if (card) card.style.opacity = ".5";
+  if (card) card.style.opacity = ".4";
 
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: action === "approve" ? "approveLeave" : "rejectLeave",
+        action,
         userId, reqId: req.reqId,
         empLineId: req.empLineId, reason
       })
@@ -592,7 +595,7 @@ async function submitDecision(idx, action, reason) {
     const data = await res.json();
 
     if (data.success) {
-      req.status     = action === "approve" ? "อนุมัติ" : "ไม่อนุมัติ";
+      req.status     = action === "approveLeave" ? "อนุมัติ" : "ไม่อนุมัติ";
       req.approvedBy = approver.nick;
       renderRequests();
     } else {
@@ -601,21 +604,46 @@ async function submitDecision(idx, action, reason) {
     }
   } catch (err) {
     if (card) card.style.opacity = "1";
-    alert("เชื่อมต่อไม่ได้ค่ะ");
+    alert("เชื่อมต่อไม่ได้ค่ะ กรุณาลองใหม่");
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────
-function show(id) { const el = document.getElementById(id); if (el) el.style.display = "block"; }
-function hide(id) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
+// ── Helpers ───────────────────────────────────────────────────
+function setLoadingText(txt) {
+  const el = document.getElementById("loading-text");
+  if (el) el.textContent = txt;
+}
 
-function showError(msg) {
-  hide("loading"); hide("header"); hide("main-content");
+function show(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "block";
+}
+
+// FIX B: เพิ่ม showFlex แยกต่างหากสำหรับ flex container
+function showFlex(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "flex";
+}
+
+function hide(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
+
+function showError(msg, detail) {
+  hide("loading");
+  hide("header");
+  hide("main-content");
   document.getElementById("error-msg").textContent = msg;
+  const detailEl = document.getElementById("error-detail");
+  if (detail && detailEl) {
+    detailEl.textContent = detail;
+    detailEl.style.display = "block";
+  }
   show("error-screen");
 }
 
-// ── Start ──────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────
 window.addEventListener("DOMContentLoaded", () => {
   function waitLiff(cb) {
     if (typeof liff !== "undefined") cb();
