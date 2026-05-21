@@ -322,6 +322,12 @@ html,body{
       </div>
     </div>
 
+    <!-- Selected type header — แสดงเมื่อ type ถูกเลือกแล้ว -->
+    <div id="selected-type-bar" style="display:none;align-items:center;justify-content:space-between;background:var(--deep);color:var(--off);padding:10px 14px;border-radius:2px;margin-bottom:4px;">
+      <span id="selected-type-label" style="font-size:13px;font-weight:700;letter-spacing:.04em;"></span>
+      <button onclick="resetType()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:var(--off);font-size:10px;padding:4px 10px;border-radius:2px;cursor:pointer;font-family:'Anuphan',sans-serif;">เปลี่ยน</button>
+    </div>
+
     <!-- Date -->
     <div id="date-section" style="display:none">
       <div class="section-label">วันที่ลา</div>
@@ -428,7 +434,15 @@ async function init() {
       const typeParam = urlParams.get("type");
       if (typeParam) {
         const btn = document.querySelector(`.lt-btn[data-type="${typeParam}"]`);
-        if (btn) setTimeout(() => { selType(btn); btn.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300);
+        if (btn) {
+          setTimeout(() => {
+            // ซ่อน type selector ทันที — ไม่ต้องให้ user เลือกเอง
+            const typeSection = document.getElementById("lt-grid");
+            if (typeSection) typeSection.closest("div").style.display = "none";
+            // เลือก type และแสดงฟอร์มทันที
+            selType(btn);
+          }, 200);
+        }
       }
     } else {
       showUnregistered();
@@ -485,6 +499,21 @@ function renderEmployee() {
   document.getElementById('date-end').value = todayStr;
 }
 
+// ── Reset type (ปุ่ม "เปลี่ยน") ─────────────────────────────────
+function resetType() {
+  // แสดง type selector กลับมา
+  const typeSection = document.getElementById("lt-grid");
+  if (typeSection) typeSection.closest("div").style.display = "block";
+  // ซ่อน selected bar และฟอร์ม
+  document.getElementById('selected-type-bar').style.display = 'none';
+  document.getElementById('date-section').style.display = 'none';
+  document.getElementById('reason-section').style.display = 'none';
+  document.getElementById('halfday-section').style.display = 'none';
+  // reset selection
+  document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
+  selectedType = null;
+}
+
 // ── Select Leave Type ──────────────────────────────────────────
 function selType(btn) {
   document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
@@ -506,6 +535,14 @@ function selType(btn) {
   // แสดง date section (ซ่อนวันสิ้นสุดถ้าเป็น half-day)
   document.getElementById('date-section').style.display = 'block';
   document.getElementById('reason-section').style.display = 'block';
+
+  // แสดง selected type bar
+  const bar = document.getElementById('selected-type-bar');
+  const lbl = document.getElementById('selected-type-label');
+  if (bar && lbl) {
+    lbl.textContent = selectedType;
+    bar.style.display = 'flex';
+  }
   document.getElementById('submit-btn').style.display = 'block';
   document.getElementById('alert-box').style.display = 'none';
 
