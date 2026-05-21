@@ -282,12 +282,12 @@ html,body{
         <button class="lt-btn" data-type="ลาพักร้อน" onclick="selType(this)" id="btn-vacation">
           <span class="lt-icon">🏖</span>
           <span class="lt-name">ลาพักร้อน</span>
-          <span class="lt-desc">ล่วงหน้า 5 วัน</span>
+          <span class="lt-desc">ล่วงหน้า 30 วัน</span>
         </button>
         <button class="lt-btn" data-type="ลากิจ" onclick="selType(this)">
           <span class="lt-icon">📋</span>
           <span class="lt-name">ลากิจ</span>
-          <span class="lt-desc">ล่วงหน้า 3 วัน</span>
+          <span class="lt-desc">ล่วงหน้า 7 วัน</span>
         </button>
         <button class="lt-btn" data-type="WFH" onclick="selType(this)">
           <span class="lt-icon">🏠</span>
@@ -391,7 +391,7 @@ html,body{
 <script>
 // ── State ──────────────────────────────────────────────────────
 const LIFF_ID = "2010134572-IRYeubTe"; // ← ใส่ LIFF ID จาก LINE Developers
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyzyQ3I-Omw4gwLjVIUEwe7q5iQFZTpp6xs3e4QkX68ngkmlQKP8j5qbKl3mCvgu3qz5w/exec";  // ← ใส่ Apps Script Webhook URL
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzF-fqWusAStgebVALF4WsbPjb34aYG8f9XOYvEEGd0r7tCb4P0JocnDBOLK2pgR0OGCQ/exec";  // ← ใส่ Apps Script Webhook URL
 
 let empData = null;
 let quotaData = null;
@@ -422,6 +422,14 @@ async function init() {
       empData = data.emp;
       quotaData = data.quota;
       renderEmployee();
+
+      // ── Auto-select type จาก URL parameter ?type=ลาป่วย ──────
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeParam = urlParams.get("type");
+      if (typeParam) {
+        const btn = document.querySelector(`.lt-btn[data-type="${typeParam}"]`);
+        if (btn) setTimeout(() => { selType(btn); btn.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300);
+      }
     } else {
       showUnregistered();
     }
@@ -580,7 +588,7 @@ function calcDays() {
 
 function checkAdvance(start, days) {
   const alert = document.getElementById('alert-box');
-  const advance = { 'ลากิจ': 3, 'ลาพักร้อน': 5 };
+  const advance = { 'ลากิจ': 7, 'ลาพักร้อน': 30, 'Leave Without Pay': 30 };
   const req = advance[selectedType];
 
   if (req) {
