@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TIDTANG — ลงทะเบียน</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root {
+  --deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;
+  --off:#EBE7E4;--cream:#C8B8A2;--muted:#888;
+  --green:#4caf50;--red:#e03535;--r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh;display:flex;flex-direction:column}
+
+.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--muted);letter-spacing:.1em}
+
+.header{background:var(--dark);border-bottom:1px solid var(--border);padding:20px}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:4px}
+.header-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.header-sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+.form-wrap{flex:1;padding:20px;display:flex;flex-direction:column;gap:0}
+
+.field{margin-bottom:20px}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream);margin-bottom:8px;display:block}
+.field-sub{font-size:11px;color:var(--muted);margin-bottom:8px}
+.inp{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:14px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:15px;transition:border-color .15s}
+.inp:focus{outline:none;border-color:var(--cream)}
+.inp::placeholder{color:var(--muted)}
+.inp.err{border-color:var(--red)}
+
+/* Match result card */
+.match-card{background:var(--dark);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-top:10px;display:none}
+.match-card.found{border-color:var(--green)}
+.match-card.notfound{border-color:var(--red)}
+.match-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.match-tag.ok{color:var(--green)}
+.match-tag.no{color:var(--red)}
+.match-name{font-size:15px;font-weight:700}
+.match-info{font-size:12px;color:var(--muted);margin-top:3px}
+
+.divider{height:1px;background:var(--border);margin:4px 0 20px}
+
+.btn-submit{width:100%;padding:16px;background:var(--cream);border:none;border-radius:var(--r);color:var(--deep);font-family:'Anuphan',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:opacity .15s;margin-top:auto}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed}
+.btn-submit:active{opacity:.8}
+
+.alert{border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:16px;line-height:1.6;display:none}
+.alert-err{background:rgba(224,53,53,.12);border:1px solid var(--red);color:#fca5a5}
+.alert-ok{background:rgba(76,175,80,.12);border:1px solid var(--green);color:#86efac}
+
+.success{position:fixed;inset:0;background:var(--deep);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center}
+.success.show{display:flex}
+.s-icon{font-size:60px}
+.s-title{font-size:24px;font-weight:800}
+.s-name{font-size:18px;color:var(--cream);font-weight:600}
+.s-sub{font-size:13px;color:var(--muted);line-height:1.7}
+.btn-close{margin-top:8px;padding:14px 40px;background:var(--mid);border:1px solid var(--border);border-radius:var(--r);color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="load-txt" id="load-txt">กำลังโหลด...</div>
+</div>
+
+<div id="main" style="display:none;flex:1;flex-direction:column">
+  <div class="header">
+    <div class="header-tag">TIDTANG STUDIO</div>
+    <div class="header-title">ลงทะเบียนพนักงาน</div>
+    <div class="header-sub">กรอกข้อมูลเพื่อเริ่มใช้งาน Leave System</div>
+  </div>
+
+  <div class="form-wrap">
+    <div class="alert" id="alert-box"></div>
+
+    <!-- ชื่อเล่น -->
+    <div class="field">
+      <label class="field-label">ชื่อเล่น</label>
+      <div class="field-sub">ชื่อเล่นที่ใช้ในบริษัท เช่น Mew, Top, Ploy</div>
+      <input class="inp" id="inp-nick" type="text" placeholder="ชื่อเล่น" autocomplete="off"
+        oninput="onNickInput()">
+      <div class="match-card" id="match-card">
+        <div class="match-tag" id="match-tag"></div>
+        <div class="match-name" id="match-name"></div>
+        <div class="match-info" id="match-info"></div>
+      </div>
+    </div>
+
+    <!-- ชื่อจริง EN -->
+    <div class="field">
+      <label class="field-label">ชื่อ-นามสกุล (ภาษาอังกฤษ)</label>
+      <div class="field-sub">เช่น Ms. Petcharat Lamai</div>
+      <input class="inp" id="inp-name" type="text" placeholder="First Last" autocomplete="off">
+    </div>
+
+    <!-- อีเมลบริษัท -->
+    <div class="field">
+      <label class="field-label">อีเมลบริษัท</label>
+      <div class="field-sub">@tidtangstudio.com เท่านั้น</div>
+      <input class="inp" id="inp-email" type="email" placeholder="name@tidtangstudio.com" autocomplete="off"
+        oninput="validateEmail()">
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-submit" id="btn-submit" onclick="doRegister()" disabled>
+      ยืนยันลงทะเบียน
+    </button>
+  </div>
+</div>
+
+<!-- Success -->
+<div class="success" id="success">
+  <div class="s-icon">🎉</div>
+  <div class="s-title">ลงทะเบียนสำเร็จ!</div>
+  <div class="s-name" id="s-name"></div>
+  <div class="s-sub" id="s-sub">ระบบจดจำคุณแล้วค่ะ<br>กดเมนูด้านล่างเพื่อเริ่มใช้งานได้เลยค่ะ</div>
+  <button class="btn-close" onclick="liff.closeWindow()">เริ่มใช้งาน</button>
+</div>
+
+<script>
+const LIFF_ID    = "2010134572-0WxoMult";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz9DZBIpuHxMFoeEjpxPTQqE8SIJ_zkts7_uUBWJR2_yhBONhisC7f9Is7Xy9M-ko57KQ/exec";
+
+let userId    = null;
+let matchedEmp = null;
+let nickTimer  = null;
+
+async function init() {
+  try {
+    setLoad("เชื่อมต่อ Line...");
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    setLoad("ดึงข้อมูลผู้ใช้...");
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    // ตรวจสอบว่าลงทะเบียนแล้วหรือยัง
+    setLoad("ตรวจสอบข้อมูล...");
+    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+
+    if (data.success && data.emp) {
+      // ลงทะเบียนแล้ว → แสดง success ทันที
+      showSuccess(data.emp.nick, data.emp.name, true);
+      return;
+    }
+
+    // ยังไม่ได้ลงทะเบียน → แสดงฟอร์ม
+    hide("loading");
+    showFlex("main");
+
+  } catch(err) {
+    console.error(err);
+    setLoad("เกิดข้อผิดพลาด: " + err.message);
+  }
+}
+
+// ── ค้นหาชื่อเล่นใน Sheet ────────────────────────────────────
+function onNickInput() {
+  clearTimeout(nickTimer);
+  const nick = document.getElementById("inp-nick").value.trim();
+  const card = document.getElementById("match-card");
+
+  if (nick.length < 2) {
+    card.style.display = "none";
+    matchedEmp = null;
+    checkReady();
+    return;
+  }
+
+  nickTimer = setTimeout(() => searchNick(nick), 600);
+}
+
+async function searchNick(nick) {
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=searchEmployee&nick=${encodeURIComponent(nick)}`);
+    const data = await res.json();
+    const card = document.getElementById("match-card");
+
+    card.style.display = "block";
+
+    if (data.success && data.emp) {
+      matchedEmp = data.emp;
+      card.className = "match-card found";
+      document.getElementById("match-tag").className  = "match-tag ok";
+      document.getElementById("match-tag").textContent = "พบข้อมูลในระบบ ✓";
+      document.getElementById("match-name").textContent = data.emp.name || data.emp.nick;
+      document.getElementById("match-info").textContent =
+        `${data.emp.pos || ""} · ${data.emp.dept || ""} · ${data.emp.role || ""}`;
+
+      // Auto-fill ถ้ามีข้อมูล
+      if (data.emp.name)  document.getElementById("inp-name").value  = data.emp.name;
+      if (data.emp.email) document.getElementById("inp-email").value = data.emp.email;
+
+    } else {
+      matchedEmp = null;
+      card.className = "match-card notfound";
+      document.getElementById("match-tag").className  = "match-tag no";
+      document.getElementById("match-tag").textContent = "ไม่พบชื่อนี้ในระบบ";
+      document.getElementById("match-name").textContent = `"${nick}"`;
+      document.getElementById("match-info").textContent = "ระบบจะสร้างข้อมูลพนักงานใหม่ให้ค่ะ";
+    }
+  } catch(err) {
+    console.error(err);
+  }
+  checkReady();
+}
+
+function validateEmail() {
+  const email = document.getElementById("inp-email").value.trim();
+  const inp   = document.getElementById("inp-email");
+  const valid = email.endsWith("@tidtangstudio.com") && email.length > 20;
+  inp.className = valid || email === "" ? "inp" : "inp err";
+  checkReady();
+}
+
+function checkReady() {
+  const nick  = document.getElementById("inp-nick").value.trim();
+  const name  = document.getElementById("inp-name").value.trim();
+  const email = document.getElementById("inp-email").value.trim();
+  const emailOk = email.endsWith("@tidtangstudio.com");
+  const ready = nick.length >= 2 && name.length >= 3 && emailOk;
+  document.getElementById("btn-submit").disabled = !ready;
+}
+
+async function doRegister() {
+  const nick  = document.getElementById("inp-nick").value.trim();
+  const name  = document.getElementById("inp-name").value.trim();
+  const email = document.getElementById("inp-email").value.trim();
+
+  if (!email.endsWith("@tidtangstudio.com")) {
+    showAlert("err", "กรุณาใช้อีเมลบริษัท @tidtangstudio.com ค่ะ");
+    return;
+  }
+
+  const btn = document.getElementById("btn-submit");
+  btn.disabled = true;
+  btn.textContent = "กำลังลงทะเบียน...";
+
+  try {
+    const res  = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "registerEmployee",
+        userId, nick, name, email,
+        matchedEmp: matchedEmp || null
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showSuccess(nick, name, false);
+    } else {
+      showAlert("err", data.msg || "เกิดข้อผิดพลาดค่ะ กรุณาลองใหม่");
+      btn.disabled = false;
+      btn.textContent = "ยืนยันลงทะเบียน";
+    }
+  } catch(err) {
+    showAlert("err", "เชื่อมต่อไม่ได้ค่ะ กรุณาลองใหม่");
+    btn.disabled = false;
+    btn.textContent = "ยืนยันลงทะเบียน";
+  }
+}
+
+function showSuccess(nick, name, alreadyRegistered) {
+  hide("loading");
+  hide("main");
+  document.getElementById("s-name").textContent = `คุณ${nick} · ${name}`;
+  document.getElementById("s-sub").textContent  = alreadyRegistered
+    ? "คุณลงทะเบียนไว้แล้วค่ะ\nกดเมนูด้านล่างเพื่อใช้งานได้เลยค่ะ"
+    : "ระบบจดจำคุณแล้วค่ะ\nกดเมนูด้านล่างเพื่อเริ่มใช้งานได้เลยค่ะ";
+  document.getElementById("success").classList.add("show");
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById("alert-box");
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function setLoad(txt) { document.getElementById("load-txt").textContent = txt; }
+function hide(id)     { const el=document.getElementById(id); if(el) el.style.display="none"; }
+function showFlex(id) { const el=document.getElementById(id); if(el) el.style.display="flex"; }
+
+window.addEventListener("DOMContentLoaded", () => {
+  function waitLiff(cb) {
+    if (typeof liff !== "undefined") cb();
+    else setTimeout(() => waitLiff(cb), 100);
+  }
+  waitLiff(init);
+});
+</script>
+</body>
+</html>
