@@ -248,16 +248,21 @@ async function doRegister() {
   btn.textContent = "กำลังลงทะเบียน...";
 
   try {
-    const res  = await fetch(WEBAPP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "registerEmployee",
-        userId, nick, name, email,
-        matchedEmp: matchedEmp || null
-      })
+    const payload = JSON.stringify({
+      action: "registerEmployee",
+      userId, nick, name, email,
+      matchedEmp: matchedEmp || null
     });
-    const data = await res.json();
+
+    // ใช้ URLSearchParams แทน JSON เพื่อหลีกเลี่ยง CORS preflight
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: payload
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { success: false, msg: text }; }
 
     if (data.success) {
       showSuccess(nick, name, false);
@@ -267,7 +272,7 @@ async function doRegister() {
       btn.textContent = "ยืนยันลงทะเบียน";
     }
   } catch(err) {
-    showAlert("err", "เชื่อมต่อไม่ได้ค่ะ กรุณาลองใหม่");
+    showAlert("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
     btn.disabled = false;
     btn.textContent = "ยืนยันลงทะเบียน";
   }
