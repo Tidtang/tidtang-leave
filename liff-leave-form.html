@@ -32,7 +32,7 @@ html,body{
   -webkit-tap-highlight-color:transparent;
 }
 
-/* ── Loading ── */
+/*  Loading  */
 .loading-screen{
   position:fixed;inset:0;background:var(--deep);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -47,10 +47,10 @@ html,body{
 .loading-fill{height:100%;background:var(--warm-tan);border-radius:1px;animation:fill 1.5s ease forwards;}
 @keyframes fill{from{width:0}to{width:100%}}
 
-/* ── App ── */
+/*  App  */
 .app{display:flex;flex-direction:column;min-height:100vh;}
 
-/* ── Header ── */
+/*  Header  */
 .header{
   background:var(--deep);padding:env(safe-area-inset-top) 20px 16px;
   padding-top:calc(env(safe-area-inset-top) + 16px);
@@ -59,7 +59,7 @@ html,body{
 .header-title{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.01em;}
 .header-sub{font-size:11px;color:rgba(176,167,157,0.6);margin-top:2px;letter-spacing:.03em;}
 
-/* ── User chip ── */
+/*  User chip  */
 .user-chip{
   display:flex;align-items:center;gap:10px;
   background:rgba(255,255,255,0.07);border-radius:2px;
@@ -76,16 +76,16 @@ html,body{
 .quota-num{font-size:18px;font-weight:800;color:var(--white);line-height:1;}
 .quota-label{font-size:9px;color:rgba(176,167,157,0.6);letter-spacing:.04em;}
 
-/* ── Body ── */
+/*  Body  */
 .body{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;}
 
-/* ── Section ── */
+/*  Section  */
 .section-label{
   font-size:9px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase;color:var(--warm-tan);margin-bottom:8px;
 }
 
-/* ── Leave type grid ── */
+/*  Leave type grid  */
 .lt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .lt-btn{
   padding:14px 8px;border-radius:2px;border:1.5px solid var(--border-mid);
@@ -103,7 +103,7 @@ html,body{
 .lt-btn.disabled{opacity:.4;pointer-events:none;filter:grayscale(1);}
 .lt-btn.full-width{grid-column:span 2;}
 
-/* ── Quota bars ── */
+/*  Quota bars  */
 .quota-wrap{background:var(--white);border-radius:2px;padding:12px 14px;border:1px solid var(--border);}
 .q-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
 .q-key{color:var(--warm-tan);font-weight:500;}
@@ -114,7 +114,7 @@ html,body{
 .q-bar.warn{background:var(--amber);}
 .q-bar.low{background:var(--red);}
 
-/* ── Date inputs ── */
+/*  Date inputs  */
 .date-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .date-field{}
 .date-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:5px;display:block;}
@@ -144,7 +144,7 @@ html,body{
 }
 .f-textarea:focus{border-color:var(--deep);}
 
-/* ── Summary pill ── */
+/*  Summary pill  */
 .summary-pill{
   background:var(--deep);border-radius:2px;padding:10px 14px;
   display:flex;align-items:center;justify-content:space-between;
@@ -152,13 +152,13 @@ html,body{
 .sum-left{font-size:12px;color:var(--warm-tan);}
 .sum-right{font-size:14px;font-weight:800;color:var(--white);}
 
-/* ── Alert ── */
+/*  Alert  */
 .alert{border-radius:2px;padding:10px 14px;font-size:12px;line-height:1.6;font-weight:500;}
 .alert-warn{background:var(--amber-l);border-left:3px solid var(--amber);color:#92400e;}
 .alert-err{background:var(--red-l);border-left:3px solid var(--red);color:#7f1d1d;}
 .alert-ok{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal);}
 
-/* ── Submit ── */
+/*  Submit  */
 .submit-btn{
   width:100%;padding:15px;border:none;border-radius:2px;
   font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
@@ -170,7 +170,7 @@ html,body{
 .submit-btn:disabled{opacity:.5;pointer-events:none;}
 .submit-btn.loading::after{content:" ..."}
 
-/* ── Success screen ── */
+/*  Success screen  */
 .success-screen{
   position:fixed;inset:0;background:var(--off-white);
   display:none;flex-direction:column;align-items:center;justify-content:center;
@@ -187,7 +187,7 @@ html,body{
   font-family:'Anuphan',sans-serif;cursor:pointer;
 }
 
-/* ── Vacation notice ── */
+/*  Vacation notice  */
 .vacation-notice{
   background:var(--graphite);border-radius:2px;padding:12px 14px;
   font-size:12px;color:var(--off-white);line-height:1.7;
@@ -195,7 +195,7 @@ html,body{
 }
 .vacation-notice.show{display:block;}
 
-/* ── Half day ── */
+/*  Half day  */
 .half-day-wrap{background:var(--white);border:1.5px solid var(--border-mid);border-radius:2px;overflow:hidden;}
 .half-day-header{padding:10px 14px;background:var(--deep);display:flex;align-items:center;gap:8px;}
 .half-day-header span{font-size:11px;font-weight:700;color:var(--warm-tan);letter-spacing:.06em;text-transform:uppercase;}
@@ -224,7 +224,7 @@ html,body{
 .half-opt-name{font-size:13px;font-weight:700;color:var(--graphite);}
 .half-opt-time{font-size:11px;color:var(--warm-tan);margin-top:1px;font-family:'IBM Plex Mono',monospace;}
 
-/* ── Bottom padding ── */
+/*  Bottom padding  */
 .bottom-pad{height:env(safe-area-inset-bottom);min-height:20px;}
 </style>
 </head>
@@ -238,7 +238,7 @@ html,body{
 
 <!-- Success -->
 <div class="success-screen" id="success-screen">
-  <div class="success-icon" id="success-icon">✅</div>
+  <div class="success-icon" id="success-icon"></div>
   <div class="success-title" id="success-title">ส่งคำขอแล้วค่ะ</div>
   <div class="success-sub" id="success-sub">รอผู้อนุมัติตรวจสอบ<br>ระบบจะแจ้งผลทาง Line ค่ะ</div>
   <button class="success-close" onclick="closeLiff()">ปิดหน้านี้</button>
@@ -275,27 +275,27 @@ html,body{
       <div class="section-label">ประเภทการลา</div>
       <div class="lt-grid" id="lt-grid">
         <button class="lt-btn" data-type="ลาป่วย" onclick="selType(this)">
-          <span class="lt-icon">🤒</span>
+          <span class="lt-icon"></span>
           <span class="lt-name">ลาป่วย</span>
           <span class="lt-desc">ไม่ต้องรออนุมัติ</span>
         </button>
         <button class="lt-btn" data-type="ลาพักร้อน" onclick="selType(this)" id="btn-vacation">
-          <span class="lt-icon">🏖</span>
+          <span class="lt-icon"></span>
           <span class="lt-name">ลาพักร้อน</span>
           <span class="lt-desc">ล่วงหน้า 30 วัน</span>
         </button>
         <button class="lt-btn" data-type="ลากิจ" onclick="selType(this)">
-          <span class="lt-icon">📋</span>
+          <span class="lt-icon"></span>
           <span class="lt-name">ลากิจ</span>
           <span class="lt-desc">ล่วงหน้า 7 วัน</span>
         </button>
         <button class="lt-btn" data-type="WFH" onclick="selType(this)">
-          <span class="lt-icon">🏠</span>
+          <span class="lt-icon"></span>
           <span class="lt-name">WFH</span>
           <span class="lt-desc">ไม่หักโควต้า</span>
         </button>
         <button class="lt-btn full-width" data-type="On Site" onclick="openOnSite()" id="btn-onsite">
-          <span class="lt-icon">📍</span>
+          <span class="lt-icon"></span>
           <span class="lt-name">On Site</span>
           <span class="lt-desc">ออกนอกสถานที่ — GPS Check in</span>
         </button>
@@ -304,7 +304,7 @@ html,body{
 
     <!-- Vacation notice -->
     <div class="vacation-notice" id="vacation-notice">
-      🏖 ลาพักร้อนได้หลังทำงานครบ 1 ปีค่ะ<br>
+       ลาพักร้อนได้หลังทำงานครบ 1 ปีค่ะ<br>
       <span id="vacation-start-msg"></span>
     </div>
 
@@ -312,13 +312,13 @@ html,body{
     <div id="quota-section" style="display:none">
       <div class="section-label">โควต้าคงเหลือ</div>
       <div class="quota-wrap">
-        <div class="q-row"><span class="q-key">🤒 ลาป่วย</span><span class="q-val" id="q-sick-val">—</span></div>
+        <div class="q-row"><span class="q-key"> ลาป่วย</span><span class="q-val" id="q-sick-val">—</span></div>
         <div class="q-bar-bg"><div class="q-bar good" id="q-sick-bar" style="width:0%"></div></div>
-        <div class="q-row"><span class="q-key">🏖 ลาพักร้อน</span><span class="q-val" id="q-vacation-val">—</span></div>
+        <div class="q-row"><span class="q-key"> ลาพักร้อน</span><span class="q-val" id="q-vacation-val">—</span></div>
         <div class="q-bar-bg"><div class="q-bar good" id="q-vacation-bar" style="width:0%"></div></div>
-        <div class="q-row"><span class="q-key">📋 ลากิจ</span><span class="q-val" id="q-personal-val">—</span></div>
+        <div class="q-row"><span class="q-key"> ลากิจ</span><span class="q-val" id="q-personal-val">—</span></div>
         <div class="q-bar-bg"><div class="q-bar good" id="q-personal-bar" style="width:0%"></div></div>
-        <div class="q-row" style="margin-bottom:0"><span class="q-key">🏠 WFH</span><span class="q-val" id="q-wfh-val">—</span></div>
+        <div class="q-row" style="margin-bottom:0"><span class="q-key"> WFH</span><span class="q-val" id="q-wfh-val">—</span></div>
       </div>
     </div>
 
@@ -355,14 +355,14 @@ html,body{
           <button class="half-opt" id="half-morning" onclick="selHalf('morning')">
             <div class="half-radio"></div>
             <div>
-              <div class="half-opt-name">🌅 ครึ่งวันเช้า</div>
+              <div class="half-opt-name"> ครึ่งวันเช้า</div>
               <div class="half-opt-time">10:00 – 15:00 น.</div>
             </div>
           </button>
           <button class="half-opt" id="half-afternoon" onclick="selHalf('afternoon')">
             <div class="half-radio"></div>
             <div>
-              <div class="half-opt-name">🌇 ครึ่งวันบ่าย</div>
+              <div class="half-opt-name"> ครึ่งวันบ่าย</div>
               <div class="half-opt-time">15:00 – 19:00 น.</div>
             </div>
           </button>
@@ -395,7 +395,7 @@ html,body{
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────
+//  State 
 const LIFF_ID = "2010134572-IRYeubTe"; // ← ใส่ LIFF ID จาก LINE Developers
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";  // ← ใส่ Apps Script Webhook URL
 
@@ -407,7 +407,7 @@ let dayMode = 'full';    // 'full' | 'half'
 let halfPart = null;     // 'morning' | 'afternoon'
 const HALF_TYPES = ['ลาป่วย','ลากิจ']; // ประเภทที่รองรับครึ่งวัน
 
-// ── Init ───────────────────────────────────────────────────────
+//  Init 
 async function init() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -429,7 +429,7 @@ async function init() {
       quotaData = data.quota;
       renderEmployee();
 
-      // ── Auto-select type จาก URL parameter ?type=ลาป่วย ──────
+      //  Auto-select type จาก URL parameter ?type=ลาป่วย 
       const urlParams = new URLSearchParams(window.location.search);
       const typeParam = urlParams.get("type");
       if (typeParam) {
@@ -456,7 +456,7 @@ async function init() {
   }
 }
 
-// ── Render Employee ────────────────────────────────────────────
+//  Render Employee 
 function renderEmployee() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('user-chip').style.display = 'flex';
@@ -499,7 +499,7 @@ function renderEmployee() {
   document.getElementById('date-end').value = todayStr;
 }
 
-// ── Reset type (ปุ่ม "เปลี่ยน") ─────────────────────────────────
+//  Reset type (ปุ่ม "เปลี่ยน") 
 function resetType() {
   // แสดง type selector กลับมา
   const typeSection = document.getElementById("lt-grid");
@@ -514,7 +514,7 @@ function resetType() {
   selectedType = null;
 }
 
-// ── Select Leave Type ──────────────────────────────────────────
+//  Select Leave Type 
 function selType(btn) {
   document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
@@ -549,7 +549,7 @@ function selType(btn) {
   calcDays();
 }
 
-// ── Half Day Mode ──────────────────────────────────────────────
+//  Half Day Mode 
 function setDayMode(mode) {
   dayMode = mode;
   halfPart = null;
@@ -586,7 +586,7 @@ function openOnSite() {
   });
 }
 
-// ── Calc Days ──────────────────────────────────────────────────
+//  Calc Days 
 function calcDays() {
   const s = document.getElementById('date-start').value;
   const e = document.getElementById('date-end').value;
@@ -645,7 +645,7 @@ function checkAdvance(start, days) {
   document.getElementById('submit-btn').disabled = false;
 }
 
-// ── Submit ─────────────────────────────────────────────────────
+//  Submit 
 async function submitLeave() {
   if (!selectedType || !userId) return;
 
@@ -701,7 +701,7 @@ async function submitLeave() {
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────
+//  Helpers 
 function countWorkdays(start, end) {
   let count = 0;
   const cur = new Date(start);
@@ -735,10 +735,10 @@ function setBar(id, left, total) {
 
 function showSuccess(msg, type) {
   const icons = {
-    'ลาป่วย':'🤒', 'ลาพักร้อน':'🏖', 'ลากิจ':'📋', 'WFH':'🏠', 'On Site':'📍'
+    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'WFH':'', 'On Site':''
   };
   const auto = type === 'ลาป่วย';
-  document.getElementById('success-icon').textContent = icons[type] || '✅';
+  document.getElementById('success-icon').textContent = icons[type] || '';
   document.getElementById('success-title').textContent = auto ? 'บันทึกแล้วค่ะ' : 'ส่งคำขอแล้วค่ะ';
   document.getElementById('success-sub').textContent = auto
     ? 'ลาป่วยบันทึกอัตโนมัติ\nขึ้น Calendar แล้วค่ะ'
@@ -774,7 +774,7 @@ function closeLiff() {
   liff.closeWindow();
 }
 
-// ── Start ──────────────────────────────────────────────────────
+//  Start 
 window.addEventListener("DOMContentLoaded", function() { function waitForLiff(cb) { if (typeof liff !== "undefined") { cb(); } else { setTimeout(function(){ waitForLiff(cb); }, 100); } } waitForLiff(init); });
 </script>
 </body>

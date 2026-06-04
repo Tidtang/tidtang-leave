@@ -165,7 +165,7 @@ async function init() {
   }
 }
 
-// ── ค้นหาชื่อเล่นใน Sheet ────────────────────────────────────
+//  ค้นหาชื่อเล่นใน Sheet 
 function onNickInput() {
   clearTimeout(nickTimer);
   const nick = document.getElementById("inp-nick").value.trim();
@@ -193,7 +193,7 @@ async function searchNick(nick) {
       matchedEmp = data.emp;
       card.className = "match-card found";
       document.getElementById("match-tag").className  = "match-tag ok";
-      document.getElementById("match-tag").textContent = "พบข้อมูลในระบบ ✓";
+      document.getElementById("match-tag").textContent = "พบข้อมูลในระบบ ";
       document.getElementById("match-name").textContent = data.emp.name || data.emp.nick;
       document.getElementById("match-info").textContent =
         `${data.emp.pos || ""} · ${data.emp.dept || ""} · ${data.emp.role || ""}`;

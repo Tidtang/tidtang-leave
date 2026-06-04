@@ -101,7 +101,7 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-heigh
 </div>
 
 <div class="success-screen" id="success-screen">
-  <div class="success-icon" id="success-icon">📍</div>
+  <div class="success-icon" id="success-icon"></div>
   <div class="success-title" id="success-title">Check In แล้วค่ะ</div>
   <div class="success-sub" id="success-sub">บันทึก GPS เรียบร้อยแล้ว<br>กด Check Out เมื่อเสร็จงานค่ะ</div>
   <button class="success-close" onclick="closeLiff()">ปิดหน้านี้</button>
@@ -118,7 +118,7 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-heigh
 
     <!-- Active Check In State -->
     <div class="state-card state-checkin" id="active-checkin">
-      <div class="state-label">📍 กำลัง On Site อยู่</div>
+      <div class="state-label"> กำลัง On Site อยู่</div>
       <div class="state-project" id="active-project">—</div>
       <div class="state-time" id="active-time">Check in เมื่อ —</div>
     </div>
@@ -127,16 +127,16 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-heigh
     <div id="gps-section">
       <div class="section-label">ตำแหน่ง GPS</div>
       <div class="gps-card">
-        <div class="gps-icon" id="gps-icon">📡</div>
+        <div class="gps-icon" id="gps-icon"></div>
         <div class="gps-status" id="gps-status">กด "รับตำแหน่ง" เพื่อปักหมุดค่ะ</div>
         <div class="gps-coords" id="gps-coords">รอรับสัญญาณ GPS...</div>
-        <button class="gps-btn" id="gps-btn" onclick="getGPS()">📡 รับตำแหน่ง</button>
+        <button class="gps-btn" id="gps-btn" onclick="getGPS()"> รับตำแหน่ง</button>
       </div>
     </div>
 
     <!-- Map Link -->
     <a id="map-link" style="display:none" target="_blank">
-      <span>🗺</span>
+      <span></span>
       <span id="map-link-text">ดูใน Google Maps</span>
     </a>
 
@@ -154,12 +154,12 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-heigh
 
     <!-- Check In Button -->
     <button class="btn-primary" id="checkin-btn" onclick="doCheckin()" style="display:none">
-      📍 Check In ที่นี่ →
+       Check In ที่นี่ →
     </button>
 
     <!-- Check Out Button -->
     <button class="btn-primary btn-checkout" id="checkout-btn" onclick="doCheckout()" style="display:none">
-      🔴 Check Out →
+       Check Out →
     </button>
 
     <div class="bottom-pad"></div>
@@ -247,7 +247,7 @@ async function getGPS(isCheckout = false) {
 
   if (!navigator.geolocation) {
     status.textContent = 'เบราว์เซอร์ไม่รองรับ GPS ค่ะ';
-    btn.textContent = '❌ ไม่รองรับ';
+    btn.textContent = ' ไม่รองรับ';
     return;
   }
 
@@ -257,10 +257,10 @@ async function getGPS(isCheckout = false) {
       lng = pos.coords.longitude;
       const acc = Math.round(pos.coords.accuracy);
 
-      icon.textContent = '📍';
+      icon.textContent = '';
       status.textContent = `ได้รับตำแหน่งแล้วค่ะ (±${acc}m)`;
       coords.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      btn.textContent = '✓ รับตำแหน่งแล้ว';
+      btn.textContent = ' รับตำแหน่งแล้ว';
       btn.className = 'gps-btn got';
       btn.disabled = false;
 
@@ -276,7 +276,7 @@ async function getGPS(isCheckout = false) {
         const distAlert = document.getElementById('distance-alert');
         if (dist > 500) {
           distAlert.className = 'alert alert-ok';
-          distAlert.textContent = `✓ ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบจะ Check Out อัตโนมัติค่ะ`;
+          distAlert.textContent = ` ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบจะ Check Out อัตโนมัติค่ะ`;
           distAlert.style.display = 'block';
         } else {
           distAlert.className = 'alert alert-warn';
@@ -289,9 +289,9 @@ async function getGPS(isCheckout = false) {
       }
     },
     (err) => {
-      icon.textContent = '❌';
+      icon.textContent = '';
       status.textContent = 'ไม่สามารถรับตำแหน่งได้ กรุณาเปิด Location ค่ะ';
-      btn.textContent = '🔄 ลองใหม่';
+      btn.textContent = ' ลองใหม่';
       btn.disabled = false;
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -325,7 +325,7 @@ async function doCheckin() {
     const data = await res.json();
 
     if (data.success) {
-      document.getElementById('success-icon').textContent = '📍';
+      document.getElementById('success-icon').textContent = '';
       document.getElementById('success-title').textContent = 'Check In แล้วค่ะ!';
       document.getElementById('success-sub').textContent =
         `${project}\n${time} น.\n\nเปิดหน้านี้อีกครั้งเมื่อเสร็จงาน เพื่อ Check Out ค่ะ`;
@@ -333,12 +333,12 @@ async function doCheckin() {
     } else {
       showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
       btn.disabled = false;
-      btn.textContent = '📍 Check In ที่นี่ →';
+      btn.textContent = ' Check In ที่นี่ →';
     }
   } catch(err) {
     showAlertBox('ไม่สามารถเชื่อมต่อได้ค่ะ', 'err');
     btn.disabled = false;
-    btn.textContent = '📍 Check In ที่นี่ →';
+    btn.textContent = ' Check In ที่นี่ →';
   }
 }
 
@@ -361,7 +361,7 @@ async function doCheckout() {
     const data = await res.json();
 
     if (data.success) {
-      document.getElementById('success-icon').textContent = '✅';
+      document.getElementById('success-icon').textContent = '';
       document.getElementById('success-title').textContent = 'Check Out แล้วค่ะ!';
       document.getElementById('success-sub').textContent =
         `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${time} น.\nวิธี: ${data.method || 'Manual'}`;
@@ -369,12 +369,12 @@ async function doCheckout() {
     } else {
       showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
       btn.disabled = false;
-      btn.textContent = '🔴 Check Out →';
+      btn.textContent = ' Check Out →';
     }
   } catch(err) {
     showAlertBox('ไม่สามารถเชื่อมต่อได้ค่ะ', 'err');
     btn.disabled = false;
-    btn.textContent = '🔴 Check Out →';
+    btn.textContent = ' Check Out →';
   }
 }
 

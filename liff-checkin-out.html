@@ -144,7 +144,7 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100v
 
 <!-- Success -->
 <div class="success" id="success">
-  <div class="s-icon" id="s-icon">✅</div>
+  <div class="s-icon" id="s-icon"></div>
   <div class="s-title" id="s-title">Check In สำเร็จ</div>
   <div class="s-sub" id="s-sub"></div>
   <button class="s-close" onclick="closeLiff()">ปิดหน้านี้</button>
@@ -186,12 +186,12 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100v
       <div class="sec-label">เลือกประเภท</div>
       <div class="mode-grid">
         <button class="mode-btn" id="btn-office" onclick="selMode('office')">
-          <span class="mode-icon">🏢</span>
+          <span class="mode-icon"></span>
           <span class="mode-name">Office</span>
           <span class="mode-desc">เข้างานที่ Tidtang Studio<br>รัศมี 50m</span>
         </button>
         <button class="mode-btn" id="btn-onsite" onclick="selMode('onsite')">
-          <span class="mode-icon">📍</span>
+          <span class="mode-icon"></span>
           <span class="mode-name">On Site</span>
           <span class="mode-desc">ประชุมนอกสถานที่<br>ปักหมุด GPS</span>
         </button>
@@ -202,24 +202,24 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100v
     <div id="gps-section" style="display:none">
       <div class="sec-label">ตำแหน่ง GPS</div>
       <div class="gps-card">
-        <div class="gps-icon" id="gps-icon">📡</div>
+        <div class="gps-icon" id="gps-icon"></div>
         <div class="gps-status" id="gps-status">กด "รับตำแหน่ง" ค่ะ</div>
         <div class="gps-coords" id="gps-coords">รอสัญญาณ...</div>
-        <button class="gps-btn" id="gps-btn" onclick="getGPS()">📡 รับตำแหน่ง</button>
+        <button class="gps-btn" id="gps-btn" onclick="getGPS()"> รับตำแหน่ง</button>
       </div>
     </div>
 
     <!-- Distance check -->
     <div id="dist-section" style="display:none">
       <div class="dist-meter" id="dist-meter">
-        <span id="dist-emoji">📍</span>
+        <span id="dist-emoji"></span>
         <span class="dist-txt" id="dist-txt">—</span>
       </div>
     </div>
 
     <!-- Map link (On Site) -->
     <a id="map-link" style="display:none" target="_blank">
-      <span>🗺</span>
+      <span></span>
       <span id="map-link-txt">ดูใน Google Maps</span>
     </a>
 
@@ -239,7 +239,7 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100v
 
     <!-- Check Out Button -->
     <button class="btn btn-checkout" id="checkout-btn" onclick="doCheckout()" style="display:none">
-      🔴 Check Out →
+       Check Out →
     </button>
 
     <div class="bottom-pad"></div>
@@ -260,7 +260,7 @@ let activeCheckin = null;
 let selectedMode = null;
 let lat = null, lng = null;
 
-// ── Init ──────────────────────────────────────────────────────
+//  Init 
 async function init() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -296,7 +296,7 @@ async function init() {
   }
 }
 
-// ── Render chip ───────────────────────────────────────────────
+//  Render chip 
 function renderChip() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('chip').style.display = 'flex';
@@ -305,7 +305,7 @@ function renderChip() {
   document.getElementById('urole').textContent = `${empData.role} · ${empData.dept}`;
 }
 
-// ── Check In Mode ─────────────────────────────────────────────
+//  Check In Mode 
 function showCheckinMode() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('mode-section').style.display = 'block';
@@ -315,7 +315,7 @@ function showCheckinMode() {
   document.getElementById('hdr-sub').textContent = 'เลือกประเภทและรับตำแหน่ง GPS';
 }
 
-// ── Check Out Mode ────────────────────────────────────────────
+//  Check Out Mode 
 function showCheckoutMode() {
   document.getElementById('app').style.display = 'flex';
   document.getElementById('mode-section').style.display = 'none';
@@ -333,12 +333,12 @@ function showCheckoutMode() {
   const badge = document.getElementById('ac-badge');
   card.className = `active-card ${isOffice ? 'active-office' : 'active-onsite'}`;
   badge.className = `ac-badge ${isOffice ? 'ac-badge-office' : 'ac-badge-onsite'}`;
-  badge.textContent = isOffice ? '🏢 Office' : '📍 On Site';
+  badge.textContent = isOffice ? ' Office' : ' On Site';
   document.getElementById('ac-title').textContent = isOffice ? 'Tidtang Studio' : (ac.projectName || 'On Site');
   document.getElementById('ac-time').textContent = `Check in เมื่อ ${ac.timeIn} น.`;
 }
 
-// ── Auto GPS Check (สำหรับ checkout auto) ────────────────────
+//  Auto GPS Check (สำหรับ checkout auto) 
 function autoCheckGPS() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition((pos) => {
@@ -353,21 +353,21 @@ function autoCheckGPS() {
     distEl.style.display = 'block';
 
     if (dist > radius) {
-      distEl.textContent = `📍 ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบพร้อม Check Out อัตโนมัติค่ะ`;
+      distEl.textContent = ` ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบพร้อม Check Out อัตโนมัติค่ะ`;
       distEl.style.background = 'rgba(220,38,38,0.1)';
       distEl.style.color = '#dc2626';
       // Auto check out
       lat = curLat; lng = curLng;
       doCheckout(true);
     } else {
-      distEl.textContent = `📍 ยังอยู่ในรัศมี ${Math.round(dist)}/${radius}m — กด Check Out เมื่อเสร็จงานค่ะ`;
+      distEl.textContent = ` ยังอยู่ในรัศมี ${Math.round(dist)}/${radius}m — กด Check Out เมื่อเสร็จงานค่ะ`;
       distEl.style.background = 'rgba(15,118,110,0.1)';
       distEl.style.color = '#0f766e';
     }
   }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
 }
 
-// ── Select Mode ───────────────────────────────────────────────
+//  Select Mode 
 function selMode(mode) {
   selectedMode = mode;
   lat = null; lng = null;
@@ -383,19 +383,19 @@ function selMode(mode) {
   document.getElementById('map-link').style.display = 'none';
 
   // รีเซ็ต GPS
-  document.getElementById('gps-icon').textContent = '📡';
+  document.getElementById('gps-icon').textContent = '';
   document.getElementById('gps-status').textContent = 'กด "รับตำแหน่ง" ค่ะ';
   document.getElementById('gps-coords').textContent = 'รอสัญญาณ...';
-  document.getElementById('gps-btn').textContent = '📡 รับตำแหน่ง';
+  document.getElementById('gps-btn').textContent = ' รับตำแหน่ง';
   document.getElementById('gps-btn').className = 'gps-btn';
   document.getElementById('gps-btn').disabled = false;
 
   const btn = document.getElementById('checkin-btn');
   btn.className = `btn btn-${mode === 'office' ? 'office' : 'onsite'}`;
-  btn.textContent = mode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+  btn.textContent = mode === 'office' ? ' Check In Office →' : ' Check In On Site →';
 }
 
-// ── Get GPS ───────────────────────────────────────────────────
+//  Get GPS 
 function getGPS() {
   const btn = document.getElementById('gps-btn');
   btn.textContent = '⏳ กำลังรับ...';
@@ -405,7 +405,7 @@ function getGPS() {
 
   if (!navigator.geolocation) {
     document.getElementById('gps-status').textContent = 'ไม่รองรับ GPS ค่ะ';
-    btn.textContent = '❌ ไม่รองรับ';
+    btn.textContent = ' ไม่รองรับ';
     return;
   }
 
@@ -415,10 +415,10 @@ function getGPS() {
       lng = pos.coords.longitude;
       const acc = Math.round(pos.coords.accuracy);
 
-      document.getElementById('gps-icon').textContent = '📍';
+      document.getElementById('gps-icon').textContent = '';
       document.getElementById('gps-status').textContent = `ได้รับตำแหน่งแล้วค่ะ (±${acc}m)`;
       document.getElementById('gps-coords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      btn.textContent = '✓ รับแล้ว';
+      btn.textContent = ' รับแล้ว';
       btn.className = 'gps-btn got';
       btn.disabled = false;
 
@@ -426,16 +426,16 @@ function getGPS() {
       checkDistance();
     },
     () => {
-      document.getElementById('gps-icon').textContent = '❌';
+      document.getElementById('gps-icon').textContent = '';
       document.getElementById('gps-status').textContent = 'กรุณาเปิด Location ในมือถือค่ะ';
-      btn.textContent = '🔄 ลองใหม่';
+      btn.textContent = ' ลองใหม่';
       btn.disabled = false;
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 }
 
-// ── Check Distance ────────────────────────────────────────────
+//  Check Distance 
 function checkDistance() {
   const distSec = document.getElementById('dist-section');
   const distEl  = document.getElementById('dist-meter');
@@ -446,10 +446,10 @@ function checkDistance() {
     const dist = getDistance(OFFICE_LAT, OFFICE_LNG, lat, lng);
     const ok   = dist <= OFFICE_R;
     distEl.className = `dist-meter ${ok ? 'dist-ok' : 'dist-err'}`;
-    document.getElementById('dist-emoji').textContent = ok ? '✅' : '❌';
+    document.getElementById('dist-emoji').textContent = ok ? '' : '';
     distTxt.className = `dist-txt ${ok ? 'dist-txt-ok' : 'dist-txt-err'}`;
     distTxt.textContent = ok
-      ? `อยู่ใน Office รัศมี · ${Math.round(dist)}m จาก Tidtang Studio ✓`
+      ? `อยู่ใน Office รัศมี · ${Math.round(dist)}m จาก Tidtang Studio `
       : `อยู่นอกรัศมี Office · ${Math.round(dist)}m (ต้องอยู่ภายใน ${OFFICE_R}m)`;
 
     if (ok) {
@@ -460,7 +460,7 @@ function checkDistance() {
   } else {
     // On Site → แสดง Map link + ปุ่ม Check In เสมอ
     distEl.className = 'dist-meter dist-ok';
-    document.getElementById('dist-emoji').textContent = '📍';
+    document.getElementById('dist-emoji').textContent = '';
     distTxt.className = 'dist-txt dist-txt-ok';
     distTxt.textContent = `ปักหมุดตำแหน่งแล้วค่ะ`;
 
@@ -473,7 +473,7 @@ function checkDistance() {
   }
 }
 
-// ── Check In ─────────────────────────────────────────────────
+//  Check In 
 async function doCheckin() {
   if (!lat || !lng || !selectedMode) return;
   if (selectedMode === 'onsite' && !document.getElementById('project-name').value.trim()) {
@@ -502,23 +502,23 @@ async function doCheckin() {
 
     if (data.success) {
       showSuccess(
-        selectedMode === 'office' ? '🏢' : '📍',
+        selectedMode === 'office' ? '' : '',
         'Check In สำเร็จ!',
         `${selectedMode === 'office' ? 'Tidtang Studio' : document.getElementById('project-name').value.trim()}\n${time} น.\n\nเปิดหน้านี้อีกครั้งเพื่อ Check Out ค่ะ`
       );
     } else {
       showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
       btn.disabled = false;
-      btn.textContent = selectedMode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+      btn.textContent = selectedMode === 'office' ? ' Check In Office →' : ' Check In On Site →';
     }
   } catch(err) {
     showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
     btn.disabled = false;
-    btn.textContent = selectedMode === 'office' ? '🏢 Check In Office →' : '📍 Check In On Site →';
+    btn.textContent = selectedMode === 'office' ? ' Check In Office →' : ' Check In On Site →';
   }
 }
 
-// ── Check Out ─────────────────────────────────────────────────
+//  Check Out 
 async function doCheckout(isAuto = false) {
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
@@ -558,23 +558,23 @@ async function sendCheckout(time, isAuto, btn) {
     if (data.success) {
       const mode = activeCheckin.mode;
       showSuccess(
-        mode === 'office' ? '🏢' : '✅',
+        mode === 'office' ? '' : '',
         `Check Out${isAuto ? ' อัตโนมัติ' : ''} สำเร็จ!`,
         `${mode === 'office' ? 'Tidtang Studio' : (activeCheckin.projectName || 'On Site')}\n${activeCheckin.timeIn}–${time} น.\n${data.hours} ชั่วโมง · ${data.method}`
       );
     } else {
       showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
       btn.disabled = false;
-      btn.textContent = '🔴 Check Out →';
+      btn.textContent = ' Check Out →';
     }
   } catch(err) {
     showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
     btn.disabled = false;
-    btn.textContent = '🔴 Check Out →';
+    btn.textContent = ' Check Out →';
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+//  Helpers 
 function getDistance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const d1 = lat1*Math.PI/180, d2 = lat2*Math.PI/180;

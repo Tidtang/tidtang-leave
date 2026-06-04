@@ -294,7 +294,7 @@ body {
 
 <!-- Error -->
 <div class="error-screen" id="error-screen" style="display:none">
-  <div style="font-size:40px">🔒</div>
+  <div style="font-size:40px"></div>
   <h2>ไม่มีสิทธิ์เข้าถึง</h2>
   <p id="error-msg">ระบบ Approve สำหรับ Senior, Head และ HR เท่านั้นค่ะ</p>
   <div class="error-detail" id="error-detail" style="display:none"></div>
@@ -320,7 +320,7 @@ const TYPE_CONFIG = {
   "Leave Without Pay":{ cls: "type-lwp",      label: "Leave Without Pay" },
 };
 
-// ── Init ──────────────────────────────────────────────────────
+//  Init 
 async function init() {
   try {
     setLoadingText("เชื่อมต่อ Line...");
@@ -364,7 +364,7 @@ async function init() {
   }
 }
 
-// ── Load — 2 phase ───────────────────────────────────────────
+//  Load — 2 phase 
 async function loadRequests() {
   try {
     // Phase 1: รออนุมัติ → แสดงทันที
@@ -401,7 +401,7 @@ async function loadRequests() {
     showFlex("main-content");
     document.getElementById("main-content").innerHTML = `
       <div class="empty">
-        <div class="empty-icon">⚠️</div>
+        <div class="empty-icon"></div>
         <div class="empty-text">โหลดไม่สำเร็จค่ะ<br>${err.message || "กรุณาลองใหม่"}</div>
         <button class="btn-switch" onclick="location.reload()">โหลดใหม่</button>
       </div>`;
@@ -414,7 +414,7 @@ function updateCount() {
     pending > 0 ? `รอ ${pending} รายการ` : "ครบแล้ว";
 }
 
-// ── Tab switch ────────────────────────────────────────────────
+//  Tab switch 
 function switchTab(tab) {
   currentTab = tab;
   document.getElementById("tab-pending").classList.toggle("active", tab === "pending");
@@ -422,7 +422,7 @@ function switchTab(tab) {
   renderRequests();
 }
 
-// ── Render ────────────────────────────────────────────────────
+//  Render 
 function renderRequests() {
   updateCount();
   const main = document.getElementById("main-content");
@@ -434,7 +434,7 @@ function renderRequests() {
   if (filtered.length === 0) {
     main.innerHTML = `
       <div class="empty">
-        <div class="empty-icon">${currentTab === "pending" ? "✅" : "📋"}</div>
+        <div class="empty-icon">${currentTab === "pending" ? "" : ""}</div>
         <div class="empty-text">${currentTab === "pending" ? "ไม่มีคำขอรออนุมัติค่ะ" : "ยังไม่มีรายการที่ดำเนินการแล้วค่ะ"}</div>
         <button class="btn-switch" onclick="switchTab('${currentTab === "pending" ? "done" : "pending"}')">
           ${currentTab === "pending" ? "ดูรายการที่ดำเนินการแล้ว" : "กลับ"}
@@ -471,7 +471,7 @@ function buildCard(req, idx) {
     <div class="req-actions">
       <button class="btn-action btn-approve" onclick="approve(${idx})">อนุมัติ</button>
       <button class="btn-action btn-reject"  onclick="reject(${idx})">ปฏิเสธ</button>
-      <button class="btn-action btn-info"    onclick="requestInfo(${idx})">💬</button>
+      <button class="btn-action btn-info"    onclick="requestInfo(${idx})"></button>
     </div>`
     : isPending && !req.canApprove ? `
     <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--cream)">
@@ -523,7 +523,7 @@ function buildCard(req, idx) {
   return card;
 }
 
-// ── Actions ───────────────────────────────────────────────────
+//  Actions 
 async function approve(idx) {
   const req = requests[idx];
   if (!confirm(`อนุมัติการลาของ ${req.empNick}?\n${req.leaveType} · ${req.dateRange}`)) return;
@@ -608,7 +608,7 @@ async function submitDecision(idx, action, reason) {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+//  Helpers 
 function setLoadingText(txt) {
   const el = document.getElementById("loading-text");
   if (el) el.textContent = txt;
@@ -643,7 +643,7 @@ function showError(msg, detail) {
   show("error-screen");
 }
 
-// ── Start ─────────────────────────────────────────────────────
+//  Start 
 window.addEventListener("DOMContentLoaded", () => {
   function waitLiff(cb) {
     if (typeof liff !== "undefined") cb();
