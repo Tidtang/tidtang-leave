@@ -557,7 +557,7 @@ async function sendInfoRequest() {
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify({
         action: "requestMoreInfo",
         userId, reqId: currentInfoReqId,
@@ -585,7 +585,7 @@ async function submitDecision(idx, action, reason) {
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify({
         action,
         userId, reqId: req.reqId,
