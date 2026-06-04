@@ -198,8 +198,8 @@ body {
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-action:active { transform: scale(.97); opacity: .8; }
-.btn-approve { background: var(--green); color: #fff; }
-.btn-reject  { background: var(--red);   color: #fff; }
+.btn-approve { background: #b7a996; color: #191919; }
+.btn-reject  { background: #434343; color: #EBE7E4; }
 .btn-info    { background: var(--mid); color: var(--amber); border: 1px solid var(--amber); flex: 0 0 auto; padding: 11px 14px; }
 
 .done-badge {
@@ -557,7 +557,7 @@ async function sendInfoRequest() {
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "requestMoreInfo",
         userId, reqId: currentInfoReqId,
@@ -585,7 +585,7 @@ async function submitDecision(idx, action, reason) {
   try {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action,
         userId, reqId: req.reqId,
