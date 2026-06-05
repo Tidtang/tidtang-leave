@@ -108,6 +108,23 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 
 /* Refresh btn */
 .btn-refresh{padding:8px 16px;background:var(--mid);border:1px solid var(--border);border-radius:8px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:12px;cursor:pointer}
+
+/* Search */
+.search-box{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;margin-bottom:12px}
+.search-box:focus{outline:none;border-color:var(--cream)}
+.search-box::placeholder{color:var(--muted)}
+
+/* Employee detail modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;display:flex;align-items:flex-end}
+.modal-sheet{background:var(--dark);border-radius:16px 16px 0 0;width:100%;max-height:85vh;overflow-y:auto;padding:20px}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-name{font-size:20px;font-weight:800;margin-bottom:2px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.modal-sec{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream)}
+.btn-modal-close{width:100%;padding:14px;background:var(--mid);border:1px solid var(--border);border-radius:var(--r);color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px}
 </style>
 </head>
 <body>
@@ -150,11 +167,13 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
     <div class="sec-label">สรุปตามประเภท</div>
     <div id="leave-type-list"></div>
     <div class="sec-label">รายละเอียดการลา</div>
+    <input class="search-box" id="leave-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterLeaveList()">
     <div class="person-list" id="leave-detail-list"></div>
   </div>
 
   <!-- Tab 2: โควต้า -->
   <div class="content" id="tab-2">
+    <input class="search-box" id="quota-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterQuotaList()">
     <div class="sec-label">โควต้าคงเหลือรายคน</div>
     <div id="quota-list"></div>
   </div>
@@ -162,6 +181,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
   <!-- Tab 3: Check In/Out -->
   <div class="content" id="tab-3">
     <div class="month-sel" id="month-sel-att"></div>
+    <input class="search-box" id="att-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterAttTable()">
     <div class="sec-label">บันทึกเวลาเข้า-ออก</div>
     <table class="att-table" id="att-table">
       <thead>
@@ -175,6 +195,17 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
       </thead>
       <tbody id="att-body"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- Employee Detail Modal -->
+<div class="modal-overlay" id="emp-modal" style="display:none" onclick="closeEmpModal(event)">
+  <div class="modal-sheet" id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" id="modal-name"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div id="modal-body"></div>
+    <button class="btn-modal-close" onclick="closeEmpModal()">ปิด</button>
   </div>
 </div>
 
@@ -338,6 +369,7 @@ async function loadLeaveTab() {
     const data = await res.json();
 
     if (!data.success) { typeEl.innerHTML = `<div class="err-box">${data.msg}</div>`; return; }
+    allLeaveData = data.byPerson || {};
 
     // Type summary
     const maxDays = Math.max(...Object.values(data.byType||{}).map(t => t.days), 1);
@@ -363,7 +395,7 @@ async function loadLeaveTab() {
     Object.entries(data.byPerson||{}).forEach(([nick, p]) => {
       p.requests.forEach(req => {
         const color = LEAVE_COLORS[req.type] || "#888";
-        detailHtml += `<div class="person-row">
+        detailHtml += `<div class="person-row" onclick="openEmpDetail('${nick}')" style="cursor:pointer">
           <div class="person-left">
             <div class="person-av" style="background:${color}22;color:${color}">${nick.substring(0,2)}</div>
             <div>
@@ -394,12 +426,13 @@ async function loadQuotaTab() {
     if (!data.success) { el.innerHTML = `<div class="err-box">${data.msg}</div>`; return; }
 
     let html = "";
+    allQuotaData = data.quotas || [];
     (data.quotas || []).forEach(q => {
       const sickPct = q.sickTotal > 0 ? Math.round((q.sickLeft/q.sickTotal)*100) : 0;
       const vacPct  = q.vacationTotal > 0 ? Math.round((q.vacationLeft/q.vacationTotal)*100) : 0;
       const perPct  = q.personalTotal > 0 ? Math.round((q.personalLeft/q.personalTotal)*100) : 0;
 
-      html += `<div class="quota-row">
+      html += `<div class="quota-row" onclick="openEmpDetail('${q.nick}')" style="cursor:pointer">
         <div class="quota-head">
           <span class="quota-name">${q.nick}</span>
           <span class="quota-nums">${q.dept || ""}</span>
@@ -445,11 +478,12 @@ async function loadAttTab() {
       return;
     }
 
+    allAttData = data.records || [];
     let html = "";
     (data.records || []).forEach(r => {
       const hoursClass = r.timeOut === "No Check-Out" ? "att-noout" : "att-hours";
       const hoursText  = r.timeOut === "No Check-Out" ? "ลืม Check Out" : (r.hours ? `${r.hours}h` : "—");
-      html += `<tr>
+      html += `<tr onclick="openEmpDetail('${r.nick}')" style="cursor:pointer">
         <td><strong>${r.nick}</strong><br><span style="font-size:10px;color:var(--muted)">${r.dept||""}</span></td>
         <td class="att-time">${r.date}</td>
         <td class="att-time">${r.timeIn || "—"}</td>
@@ -494,6 +528,95 @@ function switchTab(idx) {
 function setLoad(txt) { document.getElementById("load-txt").textContent = txt; }
 function hide(id)     { const el=document.getElementById(id); if(el) el.style.display="none"; }
 function showEl(id)   { const el=document.getElementById(id); if(el) el.style.display="block"; }
+
+// ── Employee Detail Modal ────────────────────────────────────
+let allQuotaData = [];
+let allLeaveData = {};
+let allAttData   = [];
+
+function openEmpDetail(nick) {
+  const modal = document.getElementById("emp-modal");
+  const nameEl = document.getElementById("modal-name");
+  const subEl  = document.getElementById("modal-sub");
+  const body   = document.getElementById("modal-body");
+
+  nameEl.textContent = nick;
+
+  // หา quota
+  const q = allQuotaData.find(x => x.nick === nick);
+  subEl.textContent = q ? `${q.dept || ""}` : "";
+
+  let html = "";
+
+  // โควต้า
+  if (q) {
+    html += `<div class="modal-sec">โควต้าวันลา</div>`;
+    html += `<div class="detail-row"><span>ลาป่วย</span><span class="detail-val">${q.sickLeft}/${q.sickTotal}</span></div>`;
+    html += `<div class="detail-row"><span>ลาพักร้อน</span><span class="detail-val">${q.vacationLeft}/${q.vacationTotal}</span></div>`;
+    html += `<div class="detail-row"><span>ลากิจ</span><span class="detail-val">${q.personalLeft}/${q.personalTotal}</span></div>`;
+    html += `<div class="detail-row"><span>WFH</span><span class="detail-val">${q.wfhCount} ครั้ง</span></div>`;
+  }
+
+  // ประวัติการลา
+  const leaveReqs = allLeaveData[nick]?.requests || [];
+  if (leaveReqs.length > 0) {
+    html += `<div class="modal-sec">ประวัติการลาเดือนนี้</div>`;
+    leaveReqs.forEach(r => {
+      const color = {"ลาป่วย":"#e8a020","ลาพักร้อน":"#3b82f6","ลากิจ":"#4caf50","WFH":"#a855f7"}[r.type] || "#888";
+      html += `<div class="detail-row">
+        <span style="color:${color};font-weight:600">${r.type}</span>
+        <span class="detail-val">${r.dateRange} · ${r.days}วัน</span>
+      </div>`;
+    });
+  }
+
+  // Check In/Out
+  const attRecs = allAttData.filter(r => r.nick === nick).slice(-10);
+  if (attRecs.length > 0) {
+    html += `<div class="modal-sec">Check In/Out ล่าสุด</div>`;
+    attRecs.reverse().forEach(r => {
+      const outColor = r.timeOut === "No Out" ? "color:var(--red)" : "";
+      html += `<div class="detail-row">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">${r.date}</span>
+        <span class="detail-val" style="${outColor}">${r.timeIn||"—"} → ${r.timeOut||"—"}</span>
+      </div>`;
+    });
+  }
+
+  body.innerHTML = html || `<div class="empty">ไม่มีข้อมูลค่ะ</div>`;
+  modal.style.display = "flex";
+}
+
+function closeEmpModal(e) {
+  if (!e || e.target === document.getElementById("emp-modal")) {
+    document.getElementById("emp-modal").style.display = "none";
+  }
+}
+
+// ── Search/Filter ─────────────────────────────────────────────
+function filterLeaveList() {
+  const q = (document.getElementById("leave-search")?.value || "").toLowerCase();
+  document.querySelectorAll("#leave-detail-list .person-row").forEach(el => {
+    const name = el.querySelector(".person-name")?.textContent.toLowerCase() || "";
+    el.style.display = (!q || name.includes(q)) ? "" : "none";
+  });
+}
+
+function filterQuotaList() {
+  const q = (document.getElementById("quota-search")?.value || "").toLowerCase();
+  document.querySelectorAll("#quota-list .quota-row").forEach(el => {
+    const name = el.querySelector(".quota-name")?.textContent.toLowerCase() || "";
+    el.style.display = (!q || name.includes(q)) ? "" : "none";
+  });
+}
+
+function filterAttTable() {
+  const q = (document.getElementById("att-search")?.value || "").toLowerCase();
+  document.querySelectorAll("#att-body tr").forEach(el => {
+    const name = el.querySelector("td strong")?.textContent.toLowerCase() || "";
+    el.style.display = (!q || name.includes(q)) ? "" : "none";
+  });
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   function waitLiff(cb) {
