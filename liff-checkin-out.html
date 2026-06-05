@@ -2,631 +2,670 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TIDTANG — Check In / Out</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root{
-  --off:#EBE7E4; --tan:#B0A79D; --graph:#424242; --deep:#191919;
-  --white:#fff; --border:rgba(66,66,66,0.14); --bm:rgba(66,66,66,0.22);
-  --teal:#0f766e; --teal-l:#f0fdfa; --red:#dc2626; --red-l:#fef2f2;
-  --amber:#d97706; --amber-l:#fffbeb; --green:#16a34a; --green-l:#f0fdf4;
+  --deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;
+  --off:#EBE7E4;--cream:#C8B8A2;--muted:#666;
+  --green:#4caf50;--red:#e03535;--amber:#e8a020;--blue:#3b82f6;--r:10px;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{font-family:'Anuphan',sans-serif;background:var(--off);min-height:100vh;color:var(--deep);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh}
 
-/* Loading */
-.ls{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .4s;}
-.ls.hide{opacity:0;pointer-events:none;}
-.ll{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--tan);margin-bottom:24px;}
-.lb{width:120px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden;}
-.lf{height:100%;background:var(--tan);animation:fill 1.4s ease forwards;}
-@keyframes fill{from{width:0}to{width:100%}}
+.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--muted);letter-spacing:.1em}
 
-/* App */
-.app{display:flex;flex-direction:column;min-height:100vh;}
+.header{background:var(--dark);border-bottom:1px solid var(--border);padding:16px 20px}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:2px}
+.header-title{font-size:20px;font-weight:800}
+.header-sub{font-size:11px;color:var(--muted);margin-top:2px}
 
-/* Header */
-.hdr{background:var(--deep);padding:16px 20px;padding-top:calc(env(safe-area-inset-top)+16px);}
-.hdr-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--tan);margin-bottom:4px;}
-.hdr-title{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.01em;}
-.hdr-sub{font-size:11px;color:rgba(176,167,157,.6);margin-top:2px;}
+.user-chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border-radius:8px;padding:10px 14px;margin:12px 20px 0}
+.av{width:32px;height:32px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--deep);flex-shrink:0}
+.u-name{font-size:13px;font-weight:700}
+.u-role{font-size:10px;color:var(--muted)}
 
-/* User chip */
-.chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border-radius:2px;padding:10px 14px;margin:12px 20px 0;}
-.av{width:32px;height:32px;border-radius:50%;background:var(--tan);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--deep);flex-shrink:0;}
-.uname{font-size:13px;font-weight:700;color:var(--white);}
-.urole{font-size:10px;color:rgba(176,167,157,.7);letter-spacing:.04em;}
-
-/* Body */
-.body{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;}
-.sec-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tan);margin-bottom:8px;}
+.body{padding:20px;display:flex;flex-direction:column;gap:14px}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 
 /* Active card */
-.active-card{border-radius:2px;padding:16px;border:1.5px solid;}
-.active-office{background:var(--teal-l);border-color:var(--teal);}
-.active-onsite{background:var(--amber-l);border-color:var(--amber);}
-.ac-badge{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
-.ac-badge-office{color:var(--teal);}
-.ac-badge-onsite{color:var(--amber);}
-.ac-title{font-size:18px;font-weight:800;color:var(--deep);margin-bottom:2px;}
-.ac-time{font-size:12px;color:var(--tan);font-family:'IBM Plex Mono',monospace;}
-.ac-dist{font-size:11px;margin-top:6px;padding:6px 10px;border-radius:2px;background:rgba(0,0,0,.05);}
-
-/* Mode selector */
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.mode-btn{
-  padding:18px 12px;border-radius:2px;border:1.5px solid var(--bm);
-  background:var(--white);display:flex;flex-direction:column;align-items:center;gap:8px;
-  cursor:pointer;font-family:'Anuphan',sans-serif;transition:all .15s;
-}
-.mode-btn:active{transform:scale(.97);}
-.mode-icon{font-size:28px;}
-.mode-name{font-size:13px;font-weight:700;color:var(--graph);}
-.mode-desc{font-size:10px;color:var(--tan);text-align:center;line-height:1.5;}
-.mode-btn.sel-office{border-color:var(--teal);background:var(--teal-l);}
-.mode-btn.sel-onsite{border-color:var(--amber);background:var(--amber-l);}
-
-/* GPS card */
-.gps-card{background:var(--deep);border-radius:2px;padding:20px;text-align:center;}
-.gps-icon{font-size:36px;margin-bottom:8px;}
-.gps-status{font-size:12px;color:var(--tan);margin-bottom:4px;}
-.gps-coords{font-size:10px;color:rgba(176,167,157,.5);font-family:'IBM Plex Mono',monospace;margin-bottom:14px;}
-.gps-btn{
-  padding:11px 22px;border:1.5px solid var(--tan);border-radius:2px;
-  background:transparent;color:var(--tan);font-size:12px;font-weight:700;
-  font-family:'Anuphan',sans-serif;cursor:pointer;letter-spacing:.04em;
-  transition:all .15s;
-}
-.gps-btn:active{background:rgba(176,167,157,.1);}
-.gps-btn.got{border-color:#22c55e;color:#22c55e;}
-.gps-btn:disabled{opacity:.5;pointer-events:none;}
-
-/* Distance meter */
-.dist-meter{border-radius:2px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
-.dist-ok{background:var(--green-l);border:1px solid var(--green);}
-.dist-err{background:var(--red-l);border:1px solid var(--red);}
-.dist-txt{font-size:12px;font-weight:600;}
-.dist-txt-ok{color:var(--green);}
-.dist-txt-err{color:var(--red);}
-
-/* Map link */
-.map-link{display:flex;align-items:center;gap:8px;background:var(--white);border-radius:2px;padding:11px 14px;border:1px solid var(--border);text-decoration:none;color:var(--deep);font-size:12px;font-weight:600;}
-
-/* Input */
-.f-input{width:100%;padding:11px 12px;background:var(--white);border:1.5px solid var(--bm);border-radius:2px;font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;outline:none;transition:border-color .15s;}
-.f-input:focus{border-color:var(--deep);}
-
-/* Time picker */
-.time-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.time-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tan);margin-bottom:5px;display:block;}
+.active-card{border-radius:var(--r);padding:16px;border:1.5px solid var(--green);background:rgba(76,175,80,.08);margin-bottom:4px}
+.active-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+.active-time{font-size:22px;font-weight:800;letter-spacing:-1px}
+.active-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.active-method{font-size:10px;color:var(--cream);margin-top:6px;font-family:'IBM Plex Mono',monospace}
 
 /* Buttons */
-.btn{width:100%;padding:15px;border:none;border-radius:2px;font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-family:'Anuphan',sans-serif;cursor:pointer;transition:all .15s;}
-.btn:active{transform:scale(.98);}
-.btn:disabled{opacity:.5;pointer-events:none;}
-.btn-office{background:var(--teal);color:var(--white);}
-.btn-onsite{background:var(--amber);color:var(--white);}
-.btn-checkout{background:var(--red);color:var(--white);}
-.btn-dark{background:var(--deep);color:var(--off);}
+.btn{width:100%;padding:16px;border:none;border-radius:var(--r);font-family:'Anuphan',sans-serif;font-size:16px;font-weight:800;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-checkin{background:var(--cream);color:var(--deep)}
+.btn-checkout{background:#434343;color:var(--off)}
+.btn-emergency{background:transparent;border:1.5px solid var(--border);color:var(--off);font-size:14px;padding:13px}
+.btn-retry{background:var(--mid);border:1.5px solid var(--border);color:var(--off);font-size:14px;padding:13px}
+.btn-late{background:var(--mid);border:1.5px solid var(--border);color:var(--off);font-size:15px}
+
+/* Password screen */
+.pwd-card{background:var(--dark);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.pwd-title{font-size:15px;font-weight:700;margin-bottom:6px}
+.pwd-sub{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.inp{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:14px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:16px}
+.inp:focus{outline:none;border-color:var(--cream)}
+.inp.err{border-color:var(--red)}
+.remember-row{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+.remember-row input{width:18px;height:18px;cursor:pointer}
+
+/* Emergency screen */
+.emergency-card{background:var(--dark);border:1.5px solid var(--amber);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.emergency-title{font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px}
+.emergency-sub{font-size:12px;color:var(--muted);line-height:1.6}
+.reason-grid{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.reason-btn{padding:12px;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:13px;cursor:pointer;text-align:left}
+.reason-btn.selected{border-color:var(--amber);background:rgba(232,160,32,.1);color:var(--amber)}
+
+/* Status */
+.status-card{background:var(--dark);border:1px solid var(--border);border-radius:var(--r);padding:16px;text-align:center}
+.status-icon{font-size:36px;margin-bottom:8px}
+.status-title{font-size:18px;font-weight:800;margin-bottom:6px}
+.status-sub{font-size:13px;color:var(--muted);line-height:1.7}
 
 /* Alert */
-.alert{border-radius:2px;padding:10px 14px;font-size:12px;line-height:1.6;font-weight:500;}
-.alert-err{background:var(--red-l);border-left:3px solid var(--red);color:#7f1d1d;}
-.alert-ok{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal);}
-.alert-warn{background:var(--amber-l);border-left:3px solid var(--amber);color:#92400e;}
+.alert{border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:12px;line-height:1.6}
+.alert-err{background:rgba(224,53,53,.12);border:1px solid var(--red);color:#fca5a5}
+.alert-ok{background:rgba(76,175,80,.12);border:1px solid var(--green);color:#86efac}
+.alert-warn{background:rgba(232,160,32,.12);border:1px solid var(--amber);color:#fcd34d}
 
-/* Success */
-.success{position:fixed;inset:0;background:var(--off);display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;}
-.success.show{display:flex;}
-.s-icon{font-size:56px;margin-bottom:20px;}
-.s-title{font-size:22px;font-weight:800;color:var(--deep);margin-bottom:8px;}
-.s-sub{font-size:13px;color:var(--tan);line-height:1.8;white-space:pre-line;}
-.s-close{margin-top:32px;padding:14px 32px;border:none;border-radius:2px;background:var(--deep);color:var(--off);font-size:13px;font-weight:700;letter-spacing:.06em;font-family:'Anuphan',sans-serif;cursor:pointer;}
-
-/* History strip */
-.history-strip{background:var(--white);border-radius:2px;padding:12px 14px;border:1px solid var(--border);}
-.hs-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;}
-.hs-key{color:var(--tan);font-weight:500;}
-.hs-val{font-weight:700;color:var(--graph);}
-
-.bottom-pad{height:env(safe-area-inset-bottom);min-height:20px;}
+.divider{height:1px;background:var(--border);margin:4px 0}
 </style>
 </head>
 <body>
 
-<!-- Loading -->
-<div class="ls" id="loading">
-  <div class="ll">TIDTANG STUDIO</div>
-  <div class="lb"><div class="lf"></div></div>
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="load-txt" id="load-txt">กำลังโหลด...</div>
 </div>
 
-<!-- Success -->
-<div class="success" id="success">
-  <div class="s-icon" id="s-icon"></div>
-  <div class="s-title" id="s-title">Check In สำเร็จ</div>
-  <div class="s-sub" id="s-sub"></div>
-  <button class="s-close" onclick="closeLiff()">ปิดหน้านี้</button>
-</div>
-
-<!-- App -->
-<div class="app" id="app" style="display:none">
-
-  <div class="hdr">
-    <div class="hdr-label">TIDTANG STUDIO · Attendance</div>
-    <div class="hdr-title" id="hdr-title">Check In / Out</div>
-    <div class="hdr-sub" id="hdr-sub">บันทึกเวลาเข้า-ออกงาน</div>
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-tag">TIDTANG STUDIO</div>
+    <div class="header-title">Check In / Out</div>
+    <div class="header-sub" id="hdr-date"></div>
   </div>
-
-  <!-- User chip -->
-  <div class="chip" id="chip" style="display:none">
-    <div class="av" id="av">—</div>
+  <div class="user-chip">
+    <div class="av" id="av"></div>
     <div>
-      <div class="uname" id="uname">—</div>
-      <div class="urole" id="urole">—</div>
+      <div class="u-name" id="u-name">—</div>
+      <div class="u-role" id="u-role">—</div>
     </div>
   </div>
-
-  <div class="body">
-
-    <!-- Active checkin card -->
-    <div id="active-section" style="display:none">
-      <div class="sec-label">สถานะปัจจุบัน</div>
-      <div class="active-card" id="active-card">
-        <div class="ac-badge" id="ac-badge">กำลัง Check In อยู่</div>
-        <div class="ac-title" id="ac-title">—</div>
-        <div class="ac-time" id="ac-time">—</div>
-        <div class="ac-dist" id="ac-dist" style="display:none"></div>
-      </div>
-    </div>
-
-    <!-- Mode selector (เฉพาะตอน check in) -->
-    <div id="mode-section">
-      <div class="sec-label">เลือกประเภท</div>
-      <div class="mode-grid">
-        <button class="mode-btn" id="btn-office" onclick="selMode('office')">
-          <span class="mode-icon"></span>
-          <span class="mode-name">Office</span>
-          <span class="mode-desc">เข้างานที่ Tidtang Studio<br>รัศมี 50m</span>
-        </button>
-        <button class="mode-btn" id="btn-onsite" onclick="selMode('onsite')">
-          <span class="mode-icon"></span>
-          <span class="mode-name">On Site</span>
-          <span class="mode-desc">ประชุมนอกสถานที่<br>ปักหมุด GPS</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- GPS section -->
-    <div id="gps-section" style="display:none">
-      <div class="sec-label">ตำแหน่ง GPS</div>
-      <div class="gps-card">
-        <div class="gps-icon" id="gps-icon"></div>
-        <div class="gps-status" id="gps-status">กด "รับตำแหน่ง" ค่ะ</div>
-        <div class="gps-coords" id="gps-coords">รอสัญญาณ...</div>
-        <button class="gps-btn" id="gps-btn" onclick="getGPS()"> รับตำแหน่ง</button>
-      </div>
-    </div>
-
-    <!-- Distance check -->
-    <div id="dist-section" style="display:none">
-      <div class="dist-meter" id="dist-meter">
-        <span id="dist-emoji"></span>
-        <span class="dist-txt" id="dist-txt">—</span>
-      </div>
-    </div>
-
-    <!-- Map link (On Site) -->
-    <a id="map-link" style="display:none" target="_blank">
-      <span></span>
-      <span id="map-link-txt">ดูใน Google Maps</span>
-    </a>
-
-    <!-- Project name (On Site only) -->
-    <div id="project-section" style="display:none">
-      <div class="sec-label">ชื่อโครงการ / สถานที่</div>
-      <input class="f-input" type="text" id="project-name" placeholder="เช่น บ้านคุณสมชาย, สำนักงาน ABC...">
-    </div>
-
-    <!-- Alert -->
-    <div class="alert" id="alert-box" style="display:none"></div>
-
-    <!-- Check In Button -->
-    <button class="btn btn-dark" id="checkin-btn" onclick="doCheckin()" style="display:none">
-      Check In →
-    </button>
-
-    <!-- Check Out Button -->
-    <button class="btn btn-checkout" id="checkout-btn" onclick="doCheckout()" style="display:none">
-       Check Out →
-    </button>
-
-    <div class="bottom-pad"></div>
-  </div>
+  <div class="body" id="body"></div>
 </div>
 
 <script>
 const LIFF_ID    = "2010134572-hkPA2Wuf";
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
-const OFFICE_LAT = 13.7581196;
-const OFFICE_LNG = 100.5399864;
-const OFFICE_R   = 50;   // รัศมี Office
-const ONSITE_R   = 100;  // รัศมี On Site
+const WIFI_PWD_KEY = "tidtang_wifi_pwd";
+const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 
-let userId       = null;
-let empData      = null;
-let activeCheckin = null;
-let selectedMode = null;
-let lat = null, lng = null;
+let userId = null, emp = null, activeCheckin = null;
 
-//  Init 
+// ── Init ────────────────────────────────────────────────────────
 async function init() {
   try {
+    setLoad("เชื่อมต่อ Line...");
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) { liff.login(); return; }
 
+    setLoad("ดึงข้อมูล...");
     const profile = await liff.getProfile();
     userId = profile.userId;
 
-    const res  = await fetch(`${WEBAPP_URL}?action=getAttendanceStatus&userId=${userId}`);
+    const res  = await fetch(`${WEBAPP_URL}?action=getAttendanceStatus&userId=${encodeURIComponent(userId)}`);
     const data = await res.json();
 
-    if (!data.emp) { showUnregistered(); hideLoading(); return; }
-    empData = data.emp;
-
-    if (!data.canUse) { showNoPermission(); hideLoading(); return; }
-
-    renderChip();
-
-    if (data.activeCheckin) {
-      activeCheckin = data.activeCheckin;
-      showCheckoutMode();
-      // Auto-check GPS เพื่อดูว่าออกนอกรัศมีหรือยัง
-      autoCheckGPS();
-    } else {
-      showCheckinMode();
+    if (!data.success || !data.emp) {
+      setLoad("ไม่พบข้อมูลในระบบค่ะ กรุณาลงทะเบียนก่อนนะคะ"); return;
     }
 
+    emp = data.emp;
+    activeCheckin = data.activeCheckin;
+
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
+    // Header
+    const now = new Date();
+    document.getElementById("hdr-date").textContent =
+      `${now.toLocaleDateString("th-TH", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}`;
+    document.getElementById("av").textContent = (emp.nick||"?").substring(0,2).toUpperCase();
+    document.getElementById("u-name").textContent = emp.nick || "—";
+    document.getElementById("u-role").textContent = `${emp.pos || ""} · ${emp.dept || ""}`;
+
+    renderMain();
   } catch(err) {
-    console.error(err);
-    showErr('เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ');
-  } finally {
-    hideLoading();
+    setLoad("เกิดข้อผิดพลาด: " + err.message);
   }
 }
 
-//  Render chip 
-function renderChip() {
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('chip').style.display = 'flex';
-  document.getElementById('av').textContent = empData.nick.substring(0,2);
-  document.getElementById('uname').textContent = `${empData.nick} · ${empData.name}`;
-  document.getElementById('urole').textContent = `${empData.role} · ${empData.dept}`;
+// ── Main screen ─────────────────────────────────────────────────
+function renderMain() {
+  const body = document.getElementById("body");
+  const now  = new Date();
+  const timeStr = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+  if (activeCheckin) {
+    // มี Check In อยู่ → แสดง Check Out
+    body.innerHTML = `
+      <div>
+        <div class="sec-label">สถานะปัจจุบัน</div>
+        <div class="active-card">
+          <div class="active-badge">กำลังทำงาน</div>
+          <div class="active-time">${activeCheckin.timeIn || "—"} น.</div>
+          <div class="active-sub">Check In แล้ว · ${activeCheckin.mode === "office" ? "Office" : "On Site"}</div>
+          <div class="active-method">Method: ${activeCheckin.method || "WiFi Verified"}</div>
+        </div>
+      </div>
+      <div class="sec-label">Check Out</div>
+      <button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
+      <button class="btn btn-emergency" onclick="showEmergencyOut()">Emergency Check Out</button>`;
+  } else {
+    // ยังไม่ได้ Check In
+    body.innerHTML = `
+      <div class="sec-label">Check In</div>
+      <button class="btn btn-checkin" style="margin-bottom:10px" onclick="startCheckIn()">Check In Office</button>
+      <button class="btn btn-late" onclick="startCheckInOnSite()">Check In On Site</button>
+      <div class="divider" style="margin-top:10px"></div>`;
+  }
 }
 
-//  Check In Mode 
-function showCheckinMode() {
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('mode-section').style.display = 'block';
-  document.getElementById('active-section').style.display = 'none';
-  document.getElementById('checkout-btn').style.display = 'none';
-  document.getElementById('hdr-title').textContent = 'Check In';
-  document.getElementById('hdr-sub').textContent = 'เลือกประเภทและรับตำแหน่ง GPS';
+// ── CHECK IN FLOW ────────────────────────────────────────────────
+async function startCheckIn() {
+  const body = document.getElementById("body");
+  body.innerHTML = `<div class="load-txt" style="text-align:center;padding:20px">กำลังตรวจสอบเครือข่าย...</div>`;
+
+  // ตรวจว่ามี password ที่ save ไว้ไหม
+  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
+
+  if (savedPwd) {
+    // มีรหัสที่บันทึกไว้ → verify ทันที
+    await verifyAndCheckIn(savedPwd, false);
+  } else {
+    // ยังไม่มี → แสดงหน้ากรอกรหัส
+    showPasswordScreen("checkin");
+  }
 }
 
-//  Check Out Mode 
-function showCheckoutMode() {
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('mode-section').style.display = 'none';
-  document.getElementById('gps-section').style.display = 'none';
-  document.getElementById('project-section').style.display = 'none';
-  document.getElementById('checkin-btn').style.display = 'none';
-  document.getElementById('active-section').style.display = 'block';
-  document.getElementById('checkout-btn').style.display = 'block';
-  document.getElementById('hdr-title').textContent = 'Check Out';
-  document.getElementById('hdr-sub').textContent = 'กด Check Out เมื่อเสร็จงาน';
+function showPasswordScreen(mode) {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="pwd-card">
+      <div class="pwd-title">ยืนยันเครือข่ายบริษัท</div>
+      <div class="pwd-sub">กรอกรหัส WiFi ออฟฟิศเพื่อยืนยันว่าคุณอยู่ที่บริษัทค่ะ</div>
+      <input class="inp" id="pwd-inp" type="password" placeholder="รหัส WiFi ออฟฟิศ" autocomplete="off">
+      <div class="remember-row">
+        <input type="checkbox" id="remember-cb" checked>
+        <label for="remember-cb">จดจำรหัสในเครื่องนี้ (ไม่ต้องกรอกซ้ำ)</label>
+      </div>
+    </div>
+    <div id="alert-box"></div>
+    <button class="btn btn-checkin" onclick="submitPassword('${mode}')">ยืนยัน</button>
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyIn()">Emergency Check In</button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
 
-  const ac = activeCheckin;
-  const isOffice = ac.mode === 'office';
-  const card = document.getElementById('active-card');
-  const badge = document.getElementById('ac-badge');
-  card.className = `active-card ${isOffice ? 'active-office' : 'active-onsite'}`;
-  badge.className = `ac-badge ${isOffice ? 'ac-badge-office' : 'ac-badge-onsite'}`;
-  badge.textContent = isOffice ? ' Office' : ' On Site';
-  document.getElementById('ac-title').textContent = isOffice ? 'Tidtang Studio' : (ac.projectName || 'On Site');
-  document.getElementById('ac-time').textContent = `Check in เมื่อ ${ac.timeIn} น.`;
+  document.getElementById("pwd-inp").focus();
 }
 
-//  Auto GPS Check (สำหรับ checkout auto) 
-function autoCheckGPS() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition((pos) => {
-    const curLat = pos.coords.latitude;
-    const curLng = pos.coords.longitude;
-    const refLat = activeCheckin.mode === 'office' ? OFFICE_LAT : activeCheckin.lat;
-    const refLng = activeCheckin.mode === 'office' ? OFFICE_LNG : activeCheckin.lng;
-    const radius = activeCheckin.mode === 'office' ? OFFICE_R : ONSITE_R;
-    const dist   = getDistance(refLat, refLng, curLat, curLng);
+async function submitPassword(mode) {
+  const pwd = document.getElementById("pwd-inp").value.trim();
+  if (!pwd) { showAlert("err", "กรุณากรอกรหัส WiFi ค่ะ"); return; }
 
-    const distEl = document.getElementById('ac-dist');
-    distEl.style.display = 'block';
+  const remember = document.getElementById("remember-cb").checked;
 
-    if (dist > radius) {
-      distEl.textContent = ` ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบพร้อม Check Out อัตโนมัติค่ะ`;
-      distEl.style.background = 'rgba(220,38,38,0.1)';
-      distEl.style.color = '#dc2626';
-      // Auto check out
-      lat = curLat; lng = curLng;
-      doCheckout(true);
+  if (mode === "checkin") {
+    await verifyAndCheckIn(pwd, remember);
+  } else {
+    await verifyAndCheckOut(pwd, remember);
+  }
+}
+
+async function verifyAndCheckIn(pwd, remember) {
+  const body = document.getElementById("body");
+  showLoading("กำลังตรวจสอบ...");
+
+  try {
+    const now = new Date();
+    const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "attendanceCheckin",
+        userId, mode: "office",
+        wifiPwd: pwd,
+        timeIn,
+        method: "WiFi Verified"
+      })
+    });
+    const data = await res.json();
+
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
+    if (data.success) {
+      if (remember) localStorage.setItem(WIFI_PWD_KEY, pwd);
+      activeCheckin = { timeIn, mode: "office", method: "WiFi Verified" };
+      showSuccess("checkin", timeIn);
+    } else if (data.wrongPwd) {
+      // รหัสผิด
+      localStorage.removeItem(WIFI_PWD_KEY);
+      showWifiError();
     } else {
-      distEl.textContent = ` ยังอยู่ในรัศมี ${Math.round(dist)}/${radius}m — กด Check Out เมื่อเสร็จงานค่ะ`;
-      distEl.style.background = 'rgba(15,118,110,0.1)';
-      distEl.style.color = '#0f766e';
+      renderMain();
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
-  }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
-}
-
-//  Select Mode 
-function selMode(mode) {
-  selectedMode = mode;
-  lat = null; lng = null;
-
-  document.getElementById('btn-office').className = `mode-btn${mode==='office'?' sel-office':''}`;
-  document.getElementById('btn-onsite').className = `mode-btn${mode==='onsite'?' sel-onsite':''}`;
-
-  document.getElementById('gps-section').style.display = 'block';
-  document.getElementById('project-section').style.display = mode === 'onsite' ? 'block' : 'none';
-  document.getElementById('checkin-btn').style.display = 'none';
-  document.getElementById('alert-box').style.display = 'none';
-  document.getElementById('dist-section').style.display = 'none';
-  document.getElementById('map-link').style.display = 'none';
-
-  // รีเซ็ต GPS
-  document.getElementById('gps-icon').textContent = '';
-  document.getElementById('gps-status').textContent = 'กด "รับตำแหน่ง" ค่ะ';
-  document.getElementById('gps-coords').textContent = 'รอสัญญาณ...';
-  document.getElementById('gps-btn').textContent = ' รับตำแหน่ง';
-  document.getElementById('gps-btn').className = 'gps-btn';
-  document.getElementById('gps-btn').disabled = false;
-
-  const btn = document.getElementById('checkin-btn');
-  btn.className = `btn btn-${mode === 'office' ? 'office' : 'onsite'}`;
-  btn.textContent = mode === 'office' ? ' Check In Office →' : ' Check In On Site →';
-}
-
-//  Get GPS 
-function getGPS() {
-  const btn = document.getElementById('gps-btn');
-  btn.textContent = '⏳ กำลังรับ...';
-  btn.disabled = true;
-  document.getElementById('gps-icon').textContent = '⏳';
-  document.getElementById('gps-status').textContent = 'กำลังรับสัญญาณ GPS...';
-
-  if (!navigator.geolocation) {
-    document.getElementById('gps-status').textContent = 'ไม่รองรับ GPS ค่ะ';
-    btn.textContent = ' ไม่รองรับ';
-    return;
+  } catch(err) {
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
   }
+}
 
+function showWifiError() {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="alert alert-warn">ไม่พบเครือข่ายบริษัทค่ะ<br>หากคุณอยู่ที่ออฟฟิศและพบปัญหาเครือข่าย กรุณาเลือก "Emergency Check In"</div>
+    <button class="btn btn-retry" onclick="showPasswordScreen('checkin')">ลองอีกครั้ง</button>
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyIn()">Emergency Check In</button>`;
+}
+
+// ── EMERGENCY CHECK IN ───────────────────────────────────────────
+function showEmergencyIn() {
+  renderEmergencyScreen("checkin");
+}
+
+function showEmergencyOut() {
+  renderEmergencyScreen("checkout");
+}
+
+let selectedReason = "";
+let emergencyPhoto = null;
+let emergencyGPS   = null;
+
+function renderEmergencyScreen(mode) {
+  selectedReason = "";
+  emergencyPhoto = null;
+  emergencyGPS   = null;
+
+  const title = mode === "checkin" ? "Emergency Check In" : "Emergency Check Out";
+  const body  = document.getElementById("body");
+
+  body.innerHTML = `
+    <div class="emergency-card">
+      <div class="emergency-title">${title}</div>
+      <div class="emergency-sub">ระบบไม่สามารถตรวจสอบเครือข่ายได้ กรุณาให้ข้อมูลเพิ่มเติมค่ะ</div>
+    </div>
+
+    <div class="sec-label">เหตุผล</div>
+    <div class="reason-grid">
+      ${["WiFi มีปัญหา","อินเทอร์เน็ตขัดข้อง","ระบบไม่สามารถตรวจสอบเครือข่ายได้","อื่นๆ"]
+        .map(r => `<button class="reason-btn" onclick="selectReason(this,'${r}')">${r}</button>`).join("")}
+    </div>
+
+    <div class="sec-label">ถ่ายรูปปัจจุบัน</div>
+    <div style="margin-bottom:14px">
+      <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)">
+      <button class="btn btn-retry" onclick="document.getElementById('photo-input').click()">ถ่ายรูป (ต้องถ่ายใหม่เท่านั้น)</button>
+      <div id="photo-preview" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+    </div>
+
+    <div id="alert-box"></div>
+    <button class="btn btn-emergency" onclick="submitEmergency('${mode}')" id="btn-emergency-submit" disabled>
+      ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}
+    </button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+
+  // ขอ GPS ทันที
+  getGPS();
+}
+
+function selectReason(el, reason) {
+  document.querySelectorAll(".reason-btn").forEach(b => b.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedReason = reason;
+  checkEmergencyReady();
+}
+
+function onPhotoSelected(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    // ตรวจว่าถ่ายใหม่ (ไม่ใช่จาก album) — capture=environment บังคับใช้กล้องแล้ว
+    emergencyPhoto = file;
+    document.getElementById("photo-preview").textContent = `รูปที่เลือก: ${file.name}`;
+    checkEmergencyReady();
+  }
+}
+
+function getGPS() {
+  if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      const acc = Math.round(pos.coords.accuracy);
-
-      document.getElementById('gps-icon').textContent = '';
-      document.getElementById('gps-status').textContent = `ได้รับตำแหน่งแล้วค่ะ (±${acc}m)`;
-      document.getElementById('gps-coords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      btn.textContent = ' รับแล้ว';
-      btn.className = 'gps-btn got';
-      btn.disabled = false;
-
-      // เช็คระยะ
-      checkDistance();
+    pos => {
+      emergencyGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      checkEmergencyReady();
     },
-    () => {
-      document.getElementById('gps-icon').textContent = '';
-      document.getElementById('gps-status').textContent = 'กรุณาเปิด Location ในมือถือค่ะ';
-      btn.textContent = ' ลองใหม่';
-      btn.disabled = false;
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    err => { console.log("GPS error:", err); }
   );
 }
 
-//  Check Distance 
-function checkDistance() {
-  const distSec = document.getElementById('dist-section');
-  const distEl  = document.getElementById('dist-meter');
-  const distTxt = document.getElementById('dist-txt');
-  distSec.style.display = 'block';
-
-  if (selectedMode === 'office') {
-    const dist = getDistance(OFFICE_LAT, OFFICE_LNG, lat, lng);
-    const ok   = dist <= OFFICE_R;
-    distEl.className = `dist-meter ${ok ? 'dist-ok' : 'dist-err'}`;
-    document.getElementById('dist-emoji').textContent = ok ? '' : '';
-    distTxt.className = `dist-txt ${ok ? 'dist-txt-ok' : 'dist-txt-err'}`;
-    distTxt.textContent = ok
-      ? `อยู่ใน Office รัศมี · ${Math.round(dist)}m จาก Tidtang Studio `
-      : `อยู่นอกรัศมี Office · ${Math.round(dist)}m (ต้องอยู่ภายใน ${OFFICE_R}m)`;
-
-    if (ok) {
-      document.getElementById('checkin-btn').style.display = 'block';
-    } else {
-      showErr(`ไม่สามารถ Check In ได้ค่ะ\nอยู่ห่าง ${Math.round(dist)}m จาก Office (ต้องอยู่ภายใน ${OFFICE_R}m)`);
-    }
-  } else {
-    // On Site → แสดง Map link + ปุ่ม Check In เสมอ
-    distEl.className = 'dist-meter dist-ok';
-    document.getElementById('dist-emoji').textContent = '';
-    distTxt.className = 'dist-txt dist-txt-ok';
-    distTxt.textContent = `ปักหมุดตำแหน่งแล้วค่ะ`;
-
-    const mapLink = document.getElementById('map-link');
-    mapLink.href = `https://maps.google.com/?q=${lat},${lng}`;
-    mapLink.style.display = 'flex';
-    document.getElementById('map-link-txt').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)} — ดูใน Google Maps`;
-
-    document.getElementById('checkin-btn').style.display = 'block';
-  }
+function checkEmergencyReady() {
+  const btn = document.getElementById("btn-emergency-submit");
+  if (btn) btn.disabled = !(selectedReason && emergencyPhoto);
 }
 
-//  Check In 
-async function doCheckin() {
-  if (!lat || !lng || !selectedMode) return;
-  if (selectedMode === 'onsite' && !document.getElementById('project-name').value.trim()) {
-    showErr('กรุณาระบุชื่อโครงการ/สถานที่ค่ะ'); return;
-  }
+async function submitEmergency(mode) {
+  if (!selectedReason || !emergencyPhoto) return;
 
-  const btn = document.getElementById('checkin-btn');
-  btn.disabled = true;
-  btn.textContent = 'กำลัง Check In...';
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
-  const now  = new Date();
-  const time = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  // Convert photo to base64
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const photoBase64 = e.target.result.split(",")[1];
 
+    try {
+      const res = await fetch(WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify({
+          action: mode === "checkin" ? "emergencyCheckin" : "emergencyCheckout",
+          userId,
+          time: timeStr,
+          reason: selectedReason,
+          lat: emergencyGPS?.lat || null,
+          lng: emergencyGPS?.lng || null,
+          photo: photoBase64,
+          method: "Emergency"
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        if (mode === "checkin") activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
+        showEmergencySuccess(mode);
+      } else {
+        showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+      }
+    } catch(err) {
+      showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    }
+  };
+  reader.readAsDataURL(emergencyPhoto);
+}
+
+// ── CHECK IN ON SITE ────────────────────────────────────────────
+let onsiteGPS = null;
+let onsiteProjectName = "";
+
+function startCheckInOnSite() {
+  const body = document.getElementById("body");
+  onsiteGPS = null;
+
+  body.innerHTML = `
+    <div class="sec-label">Check In On Site</div>
+    <div class="pwd-card">
+      <div class="pwd-title">ชื่อโปรเจกต์ / สถานที่</div>
+      <input class="inp" id="onsite-project" type="text" placeholder="เช่น บ้านคุณสมชาย, Site A" style="margin-bottom:10px">
+      <div id="gps-status" class="alert alert-warn" style="display:none">กำลังดึง GPS...</div>
+    </div>
+    <div id="alert-box"></div>
+    <button class="btn btn-checkin" id="btn-onsite-submit" onclick="submitCheckInOnSite()" disabled>Check In On Site</button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+
+  // ดึง GPS ทันที
+  getOnsiteGPS();
+}
+
+function getOnsiteGPS() {
+  const statusEl = document.getElementById("gps-status");
+  if (statusEl) { statusEl.style.display="block"; statusEl.textContent="กำลังดึง GPS..."; }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      onsiteGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (statusEl) {
+        statusEl.className = "alert alert-ok";
+        statusEl.textContent = `GPS พร้อมแล้วค่ะ (${onsiteGPS.lat.toFixed(5)}, ${onsiteGPS.lng.toFixed(5)})`;
+      }
+      const btn = document.getElementById("btn-onsite-submit");
+      if (btn) btn.disabled = false;
+    },
+    err => {
+      if (statusEl) {
+        statusEl.className = "alert alert-err";
+        statusEl.textContent = "ดึง GPS ไม่ได้ค่ะ กรุณาเปิด Location แล้วลองใหม่";
+      }
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+async function submitCheckInOnSite() {
+  const project = document.getElementById("onsite-project").value.trim();
+  if (!project) { showAlert("err", "กรุณากรอกชื่อโปรเจกต์ค่ะ"); return; }
+  if (!onsiteGPS) { showAlert("err", "ยังไม่ได้รับ GPS ค่ะ"); return; }
+
+  const now    = new Date();
+  const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+  showLoading("กำลัง Check In On Site...");
   try {
     const res = await fetch(WEBAPP_URL, {
-      method: 'POST',
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify({
-        action: 'attendanceCheckin',
-        userId, lat, lng,
-        mode: selectedMode,
-        projectName: document.getElementById('project-name').value.trim(),
-        timeIn: time
-      })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      showSuccess(
-        selectedMode === 'office' ? '' : '',
-        'Check In สำเร็จ!',
-        `${selectedMode === 'office' ? 'Tidtang Studio' : document.getElementById('project-name').value.trim()}\n${time} น.\n\nเปิดหน้านี้อีกครั้งเพื่อ Check Out ค่ะ`
-      );
-    } else {
-      showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
-      btn.disabled = false;
-      btn.textContent = selectedMode === 'office' ? ' Check In Office →' : ' Check In On Site →';
-    }
-  } catch(err) {
-    showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
-    btn.disabled = false;
-    btn.textContent = selectedMode === 'office' ? ' Check In Office →' : ' Check In On Site →';
-  }
-}
-
-//  Check Out 
-async function doCheckout(isAuto = false) {
-  const btn = document.getElementById('checkout-btn');
-  btn.disabled = true;
-  btn.textContent = 'กำลัง Check Out...';
-
-  const now  = new Date();
-  const time = pad(now.getHours()) + ':' + pad(now.getMinutes());
-
-  // รับ GPS ถ้ายังไม่มี
-  if (!lat || !lng) {
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      await sendCheckout(time, isAuto, btn);
-    }, async () => {
-      await sendCheckout(time, isAuto, btn);
-    }, { enableHighAccuracy: true, timeout: 8000 });
-  } else {
-    await sendCheckout(time, isAuto, btn);
-  }
-}
-
-async function sendCheckout(time, isAuto, btn) {
-  try {
-    const res = await fetch(WEBAPP_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'attendanceCheckout',
+        action: "onSiteCheckin",
         userId,
-        lat: lat || (activeCheckin.mode === 'office' ? OFFICE_LAT : activeCheckin.lat),
-        lng: lng || (activeCheckin.mode === 'office' ? OFFICE_LNG : activeCheckin.lng),
-        timeOut: time
+        lat: onsiteGPS.lat,
+        lng: onsiteGPS.lng,
+        projectName: project,
+        timeIn
       })
     });
     const data = await res.json();
 
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
     if (data.success) {
-      const mode = activeCheckin.mode;
-      showSuccess(
-        mode === 'office' ? '' : '',
-        `Check Out${isAuto ? ' อัตโนมัติ' : ''} สำเร็จ!`,
-        `${mode === 'office' ? 'Tidtang Studio' : (activeCheckin.projectName || 'On Site')}\n${activeCheckin.timeIn}–${time} น.\n${data.hours} ชั่วโมง · ${data.method}`
-      );
+      activeCheckin = { timeIn, mode: "onsite", method: "GPS" };
+      const body = document.getElementById("body");
+      body.innerHTML = `
+        <div class="status-card">
+          <div class="status-title">Check In On Site เรียบร้อยค่ะ</div>
+          <div class="status-sub">${timeIn} น. · ${project}
+
+ขอให้งานราบรื่นนะคะ</div>
+        </div>
+        <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
     } else {
-      showErr(data.msg || 'เกิดข้อผิดพลาดค่ะ');
-      btn.disabled = false;
-      btn.textContent = ' Check Out →';
+      renderMain();
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
   } catch(err) {
-    showErr('ไม่สามารถเชื่อมต่อได้ค่ะ');
-    btn.disabled = false;
-    btn.textContent = ' Check Out →';
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
   }
 }
 
-//  Helpers 
-function getDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const d1 = lat1*Math.PI/180, d2 = lat2*Math.PI/180;
-  const dl = (lat2-lat1)*Math.PI/180, dg = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dl/2)**2 + Math.cos(d1)*Math.cos(d2)*Math.sin(dg/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ── CHECK OUT FLOW ───────────────────────────────────────────────
+async function startCheckOut() {
+  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
+  if (savedPwd) {
+    await verifyAndCheckOut(savedPwd, false);
+  } else {
+    showPasswordScreen("checkout");
+  }
 }
 
-function pad(n) { return String(n).padStart(2,'0'); }
+async function verifyAndCheckOut(pwd, remember) {
+  showLoading("กำลังตรวจสอบ...");
+  try {
+    const now = new Date();
+    const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+    const hour = now.getHours();
 
-function showSuccess(icon, title, sub) {
-  document.getElementById('s-icon').textContent = icon;
-  document.getElementById('s-title').textContent = title;
-  document.getElementById('s-sub').textContent   = sub;
-  document.getElementById('success').classList.add('show');
-}
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "attendanceCheckout",
+        userId,
+        timeOut,
+        wifiPwd: pwd,
+        checkoutMethod: "WiFi Verified"
+      })
+    });
+    const data = await res.json();
 
-function showErr(msg) {
-  const el = document.getElementById('alert-box');
-  el.className = 'alert alert-err';
-  el.textContent = msg;
-  el.style.display = 'block';
-}
+    hide("loading");
+    document.getElementById("app").style.display = "block";
 
-function showUnregistered() {
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('hdr-title').textContent = 'ยังไม่ได้ลงทะเบียน';
-  document.getElementById('hdr-sub').textContent = 'กรุณาติดต่อ HR (Ploy) ค่ะ';
-}
-
-function showNoPermission() {
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('hdr-title').textContent = 'ไม่มีสิทธิ์ใช้งาน';
-  document.getElementById('hdr-sub').textContent = 'ระบบ Check In/Out สำหรับพนักงาน, Admin และ Draftman ค่ะ';
-}
-
-function hideLoading() {
-  setTimeout(() => document.getElementById('loading').classList.add('hide'), 1300);
-}
-
-function closeLiff() { liff.closeWindow(); }
-
-window.addEventListener('DOMContentLoaded', function() {
-  // รอ LIFF SDK โหลดเสร็จก่อน
-  function waitForLiff(callback) {
-    if (typeof liff !== 'undefined') {
-      callback();
+    if (data.success) {
+      if (remember) localStorage.setItem(WIFI_PWD_KEY, pwd);
+      activeCheckin = null;
+      showSuccess("checkout", timeOut, hour);
+    } else if (data.wrongPwd) {
+      localStorage.removeItem(WIFI_PWD_KEY);
+      showCheckOutWifiError();
     } else {
-      setTimeout(() => waitForLiff(callback), 100);
+      renderMain();
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+    }
+  } catch(err) {
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+  }
+}
+
+function showCheckOutWifiError() {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="alert alert-warn">ไม่พบเครือข่ายบริษัทค่ะ<br>หากออกจากออฟฟิศแล้ว กรุณาติดต่อ HR/Admin</div>
+    <button class="btn btn-retry" onclick="startCheckOut()">ลองอีกครั้ง</button>
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+}
+
+// ── SUCCESS SCREENS ──────────────────────────────────────────────
+function showSuccess(type, time, hour) {
+  const body = document.getElementById("body");
+  let title, msg;
+
+  if (type === "checkin") {
+    title = "Check In เรียบร้อยค่ะ";
+    msg   = `${time} น.\n\nขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
+  } else {
+    const h = hour ?? new Date().getHours();
+    if (h >= 0 && h < 3) {
+      title = "Check Out เรียบร้อยค่ะ";
+      msg   = `${time} น.\n\nขอบคุณที่ทุ่มเทกับงานจนดึกค่ะ\nเดินทางกลับบ้านปลอดภัย และพักผ่อนให้เต็มที่นะคะ`;
+    } else if (h >= 3) {
+      title = "Check Out เรียบร้อยค่ะ";
+      msg   = `${time} น.\n\nแสงแรกของวันกำลังมาแล้ว\nขอบคุณสำหรับความตั้งใจในคืนนี้\nเดินทางกลับบ้านปลอดภัย และอย่าลืมหาเวลาพักผ่อนนะคะ`;
+    } else {
+      title = "Check Out เรียบร้อยค่ะ";
+      msg   = `${time} น.\n\nขอบคุณสำหรับวันนี้ค่ะ เดินทางกลับบ้านปลอดภัยนะคะ`;
     }
   }
-  waitForLiff(init);
+
+  body.innerHTML = `
+    <div class="status-card">
+      <div class="status-title">${title}</div>
+      <div class="status-sub" style="white-space:pre-line">${msg}</div>
+    </div>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
+}
+
+function showEmergencySuccess(mode) {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="status-card">
+      <div class="status-title">ระบบได้รับข้อมูลแล้วค่ะ</div>
+      <div class="status-sub">รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบเพิ่มเติมค่ะ\n\nสถานะ: Admin Review</div>
+    </div>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
+}
+
+// ── WORKING LATE (จาก Reminder) ─────────────────────────────────
+async function confirmWorkingLate() {
+  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
+  if (!savedPwd) { showPasswordScreen("late"); return; }
+
+  const res = await fetch(WEBAPP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ action: "workingLate", userId, wifiPwd: savedPwd })
+  });
+  const data = await res.json();
+
+  const body = document.getElementById("body");
+  if (data.success) {
+    body.innerHTML = `
+      <div class="status-card">
+        <div class="status-title">รับทราบค่ะ</div>
+        <div class="status-sub">ขอให้การทำงานราบรื่น\nและอย่าลืมหาเวลาพักผ่อนนะคะ</div>
+      </div>
+      <button class="btn btn-checkout" style="margin-top:12px" onclick="startCheckOut()">Check Out เมื่อพร้อม</button>`;
+  } else if (data.wrongPwd) {
+    localStorage.removeItem(WIFI_PWD_KEY);
+    body.innerHTML = `<div class="alert alert-warn">ดูเหมือนว่าคุณออกจากออฟฟิศแล้วค่ะ\nกรุณาติดต่อ HR/Admin</div>`;
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function showLoading(txt) {
+  document.getElementById("load-txt").textContent = txt;
+  document.getElementById("loading").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+}
+function hide(id) { const el=document.getElementById(id); if(el) el.style.display="none"; }
+function setLoad(txt) { document.getElementById("load-txt").textContent = txt; }
+
+function showAlertInBody(type, msg) {
+  const existing = document.getElementById("body-alert");
+  if (existing) existing.remove();
+  const el = document.createElement("div");
+  el.id = "body-alert";
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  document.getElementById("body").prepend(el);
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById("alert-box");
+  if (!el) return;
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  function waitLiff(cb) {
+    if (typeof liff !== "undefined") cb();
+    else setTimeout(() => waitLiff(cb), 100);
+  }
+  waitLiff(init);
 });
 </script>
 </body>
