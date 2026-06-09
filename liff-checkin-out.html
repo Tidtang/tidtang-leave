@@ -185,19 +185,7 @@ function renderMain() {
 
 // ── CHECK IN FLOW ────────────────────────────────────────────────
 async function startCheckIn() {
-  const body = document.getElementById("body");
-  body.innerHTML = `<div class="load-txt" style="text-align:center;padding:20px">กำลังตรวจสอบเครือข่าย...</div>`;
-
-  // ตรวจว่ามี password ที่ save ไว้ไหม
-  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
-
-  if (savedPwd) {
-    // มีรหัสที่บันทึกไว้ → verify ทันที
-    await verifyAndCheckIn(savedPwd, false);
-  } else {
-    // ยังไม่มี → แสดงหน้ากรอกรหัส
-    showPasswordScreen("checkin");
-  }
+  showPasswordScreen("checkin");
 }
 
 function showPasswordScreen(mode) {
@@ -207,10 +195,7 @@ function showPasswordScreen(mode) {
       <div class="pwd-title">ยืนยันเครือข่ายบริษัท</div>
       <div class="pwd-sub">กรอกรหัส WiFi ออฟฟิศเพื่อยืนยันว่าคุณอยู่ที่บริษัทค่ะ</div>
       <input class="inp" id="pwd-inp" type="password" placeholder="รหัส WiFi ออฟฟิศ" autocomplete="off">
-      <div class="remember-row">
-        <input type="checkbox" id="remember-cb" checked>
-        <label for="remember-cb">จดจำรหัสในเครื่องนี้ (ไม่ต้องกรอกซ้ำ)</label>
-      </div>
+
     </div>
     <div id="alert-box"></div>
     <button class="btn btn-checkin" onclick="submitPassword('${mode}')">ยืนยัน</button>
@@ -224,16 +209,14 @@ async function submitPassword(mode) {
   const pwd = document.getElementById("pwd-inp").value.trim();
   if (!pwd) { showAlert("err", "กรุณากรอกรหัส WiFi ค่ะ"); return; }
 
-  const remember = document.getElementById("remember-cb").checked;
-
   if (mode === "checkin") {
-    await verifyAndCheckIn(pwd, remember);
+    await verifyAndCheckIn(pwd);
   } else {
-    await verifyAndCheckOut(pwd, remember);
+    await verifyAndCheckOut(pwd);
   }
 }
 
-async function verifyAndCheckIn(pwd, remember) {
+async function verifyAndCheckIn(pwd) {
   showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
 
   try {
@@ -245,13 +228,16 @@ async function verifyAndCheckIn(pwd, remember) {
     try {
       const pos = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject,
-          { enableHighAccuracy: true, timeout: 10000 });
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
       });
       lat = pos.coords.latitude;
       lng = pos.coords.longitude;
     } catch(gpsErr) {
-      // GPS ไม่ได้ → ยังส่งได้ แต่ server จะตรวจ
-      console.log("GPS error:", gpsErr.message);
+      // GPS ไม่ได้ → block ทันที ไม่อนุญาตให้ผ่าน
+      hide("loading");
+      document.getElementById("app").style.display = "block";
+      showWifiError();
+      return;
     }
 
     const res = await fetch(WEBAPP_URL, {
@@ -272,12 +258,10 @@ async function verifyAndCheckIn(pwd, remember) {
     document.getElementById("app").style.display = "block";
 
     if (data.success) {
-      if (remember) localStorage.setItem(WIFI_PWD_KEY, pwd);
       activeCheckin = { timeIn, mode: "office", method: "WiFi Verified" };
       showSuccess("checkin", timeIn);
     } else if (data.wrongPwd) {
       // รหัสผิด
-      localStorage.removeItem(WIFI_PWD_KEY);
       showWifiError();
     } else {
       renderMain();
@@ -522,15 +506,10 @@ async function submitCheckInOnSite() {
 
 // ── CHECK OUT FLOW ───────────────────────────────────────────────
 async function startCheckOut() {
-  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
-  if (savedPwd) {
-    await verifyAndCheckOut(savedPwd, false);
-  } else {
-    showPasswordScreen("checkout");
-  }
+  showPasswordScreen("checkout");
 }
 
-async function verifyAndCheckOut(pwd, remember) {
+async function verifyAndCheckOut(pwd) {
   showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
   try {
     const now = new Date();
@@ -542,12 +521,16 @@ async function verifyAndCheckOut(pwd, remember) {
     try {
       const pos = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject,
-          { enableHighAccuracy: true, timeout: 10000 });
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
       });
       lat = pos.coords.latitude;
       lng = pos.coords.longitude;
     } catch(gpsErr) {
-      console.log("GPS error:", gpsErr.message);
+      // GPS ไม่ได้ → block ทันที
+      hide("loading");
+      document.getElementById("app").style.display = "block";
+      showCheckOutWifiError();
+      return;
     }
 
     const res = await fetch(WEBAPP_URL, {
@@ -568,11 +551,9 @@ async function verifyAndCheckOut(pwd, remember) {
     document.getElementById("app").style.display = "block";
 
     if (data.success) {
-      if (remember) localStorage.setItem(WIFI_PWD_KEY, pwd);
       activeCheckin = null;
       showSuccess("checkout", timeOut, hour);
     } else if (data.wrongPwd) {
-      localStorage.removeItem(WIFI_PWD_KEY);
       showCheckOutWifiError();
     } else {
       renderMain();
