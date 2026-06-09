@@ -234,12 +234,25 @@ async function submitPassword(mode) {
 }
 
 async function verifyAndCheckIn(pwd, remember) {
-  const body = document.getElementById("body");
-  showLoading("กำลังตรวจสอบ...");
+  showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
 
   try {
     const now = new Date();
     const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+    // ดึง GPS ก่อนส่ง
+    let lat = null, lng = null;
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject,
+          { enableHighAccuracy: true, timeout: 10000 });
+      });
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch(gpsErr) {
+      // GPS ไม่ได้ → ยังส่งได้ แต่ server จะตรวจ
+      console.log("GPS error:", gpsErr.message);
+    }
 
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -248,8 +261,9 @@ async function verifyAndCheckIn(pwd, remember) {
         action: "attendanceCheckin",
         userId, mode: "office",
         wifiPwd: pwd,
+        lat, lng,
         timeIn,
-        method: "WiFi Verified"
+        method: "WiFi+GPS"
       })
     });
     const data = await res.json();
@@ -517,11 +531,24 @@ async function startCheckOut() {
 }
 
 async function verifyAndCheckOut(pwd, remember) {
-  showLoading("กำลังตรวจสอบ...");
+  showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
   try {
     const now = new Date();
     const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
     const hour = now.getHours();
+
+    // ดึง GPS
+    let lat = null, lng = null;
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject,
+          { enableHighAccuracy: true, timeout: 10000 });
+      });
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch(gpsErr) {
+      console.log("GPS error:", gpsErr.message);
+    }
 
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -530,8 +557,9 @@ async function verifyAndCheckOut(pwd, remember) {
         action: "attendanceCheckout",
         userId,
         timeOut,
+        lat, lng,
         wifiPwd: pwd,
-        checkoutMethod: "WiFi Verified"
+        checkoutMethod: "WiFi+GPS"
       })
     });
     const data = await res.json();
