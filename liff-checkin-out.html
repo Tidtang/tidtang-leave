@@ -133,7 +133,9 @@ async function init() {
     }
 
     emp = data.emp;
-    activeCheckin = data.activeCheckin;
+    // ไม่แสดงสถานะ Emergency ใน active card — รอ Admin อนุมัติก่อน
+    const ci = data.activeCheckin;
+    activeCheckin = (ci && ci.method === "Emergency") ? null : ci;
 
     hide("loading");
     document.getElementById("app").style.display = "block";
@@ -395,8 +397,14 @@ async function submitEmergency(mode) {
       const data = await res.json();
 
       if (data.success) {
-        if (mode === "checkin") activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
+        // ไม่ set activeCheckin — รอ Admin อนุมัติก่อน
         showEmergencySuccess(mode);
+      } else if (data.outOfRange) {
+        // นอกรัศมีออฟฟิศ
+        const body = document.getElementById("body");
+        body.innerHTML = `
+          <div class="alert alert-err" style="white-space:pre-line">${data.msg}</div>
+          <button class="btn btn-retry" onclick="renderMain()">กลับหน้าหลัก</button>`;
       } else {
         showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
       }
