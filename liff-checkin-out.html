@@ -133,9 +133,7 @@ async function init() {
     }
 
     emp = data.emp;
-    // ไม่แสดงสถานะ Emergency ใน active card — รอ Admin อนุมัติก่อน
-    const ci = data.activeCheckin;
-    activeCheckin = (ci && ci.method === "Emergency") ? null : ci;
+    activeCheckin = data.activeCheckin;
 
     hide("loading");
     document.getElementById("app").style.display = "block";
@@ -401,7 +399,12 @@ async function submitEmergency(mode) {
       const data = await res.json();
 
       if (data.success) {
-        // ไม่ set activeCheckin — รอ Admin อนุมัติก่อน
+        // save activeCheckin เพื่อให้แสดงปุ่ม Check Out
+        if (mode === "checkin") {
+          activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
+        } else {
+          activeCheckin = null;
+        }
         showEmergencySuccess(mode);
       } else if (data.outOfRange) {
         // นอกรัศมีออฟฟิศ
