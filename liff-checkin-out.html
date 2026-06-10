@@ -162,19 +162,23 @@ function renderMain() {
 
   if (activeCheckin) {
     // มี Check In อยู่ → แสดง Check Out
+    const isOnSite = activeCheckin.mode === "onsite";
     body.innerHTML = `
       <div>
         <div class="sec-label">สถานะปัจจุบัน</div>
         <div class="active-card">
           <div class="active-badge">กำลังทำงาน</div>
           <div class="active-time">${activeCheckin.timeIn || "—"} น.</div>
-          <div class="active-sub">Check In แล้ว · ${activeCheckin.mode === "office" ? "Office" : "On Site"}</div>
+          <div class="active-sub">Check In แล้ว · ${isOnSite ? "On Site" : "Office"}</div>
           <div class="active-method">Method: ${activeCheckin.method || "WiFi Verified"}</div>
         </div>
       </div>
       <div class="sec-label">Check Out</div>
-      <button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
-      <button class="btn btn-emergency" onclick="showEmergencyOut()">Emergency Check Out</button>`;
+      ${isOnSite
+        ? `<button class="btn btn-checkout" onclick="startCheckOutOnSite()">Check Out On Site</button>`
+        : `<button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
+           <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>`
+      }`;
   } else {
     // ยังไม่ได้ Check In
     body.innerHTML = `
@@ -512,7 +516,113 @@ async function submitCheckInOnSite() {
   }
 }
 
-// ── CHECK OUT FLOW ───────────────────────────────────────────────
+// ── CHECK OUT ON SITE ────────────────────────────────────────────
+let onsiteCheckoutPhoto = null;
+let onsiteCheckoutGPS   = null;
+
+function startCheckOutOnSite() {
+  onsiteCheckoutPhoto = null;
+  onsiteCheckoutGPS   = null;
+
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="emergency-card" style="border-color:var(--blue)">
+      <div class="emergency-title" style="color:var(--blue)">Check Out On Site</div>
+      <div class="emergency-sub">กรุณาถ่ายรูปเพื่อยืนยันการ Check Out ค่ะ</div>
+    </div>
+
+    <div class="sec-label">ถ่ายรูปปัจจุบัน</div>
+    <div style="margin-bottom:14px">
+      <input type="file" id="onsite-out-photo" accept="image/*" capture="environment" style="display:none" onchange="onOnsiteOutPhoto(this)">
+      <button class="btn btn-retry" onclick="document.getElementById('onsite-out-photo').click()">ถ่ายรูป (ต้องถ่ายใหม่เท่านั้น)</button>
+      <div id="onsite-out-preview" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+    </div>
+
+    <div id="gps-out-status" class="alert alert-warn">กำลังดึง GPS...</div>
+    <div id="alert-box"></div>
+    <button class="btn btn-checkout" id="btn-onsite-out-submit" onclick="submitCheckOutOnSite()" disabled style="margin-top:12px">
+      Check Out On Site
+    </button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+
+  // ดึง GPS ทันที
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      onsiteCheckoutGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      const el = document.getElementById("gps-out-status");
+      if (el) { el.className = "alert alert-ok"; el.textContent = `GPS พร้อมแล้วค่ะ`; }
+      checkOnsiteOutReady();
+    },
+    err => {
+      const el = document.getElementById("gps-out-status");
+      if (el) { el.className = "alert alert-err"; el.textContent = "ดึง GPS ไม่ได้ค่ะ กรุณาเปิด Location"; }
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function onOnsiteOutPhoto(input) {
+  if (input.files && input.files[0]) {
+    onsiteCheckoutPhoto = input.files[0];
+    const el = document.getElementById("onsite-out-preview");
+    if (el) el.textContent = `รูปที่เลือก: ${input.files[0].name}`;
+    checkOnsiteOutReady();
+  }
+}
+
+function checkOnsiteOutReady() {
+  const btn = document.getElementById("btn-onsite-out-submit");
+  if (btn) btn.disabled = !(onsiteCheckoutPhoto && onsiteCheckoutGPS);
+}
+
+async function submitCheckOutOnSite() {
+  if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
+
+  const now     = new Date();
+  const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+  const hour    = now.getHours();
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const photoBase64 = e.target.result.split(",")[1];
+    showLoading("กำลัง Check Out On Site...");
+    try {
+      const res = await fetch(WEBAPP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify({
+          action: "attendanceCheckout",
+          userId,
+          timeOut,
+          lat: onsiteCheckoutGPS.lat,
+          lng: onsiteCheckoutGPS.lng,
+          photo: photoBase64,
+          checkoutMethod: "On Site"
+        })
+      });
+      const data = await res.json();
+
+      hide("loading");
+      document.getElementById("app").style.display = "block";
+
+      if (data.success) {
+        activeCheckin = null;
+        showSuccess("checkout", timeOut, hour);
+      } else {
+        renderMain();
+        showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+      }
+    } catch(err) {
+      hide("loading");
+      document.getElementById("app").style.display = "block";
+      renderMain();
+      showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    }
+  };
+  reader.readAsDataURL(onsiteCheckoutPhoto);
+}
+
+// ── CHECK OUT FLOW (Office) ───────────────────────────────────────────
 async function startCheckOut() {
   showPasswordScreen("checkout");
 }
