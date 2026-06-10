@@ -480,8 +480,9 @@ async function submitCheckInOnSite() {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify({
-        action: "onSiteCheckin",
+        action: "attendanceCheckin",
         userId,
+        mode: "onsite",
         lat: onsiteGPS.lat,
         lng: onsiteGPS.lng,
         projectName: project,
