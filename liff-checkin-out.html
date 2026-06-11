@@ -47,6 +47,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 .btn-checkin{background:var(--cream);color:var(--deep)}
 .btn-checkout{background:#434343;color:var(--off)}
 .btn-emergency{background:transparent;border:1.5px solid var(--border);color:var(--off);font-size:14px;padding:13px}
+.btn-contact{background:transparent;border:1.5px solid var(--cream);color:var(--cream);font-size:14px;padding:13px}
 .btn-retry{background:var(--mid);border:1.5px solid var(--border);color:var(--off);font-size:14px;padding:13px}
 .btn-late{background:var(--mid);border:1.5px solid var(--border);color:var(--off);font-size:15px}
 
@@ -175,7 +176,8 @@ function renderMain() {
       ${isOnSite
         ? `<button class="btn btn-checkout" onclick="startCheckOutOnSite()">Check Out On Site</button>`
         : `<button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
-           <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>`
+           <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
+           <button class="btn btn-contact" style="margin-top:8px" onclick="showContactAdmin()">ติดต่อ Admin / HR</button>`
       }`;
   } else {
     // ยังไม่ได้ Check In
@@ -694,6 +696,7 @@ function showCheckOutWifiError() {
     <div class="alert alert-warn">ไม่พบเครือข่ายบริษัทค่ะ<br>หากออกจากออฟฟิศแล้ว กรุณาติดต่อ HR/Admin</div>
     <button class="btn btn-retry" onclick="startCheckOut()">ลองอีกครั้ง</button>
     <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
+    <button class="btn btn-contact" style="margin-top:8px" onclick="showContactAdmin()">ติดต่อ Admin / HR</button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
 }
 
@@ -725,6 +728,65 @@ function showSuccess(type, time, hour) {
       <div class="status-sub" style="white-space:pre-line">${msg}</div>
     </div>
     <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
+}
+
+// ── ติดต่อ Admin/HR ──────────────────────────────────────────────
+function showContactAdmin() {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="emergency-card" style="border-color:var(--cream)">
+      <div class="emergency-title" style="color:var(--cream)">ติดต่อ Admin / HR</div>
+      <div class="emergency-sub">แจ้งเหตุผลที่ไม่สามารถ Check Out ได้ตามปกติค่ะ<br>Admin/HR จะตรวจสอบและติดต่อกลับทาง LINE</div>
+    </div>
+    <div id="alert-box"></div>
+    <textarea class="inp" id="contact-reason" rows="4"
+      placeholder="อธิบายสถานการณ์ เช่น ลืม Check Out / มีปัญหาระบบ / อยู่นอกพื้นที่..."
+      style="resize:none;line-height:1.6;font-size:14px"
+      oninput="document.getElementById('btn-contact-submit').disabled = this.value.trim().length < 5"></textarea>
+    <button class="btn btn-contact" id="btn-contact-submit" style="margin-top:10px" disabled
+      onclick="submitContactAdmin()">ส่งข้อความหา Admin / HR</button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+}
+
+async function submitContactAdmin() {
+  const reason = document.getElementById("contact-reason").value.trim();
+  if (!reason) return;
+
+  const btn = document.getElementById("btn-contact-submit");
+  btn.disabled = true;
+  btn.textContent = "กำลังส่ง...";
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "contactAdminHR",
+        userId,
+        reason,
+        timeNow: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const body = document.getElementById("body");
+      body.innerHTML = `
+        <div class="emergency-card" style="border-color:var(--green)">
+          <div class="emergency-title" style="color:var(--green)">ส่งข้อความสำเร็จ</div>
+          <div class="emergency-sub">Admin / HR ได้รับแจ้งแล้วค่ะ<br>รอการติดต่อกลับทาง LINE ได้เลยค่ะ</div>
+        </div>
+        <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
+    } else {
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+      btn.disabled = false;
+      btn.textContent = "ส่งข้อความหา Admin / HR";
+    }
+  } catch(err) {
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    btn.disabled = false;
+    btn.textContent = "ส่งข้อความหา Admin / HR";
+  }
 }
 
 function showEmergencySuccess(mode) {
