@@ -389,25 +389,8 @@ async function loadCalendar() {
     if (!data.success) { document.getElementById("cal-grid").innerHTML = `<div class="err-box" style="grid-column:span 7">${data.msg}</div>`; return; }
     allLeaveData = data.byPerson || {};
 
-    // สร้าง map วันที่ → [{nick, type}]
-    const dayMap = {};
-    Object.entries(data.byPerson || {}).forEach(([nick, p]) => {
-      p.requests.forEach(req => {
-        // dateRange เช่น "1 Jun 2026" หรือ "1–5 Jun 2026"
-        // วนวันจาก start ถึง end
-        const status = req.status || "";
-        if (status === "ไม่อนุมัติ") return;
-        // หาวันจาก Sheet โดยใช้ req.dateRange parse ไม่แน่นอน → ใช้วิธีง่ายกว่า
-        // เติม entry ตามวันใน dateRange string
-        const range = req.dateRange || "";
-        const days = parseDateRange(range, calYear);
-        days.forEach(d => {
-          if (!dayMap[d]) dayMap[d] = [];
-          dayMap[d].push({ nick, type: req.type });
-        });
-      });
-    });
-
+    // สร้าง dayMap แล้ว render ปฏิทิน
+    const dayMap = buildDayMap(allLeaveData);
     renderCalGrid(dayMap);
 
     // รายละเอียด
@@ -675,11 +658,43 @@ function openAttDetail(nick, date) {
 
 // ── Search/Filter ────────────────────────────────────────────────
 function filterLeaveList() {
-  const q = (document.getElementById("leave-search")?.value || "").toLowerCase();
+  const q = (document.getElementById("leave-search")?.value || "").toLowerCase().trim();
+
+  // filter list ด้านล่าง
   document.querySelectorAll("#leave-detail-list .person-row").forEach(el => {
     const name = el.querySelector(".person-name")?.textContent.toLowerCase() || "";
     el.style.display = (!q || name.includes(q)) ? "" : "none";
   });
+
+  // filter ปฏิทิน — re-render โดย filter เฉพาะพนักงานที่ค้นหา
+  if (!q) {
+    // ไม่มีคำค้น → แสดงทุกคน
+    const dayMap = buildDayMap(allLeaveData);
+    renderCalGrid(dayMap);
+  } else {
+    // มีคำค้น → filter เฉพาะคนที่ชื่อตรง
+    const filtered = {};
+    Object.entries(allLeaveData).forEach(([nick, p]) => {
+      if (nick.toLowerCase().includes(q)) filtered[nick] = p;
+    });
+    const dayMap = buildDayMap(filtered);
+    renderCalGrid(dayMap);
+  }
+}
+
+function buildDayMap(byPerson) {
+  const dayMap = {};
+  Object.entries(byPerson || {}).forEach(([nick, p]) => {
+    p.requests.forEach(req => {
+      if ((req.status || "") === "ไม่อนุมัติ") return;
+      const days = parseDateRange(req.dateRange || "", calYear);
+      days.forEach(d => {
+        if (!dayMap[d]) dayMap[d] = [];
+        dayMap[d].push({ nick, type: req.type });
+      });
+    });
+  });
+  return dayMap;
 }
 
 function filterQuotaList() {
