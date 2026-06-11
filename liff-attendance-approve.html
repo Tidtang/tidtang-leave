@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TIDTANG — Attendance Approve</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{--deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;--off:#EBE7E4;--cream:#C8B8A2;--muted:#666;--green:#4caf50;--red:#e03535;--amber:#e8a020;--blue:#3b82f6;--r:10px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh}
+.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--muted);letter-spacing:.1em}
+.header{background:var(--dark);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:10}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:2px}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:18px;font-weight:800}
+.tabs{display:flex;background:var(--dark);border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:12px 6px;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;text-align:center;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em}
+.tab.active{color:var(--cream);border-bottom-color:var(--cream)}
+.content{padding:16px;display:none}
+.content.active{display:block}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.req-card{background:var(--dark);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.req-card.type-emergency{border-color:rgba(232,160,32,.5)}
+.req-card.type-contact{border-color:rgba(200,184,162,.3)}
+.req-card.done{opacity:.55}
+.req-header{padding:12px 14px 0;display:flex;justify-content:space-between;align-items:center}
+.type-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;border-radius:12px;letter-spacing:.1em}
+.badge-emg-in{background:rgba(232,160,32,.2);color:var(--amber);border:1px solid rgba(232,160,32,.4)}
+.badge-emg-out{background:rgba(224,53,53,.2);color:var(--red);border:1px solid rgba(224,53,53,.4)}
+.badge-contact{background:rgba(200,184,162,.15);color:var(--cream);border:1px solid rgba(200,184,162,.3)}
+.badge-done-ok{background:rgba(76,175,80,.15);color:var(--green);border:1px solid rgba(76,175,80,.3)}
+.badge-done-no{background:rgba(224,53,53,.15);color:var(--red);border:1px solid rgba(224,53,53,.3)}
+.req-name{font-size:18px;font-weight:800;padding:8px 14px 0}
+.req-dept{font-size:11px;color:var(--muted);padding:2px 14px 10px;font-family:'IBM Plex Mono',monospace}
+.req-body{padding:0 14px 10px;display:flex;flex-direction:column;gap:7px}
+.req-row{display:flex;gap:10px;align-items:flex-start}
+.req-label{font-size:11px;color:var(--muted);width:72px;flex-shrink:0;padding-top:1px}
+.req-val{font-size:13px;font-family:'IBM Plex Mono',monospace}
+.req-reason{font-size:13px;line-height:1.6}
+.photo-wrap{padding:0 14px 10px}
+.photo-link{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(200,184,162,.1);border:1px solid rgba(200,184,162,.3);border-radius:8px;color:var(--cream);font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace}
+.req-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.btn-row{display:flex;gap:8px}
+.btn{padding:13px;border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex:1}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ok{background:var(--cream);color:var(--deep)}
+.btn-no{background:var(--mid);border:1.5px solid var(--border);color:var(--off)}
+.reply-area{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:12px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;resize:none;line-height:1.6}
+.reply-area:focus{outline:none;border-color:var(--cream)}
+.reply-area::placeholder{color:var(--muted)}
+.btn-send{background:var(--cream);color:var(--deep);width:100%;padding:13px;border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+.ref{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:0 14px 8px}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;line-height:1.8}
+.err-box{background:rgba(224,53,53,.1);border:1px solid var(--red);border-radius:8px;padding:10px 12px;font-size:12px;color:#fca5a5}
+.ok-box{background:rgba(76,175,80,.1);border:1px solid var(--green);border-radius:8px;padding:10px 12px;font-size:12px;color:#86efac}
+.cnt{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;background:var(--red);color:#fff;border-radius:50%;font-size:9px;font-weight:700;margin-left:3px;vertical-align:middle}
+.btn-refresh{padding:8px 14px;background:var(--mid);border:1px solid var(--border);border-radius:8px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="load-txt" id="load-txt">กำลังโหลด...</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-tag">TIDTANG STUDIO · ADMIN / HR</div>
+    <div class="header-row">
+      <div class="header-title">Attendance Approve</div>
+      <button class="btn-refresh" onclick="loadAll()">รีเฟรช</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">Emergency<span class="cnt" id="cnt-emg">0</span></div>
+    <div class="tab" onclick="switchTab(1)">ติดต่อ Admin/HR<span class="cnt" id="cnt-con">0</span></div>
+    <div class="tab" onclick="switchTab(2)">ดำเนินการแล้ว</div>
+  </div>
+  <div class="content active" id="tab-0">
+    <div class="sec-label">Emergency รอการอนุมัติ</div>
+    <div id="emg-list"></div>
+  </div>
+  <div class="content" id="tab-1">
+    <div class="sec-label">ขอความช่วยเหลือ Check Out</div>
+    <div id="con-list"></div>
+  </div>
+  <div class="content" id="tab-2">
+    <div class="sec-label">รายการที่ดำเนินการแล้ว</div>
+    <div id="done-list"></div>
+  </div>
+</div>
+
+<script>
+const LIFF_ID    = "2010134572-aaIB6Anr";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
+let userId = null;
+let allPending = [];
+
+async function init() {
+  try {
+    setLoad("เชื่อมต่อ Line...");
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    setLoad("ตรวจสอบสิทธิ์...");
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (!data.success || !data.emp) { setLoad("ไม่พบข้อมูลในระบบค่ะ"); return; }
+    if (!["Full Access","HR","Admin"].includes(data.emp.role)) { setLoad("ไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ"); return; }
+    hide("loading"); showEl("app");
+    await loadAll();
+  } catch(err) { setLoad("เกิดข้อผิดพลาด: " + err.message); }
+}
+
+async function loadAll() {
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getAttendancePending&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (!data.success) { document.getElementById("emg-list").innerHTML = `<div class="err-box">${data.msg}</div>`; return; }
+    allPending = data.pending || [];
+    renderAll();
+  } catch(err) { document.getElementById("emg-list").innerHTML = `<div class="err-box">${err.message}</div>`; }
+}
+
+function renderAll() {
+  const emgP = allPending.filter(p => p.category === "emergency" && p.status === "รอดำเนินการ");
+  const conP = allPending.filter(p => p.category === "contact"   && p.status === "รอดำเนินการ");
+  const done = allPending.filter(p => p.status !== "รอดำเนินการ");
+  document.getElementById("cnt-emg").textContent = emgP.length;
+  document.getElementById("cnt-con").textContent = conP.length;
+  document.getElementById("emg-list").innerHTML  = emgP.length ? emgP.map(cardEmg).join("") : `<div class="empty">ไม่มีรายการ Emergency รออนุมัติค่ะ</div>`;
+  document.getElementById("con-list").innerHTML  = conP.length ? conP.map(cardCon).join("") : `<div class="empty">ไม่มีรายการขอความช่วยเหลือค่ะ</div>`;
+  document.getElementById("done-list").innerHTML = done.length ? done.map(cardDone).join("") : `<div class="empty">ยังไม่มีรายการที่ดำเนินการแล้วค่ะ</div>`;
+}
+
+function cardEmg(p) {
+  const isIn = p.type === "checkin";
+  const lbl  = isIn ? "EMERGENCY CHECK IN" : "EMERGENCY CHECK OUT";
+  const cls  = isIn ? "badge-emg-in" : "badge-emg-out";
+  const photo = p.photoLink ? `<div class="photo-wrap"><a class="photo-link" href="${p.photoLink}" target="_blank">ดูรูปถ่ายหลักฐาน</a></div>` : "";
+  const rows = isIn
+    ? `<div class="req-row"><span class="req-label">เวลา</span><span class="req-val">${p.time||"—"} น.</span></div>
+       <div class="req-row"><span class="req-label">เหตุผล</span><span class="req-reason">${p.reason||"—"}</span></div>`
+    : `<div class="req-row"><span class="req-label">Check In</span><span class="req-val">${p.timeIn||"—"} น.</span></div>
+       <div class="req-row"><span class="req-label">Check Out</span><span class="req-val">${p.time||"—"} น.</span></div>
+       <div class="req-row"><span class="req-label">เหตุผล</span><span class="req-reason">${p.reason||"—"}</span></div>`;
+  return `<div class="req-card type-emergency" id="card-${p.id}">
+    <div class="req-header"><span class="type-badge ${cls}">${lbl}</span></div>
+    <div class="req-name">${p.empNick}</div>
+    <div class="req-dept">${p.empDept||"—"}</div>
+    <div class="req-body">${rows}</div>
+    ${photo}
+    <div class="ref">REF: ${p.id}</div>
+    <div class="req-footer">
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','approve')">Approve</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','decline')">Decline</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardCon(p) {
+  return `<div class="req-card type-contact" id="card-${p.id}">
+    <div class="req-header"><span class="type-badge badge-contact">CHECK OUT ASSISTANCE</span></div>
+    <div class="req-name">${p.empNick}</div>
+    <div class="req-dept">${p.empDept||"—"}</div>
+    <div class="req-body">
+      <div class="req-row"><span class="req-label">Check In</span><span class="req-val">${p.timeIn||"—"} น.</span></div>
+      <div class="req-row"><span class="req-label">แจ้งเมื่อ</span><span class="req-val">${p.time||"—"} น.</span></div>
+      <div class="req-row"><span class="req-label">เหตุผล</span><span class="req-reason">${p.reason||"—"}</span></div>
+    </div>
+    <div class="ref">REF: ${p.id}</div>
+    <div class="req-footer">
+      <textarea class="reply-area" id="reply-${p.id}" rows="3" placeholder="พิมพ์ข้อความตอบกลับหรือขอหลักฐานเพิ่มเติมค่ะ..."
+        oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
+      <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">ส่งข้อความหาพนักงาน</button>
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">ยืนยัน Check Out</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">ปฏิเสธ</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardDone(p) {
+  const lbl = p.category === "emergency" ? (p.type === "checkin" ? "EMG IN" : "EMG OUT") : "CONTACT";
+  const cls = (p.status === "อนุมัติ" || p.status.includes("ยืนยัน")) ? "badge-done-ok" : "badge-done-no";
+  return `<div class="req-card done">
+    <div class="req-header">
+      <span class="type-badge badge-contact">${lbl}</span>
+      <span class="type-badge ${cls}">${p.status}</span>
+    </div>
+    <div class="req-name">${p.empNick}</div>
+    <div class="req-dept">${p.empDept||"—"}</div>
+    <div class="req-body">
+      <div class="req-row"><span class="req-label">เวลา</span><span class="req-val">${p.time||"—"} น.</span></div>
+    </div>
+    <div class="ref">REF: ${p.id}</div>
+  </div>`;
+}
+
+async function doAction(id, empLineId, type, time, timeIn, decision, empNick) {
+  const card = document.getElementById(`card-${id}`);
+  const btns = card?.querySelectorAll(".btn");
+  btns?.forEach(b => b.disabled = true);
+  try {
+    const res  = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "approveAttendance", userId, id, empLineId, type, time, timeIn, decision, empNick })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const footer = card?.querySelector(".req-footer");
+      if (footer) footer.innerHTML = `<div class="${decision==="approve"?"ok-box":"err-box"}">${decision==="approve"?"อนุมัติแล้วค่ะ":"ปฏิเสธแล้วค่ะ"}</div>`;
+      card?.classList.add("done");
+      setTimeout(loadAll, 1500);
+    } else {
+      btns?.forEach(b => b.disabled = false);
+      const footer = card?.querySelector(".req-footer");
+      if (footer) { const e = document.createElement("div"); e.className="err-box"; e.textContent=data.msg||"เกิดข้อผิดพลาดค่ะ"; footer.prepend(e); setTimeout(()=>e.remove(),4000); }
+    }
+  } catch(err) { btns?.forEach(b => b.disabled = false); }
+}
+
+async function sendReply(id, empLineId) {
+  const ta  = document.getElementById(`reply-${id}`);
+  const btn = document.getElementById(`btn-r-${id}`);
+  const msg = ta?.value.trim();
+  if (!msg) return;
+  btn.disabled = true; btn.textContent = "กำลังส่ง...";
+  try {
+    const res  = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "replyToEmployee", userId, id, empLineId, message: msg })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const ok = document.createElement("div");
+      ok.className = "ok-box"; ok.textContent = "ส่งข้อความหาพนักงานแล้วค่ะ";
+      btn.parentElement.insertBefore(ok, ta);
+      ta.value = ""; btn.textContent = "ส่งแล้วค่ะ";
+    } else {
+      btn.disabled = false; btn.textContent = "ส่งข้อความหาพนักงาน";
+    }
+  } catch(err) { btn.disabled = false; btn.textContent = "ส่งข้อความหาพนักงาน"; }
+}
+
+function switchTab(i) {
+  document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",i===j));
+  document.querySelectorAll(".content").forEach((c,j)=>c.classList.toggle("active",i===j));
+}
+function setLoad(t){document.getElementById("load-txt").textContent=t}
+function hide(id){const e=document.getElementById(id);if(e)e.style.display="none"}
+function showEl(id){const e=document.getElementById(id);if(e)e.style.display="block"}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  function w(cb){if(typeof liff!=="undefined")cb();else setTimeout(()=>w(cb),100)}
+  w(init);
+});
+</script>
+</body>
+</html>
