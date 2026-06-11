@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TIDTANG — Verify</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{--deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;--off:#EBE7E4;--cream:#C8B8A2;--muted:#666;--green:#4caf50;--red:#e03535;--amber:#e8a020;--blue:#3b82f6;--r:10px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh}
+.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--muted);letter-spacing:.1em}
+.header{background:var(--dark);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:10}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:2px}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:18px;font-weight:800}
+.tabs{display:flex;background:var(--dark);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:11px 12px;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Mono',monospace}
+.tab.active{color:var(--cream);border-bottom-color:var(--cream)}
+.content{padding:16px;display:none}
+.content.active{display:block}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+
+/* Card */
+.card{background:var(--dark);border:1.5px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.card.type-emg-in{border-color:rgba(232,160,32,.5)}
+.card.type-emg-out{border-color:rgba(224,53,53,.4)}
+.card.type-contact{border-color:rgba(200,184,162,.3)}
+.card.type-noout{border-color:rgba(59,130,246,.3)}
+.card.type-onsite{border-color:rgba(76,175,80,.3)}
+.card.done{opacity:.55}
+
+.card-header{padding:12px 14px 0;display:flex;justify-content:space-between;align-items:center}
+.type-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:3px 8px;border-radius:12px;letter-spacing:.08em}
+.b-emg-in{background:rgba(232,160,32,.2);color:var(--amber);border:1px solid rgba(232,160,32,.4)}
+.b-emg-out{background:rgba(224,53,53,.2);color:var(--red);border:1px solid rgba(224,53,53,.4)}
+.b-contact{background:rgba(200,184,162,.15);color:var(--cream);border:1px solid rgba(200,184,162,.3)}
+.b-noout{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.b-onsite{background:rgba(76,175,80,.15);color:var(--green);border:1px solid rgba(76,175,80,.3)}
+.b-done-ok{background:rgba(76,175,80,.15);color:var(--green);border:1px solid rgba(76,175,80,.3)}
+.b-done-no{background:rgba(224,53,53,.15);color:var(--red);border:1px solid rgba(224,53,53,.3)}
+
+.card-name{font-size:18px;font-weight:800;padding:8px 14px 2px}
+.card-dept{font-size:11px;color:var(--muted);padding:0 14px 10px;font-family:'IBM Plex Mono',monospace}
+.card-body{padding:0 14px 10px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:10px;align-items:flex-start}
+.lbl{font-size:11px;color:var(--muted);width:80px;flex-shrink:0;padding-top:1px}
+.val{font-size:13px;font-family:'IBM Plex Mono',monospace}
+.reason-txt{font-size:13px;line-height:1.6}
+.photo-wrap{padding:0 14px 10px}
+.photo-link{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(200,184,162,.1);border:1px solid rgba(200,184,162,.3);border-radius:8px;color:var(--cream);font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace}
+.ref{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:0 14px 8px}
+
+/* Message box (Contact) */
+.msg-history{padding:0 14px 10px;display:flex;flex-direction:column;gap:6px}
+.msg-bubble{padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6}
+.msg-admin{background:rgba(200,184,162,.1);border:1px solid rgba(200,184,162,.2);color:var(--off)}
+.msg-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:3px}
+
+/* Footer actions */
+.card-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.btn-row{display:flex;gap:8px}
+.btn{padding:13px;border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex:1}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ok{background:var(--cream);color:var(--deep)}
+.btn-no{background:var(--mid);border:1.5px solid var(--border);color:var(--off)}
+.reply-area{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:12px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;resize:none;line-height:1.6}
+.reply-area:focus{outline:none;border-color:var(--cream)}
+.reply-area::placeholder{color:var(--muted)}
+.btn-send{background:var(--cream);color:var(--deep);width:100%;padding:13px;border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+
+.empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:13px;line-height:1.8}
+.err-box{background:rgba(224,53,53,.1);border:1px solid var(--red);border-radius:8px;padding:10px 12px;font-size:12px;color:#fca5a5;margin-bottom:8px}
+.ok-box{background:rgba(76,175,80,.1);border:1px solid var(--green);border-radius:8px;padding:10px 12px;font-size:12px;color:#86efac}
+.cnt{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;background:var(--red);color:#fff;border-radius:50%;font-size:9px;font-weight:700;margin-left:3px;vertical-align:middle}
+.btn-refresh{padding:8px 14px;background:var(--mid);border:1px solid var(--border);border-radius:8px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="load-txt" id="load-txt">กำลังโหลด...</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-tag">TIDTANG STUDIO · ADMIN / HR</div>
+    <div class="header-row">
+      <div class="header-title">Verify</div>
+      <button class="btn-refresh" onclick="loadAll()">รีเฟรช</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">Emergency<span class="cnt" id="cnt-emg">0</span></div>
+    <div class="tab" onclick="switchTab(1)">ติดต่อ Admin/HR<span class="cnt" id="cnt-con">0</span></div>
+    <div class="tab" onclick="switchTab(2)">No In-Out<span class="cnt" id="cnt-no">0</span></div>
+    <div class="tab" onclick="switchTab(3)">On Site<span class="cnt" id="cnt-os">0</span></div>
+    <div class="tab" onclick="switchTab(4)">ดำเนินการแล้ว</div>
+  </div>
+  <div class="content active" id="tab-0">
+    <div class="sec-label">Emergency Check In / Out รออนุมัติ</div>
+    <div id="emg-list"></div>
+  </div>
+  <div class="content" id="tab-1">
+    <div class="sec-label">ขอความช่วยเหลือ / พิมพ์คำร้อง</div>
+    <div id="con-list"></div>
+  </div>
+  <div class="content" id="tab-2">
+    <div class="sec-label">No In-Out รอชี้แจง</div>
+    <div id="no-list"></div>
+  </div>
+  <div class="content" id="tab-3">
+    <div class="sec-label">On Site รอ Verify</div>
+    <div id="os-list"></div>
+  </div>
+  <div class="content" id="tab-4">
+    <div class="sec-label">ดำเนินการแล้ว</div>
+    <div id="done-list"></div>
+  </div>
+</div>
+
+<script>
+// ── ต้องสร้าง LIFF ID ใหม่ใน LINE Developers ──
+const LIFF_ID    = "2010134572-BE6BdTg6"; // ชั่วคราว → เปลี่ยนหลังสร้าง LIFF ใหม่
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
+let userId = null;
+let allItems = [];
+
+async function init() {
+  try {
+    setLoad("เชื่อมต่อ Line...");
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    setLoad("ตรวจสอบสิทธิ์...");
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (!data.success || !data.emp) { setLoad("ไม่พบข้อมูลในระบบค่ะ"); return; }
+    if (!["Full Access","HR","Admin"].includes(data.emp.role)) { setLoad("ไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ (Admin/HR เท่านั้น)"); return; }
+    hide("loading"); showEl("app");
+    await loadAll();
+  } catch(err) { setLoad("เกิดข้อผิดพลาด: " + err.message); }
+}
+
+async function loadAll() {
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getVerifyPending&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (!data.success) {
+      document.getElementById("emg-list").innerHTML = `<div class="err-box">${data.msg || "โหลดไม่สำเร็จค่ะ"}</div>`;
+      return;
+    }
+    allItems = data.items || [];
+    renderAll();
+  } catch(err) {
+    document.getElementById("emg-list").innerHTML = `<div class="err-box">${err.message}</div>`;
+  }
+}
+
+function renderAll() {
+  const emg  = allItems.filter(p => p.category === "emergency" && p.status === "รอดำเนินการ");
+  const con  = allItems.filter(p => p.category === "contact"   && p.status === "รอดำเนินการ");
+  const no   = allItems.filter(p => p.category === "noout"     && p.status === "รอดำเนินการ");
+  const os   = allItems.filter(p => p.category === "onsite"    && p.status === "รอดำเนินการ");
+  const done = allItems.filter(p => p.status !== "รอดำเนินการ");
+
+  document.getElementById("cnt-emg").textContent = emg.length;
+  document.getElementById("cnt-con").textContent = con.length;
+  document.getElementById("cnt-no").textContent  = no.length;
+  document.getElementById("cnt-os").textContent  = os.length;
+
+  document.getElementById("emg-list").innerHTML  = emg.length  ? emg.map(cardEmg).join("")  : `<div class="empty">ไม่มีรายการ Emergency รอค่ะ</div>`;
+  document.getElementById("con-list").innerHTML  = con.length  ? con.map(cardCon).join("")  : `<div class="empty">ไม่มีรายการติดต่อ Admin/HR ค่ะ</div>`;
+  document.getElementById("no-list").innerHTML   = no.length   ? no.map(cardNoOut).join("") : `<div class="empty">ไม่มีรายการ No In-Out ค่ะ</div>`;
+  document.getElementById("os-list").innerHTML   = os.length   ? os.map(cardOnSite).join(""): `<div class="empty">ไม่มีรายการ On Site รอ Verify ค่ะ</div>`;
+  document.getElementById("done-list").innerHTML = done.length ? done.map(cardDone).join(""): `<div class="empty">ยังไม่มีรายการที่ดำเนินการแล้วค่ะ</div>`;
+}
+
+// ── Card renderers ────────────────────────────────────────────────
+function cardEmg(p) {
+  const isIn = p.type === "checkin";
+  const lbl  = isIn ? "EMERGENCY CHECK IN" : "EMERGENCY CHECK OUT";
+  const cls  = isIn ? "b-emg-in" : "b-emg-out";
+  const cardCls = isIn ? "type-emg-in" : "type-emg-out";
+  const photo = p.photoLink ? `<div class="photo-wrap"><a class="photo-link" href="${p.photoLink}" target="_blank">ดูรูปถ่ายหลักฐาน</a></div>` : "";
+  const rows = isIn
+    ? `<div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
+       <div class="row"><span class="lbl">เวลา</span><span class="val">${p.time||"—"} น.</span></div>
+       <div class="row"><span class="lbl">เหตุผล</span><span class="reason-txt">${p.reason||"—"}</span></div>`
+    : `<div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
+       <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
+       <div class="row"><span class="lbl">Check Out</span><span class="val">${p.time||"—"} น.</span></div>
+       <div class="row"><span class="lbl">เหตุผล</span><span class="reason-txt">${p.reason||"—"}</span></div>`;
+  return `<div class="card ${cardCls}" id="card-${p.id}">
+    <div class="card-header"><span class="type-badge ${cls}">${lbl}</span></div>
+    <div class="card-name">${p.empNick}</div>
+    <div class="card-dept">${p.empDept||"—"}</div>
+    <div class="card-body">${rows}</div>
+    ${photo}
+    <div class="ref">REF: ${p.id}</div>
+    <div class="card-footer">
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','approve')">Approve</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','decline')">Decline</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardCon(p) {
+  return `<div class="card type-contact" id="card-${p.id}">
+    <div class="card-header"><span class="type-badge b-contact">CHECK OUT ASSISTANCE</span></div>
+    <div class="card-name">${p.empNick}</div>
+    <div class="card-dept">${p.empDept||"—"}</div>
+    <div class="card-body">
+      <div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
+      <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
+      <div class="row"><span class="lbl">แจ้งเมื่อ</span><span class="val">${p.time||"—"} น.</span></div>
+      <div class="row"><span class="lbl">คำร้อง</span><span class="reason-txt">${p.reason||"—"}</span></div>
+    </div>
+    <div class="ref">REF: ${p.id}</div>
+    <div class="card-footer">
+      <textarea class="reply-area" id="reply-${p.id}" rows="3"
+        placeholder="พิมพ์ข้อความตอบกลับพนักงาน หรือขอหลักฐานเพิ่มเติมค่ะ..."
+        oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
+      <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">ส่งข้อความหาพนักงาน</button>
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">ยืนยัน Check Out</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">ปฏิเสธ</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardNoOut(p) {
+  return `<div class="card type-noout" id="card-${p.id}">
+    <div class="card-header"><span class="type-badge b-noout">NO IN-OUT</span></div>
+    <div class="card-name">${p.empNick}</div>
+    <div class="card-dept">${p.empDept||"—"}</div>
+    <div class="card-body">
+      <div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
+      <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
+      <div class="row"><span class="lbl">หมายเหตุ</span><span class="reason-txt">${p.reason||"No Out (Auto)"}</span></div>
+    </div>
+    <div class="ref">REF: ${p.id}</div>
+    <div class="card-footer">
+      <textarea class="reply-area" id="reply-${p.id}" rows="2"
+        placeholder="ระบุเวลา Check Out หรือหมายเหตุค่ะ..."
+        oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
+      <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">แจ้งพนักงาน</button>
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">รับทราบ / แก้ไขแล้ว</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">คง No Out</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardOnSite(p) {
+  return `<div class="card type-onsite" id="card-${p.id}">
+    <div class="card-header"><span class="type-badge b-onsite">ON SITE</span></div>
+    <div class="card-name">${p.empNick}</div>
+    <div class="card-dept">${p.empDept||"—"}</div>
+    <div class="card-body">
+      <div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
+      <div class="row"><span class="lbl">โครงการ</span><span class="val">${p.project||"—"}</span></div>
+      <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
+      <div class="row"><span class="lbl">Check Out</span><span class="val">${p.time||"—"} น.</span></div>
+      ${p.mapsLink ? `<div class="row"><span class="lbl">GPS</span><a class="photo-link" style="font-size:11px" href="${p.mapsLink}" target="_blank">ดูแผนที่</a></div>` : ""}
+    </div>
+    <div class="ref">REF: ${p.id}</div>
+    <div class="card-footer">
+      <div class="btn-row">
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">Verify</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">ปฏิเสธ</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cardDone(p) {
+  const lblMap = { emergency:"EMG", contact:"CONTACT", noout:"NO OUT", onsite:"ON SITE" };
+  const lbl = lblMap[p.category] || p.category;
+  const cls = (p.status.includes("อนุมัติ")||p.status.includes("ยืนยัน")||p.status.includes("รับทราบ")||p.status.includes("Verify")) ? "b-done-ok" : "b-done-no";
+  return `<div class="card done">
+    <div class="card-header">
+      <span class="type-badge b-contact">${lbl}</span>
+      <span class="type-badge ${cls}">${p.status}</span>
+    </div>
+    <div class="card-name">${p.empNick}</div>
+    <div class="card-dept">${p.empDept||"—"} · ${p.date||""}</div>
+    <div class="ref">REF: ${p.id}</div>
+  </div>`;
+}
+
+// ── Actions ──────────────────────────────────────────────────────
+async function doAction(id, empLineId, type, time, timeIn, decision, empNick) {
+  const card = document.getElementById(`card-${id}`);
+  const btns = card?.querySelectorAll(".btn");
+  btns?.forEach(b => b.disabled = true);
+  try {
+    const res  = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "approveAttendance", userId, id, empLineId, type, time, timeIn, decision, empNick })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const footer = card?.querySelector(".card-footer");
+      if (footer) footer.innerHTML = `<div class="${decision==="approve"?"ok-box":"err-box"}">${decision==="approve"?"ดำเนินการแล้วค่ะ":"ปฏิเสธแล้วค่ะ"}</div>`;
+      card?.classList.add("done");
+      setTimeout(loadAll, 1500);
+    } else {
+      btns?.forEach(b => b.disabled = false);
+      const footer = card?.querySelector(".card-footer");
+      if (footer) { const e = document.createElement("div"); e.className="err-box"; e.textContent=data.msg||"เกิดข้อผิดพลาดค่ะ"; footer.prepend(e); setTimeout(()=>e.remove(),4000); }
+    }
+  } catch(err) { btns?.forEach(b => b.disabled = false); }
+}
+
+async function sendReply(id, empLineId) {
+  const ta  = document.getElementById(`reply-${id}`);
+  const btn = document.getElementById(`btn-r-${id}`);
+  const msg = ta?.value.trim();
+  if (!msg) return;
+  btn.disabled = true; btn.textContent = "กำลังส่ง...";
+  try {
+    const res  = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "replyToEmployee", userId, id, empLineId, message: msg })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const ok = document.createElement("div");
+      ok.className = "ok-box"; ok.textContent = "ส่งข้อความหาพนักงานแล้วค่ะ";
+      btn.parentElement.insertBefore(ok, ta);
+      ta.value = ""; btn.textContent = "ส่งแล้วค่ะ";
+    } else { btn.disabled = false; btn.textContent = "ส่งข้อความหาพนักงาน"; }
+  } catch(err) { btn.disabled = false; btn.textContent = "ส่งข้อความหาพนักงาน"; }
+}
+
+function switchTab(i) {
+  document.querySelectorAll(".tab").forEach((t,j)=>t.classList.toggle("active",i===j));
+  document.querySelectorAll(".content").forEach((c,j)=>c.classList.toggle("active",i===j));
+}
+function setLoad(t){document.getElementById("load-txt").textContent=t}
+function hide(id){const e=document.getElementById(id);if(e)e.style.display="none"}
+function showEl(id){const e=document.getElementById(id);if(e)e.style.display="block"}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  function w(cb){if(typeof liff!=="undefined")cb();else setTimeout(()=>w(cb),100)}
+  w(init);
+});
+</script>
+</body>
+</html>

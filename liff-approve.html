@@ -311,6 +311,11 @@ let currentTab = "pending";
 let currentInfoReqId = null;
 let currentInfoEmpId = null;
 
+// บทบาทที่กดอนุมัติได้
+const CAN_APPROVE_ROLES  = ["Full Access", "Senior", "HR"];
+// บทบาทที่ดูได้อย่างเดียว
+const VIEW_ONLY_ROLES    = ["Admin"];
+
 const TYPE_CONFIG = {
   "ลาป่วย":          { cls: "type-sick",     label: "ลาป่วย" },
   "ลาพักร้อน":       { cls: "type-vacation", label: "ลาพักร้อน" },
@@ -350,10 +355,15 @@ async function init() {
 
     approver = data.emp;
 
-    const canEnter = ["Full Access","Senior","HR","Admin"].includes(approver.role);
+    const canEnter = [...CAN_APPROVE_ROLES, ...VIEW_ONLY_ROLES].includes(approver.role);
     if (!canEnter) {
       showError(`คุณ${approver.nick} (${approver.role})\nไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ`);
       return;
+    }
+
+    // อัปเดต header ถ้าเป็น view-only
+    if (VIEW_ONLY_ROLES.includes(approver.role)) {
+      document.getElementById("header-title-text").textContent = "คำขอการลา (ดูข้อมูล)";
     }
 
     await loadRequests();
@@ -467,11 +477,17 @@ function buildCard(req, idx) {
     (!isPending ? (req.status === "อนุมัติ" ? " approved" : req.status === "ไม่อนุมัติ" ? " rejected" : " info-req") : "");
   card.id = `card-${idx}`;
 
-  const actionHtml = isPending && req.canApprove ? `
+  const isViewOnly = VIEW_ONLY_ROLES.includes(approver?.role);
+
+  const actionHtml = isPending && req.canApprove && !isViewOnly ? `
     <div class="req-actions">
       <button class="btn-action btn-approve" onclick="approve(${idx})">อนุมัติ</button>
       <button class="btn-action btn-reject"  onclick="reject(${idx})">ปฏิเสธ</button>
       <button class="btn-action btn-info"    onclick="requestInfo(${idx})"></button>
+    </div>`
+    : isPending && isViewOnly ? `
+    <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--muted);font-size:12px">
+      ดูข้อมูลอย่างเดียว · รออนุมัติจาก ${(req.approvers||[]).join(", ")}
     </div>`
     : isPending && !req.canApprove ? `
     <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--cream)">
