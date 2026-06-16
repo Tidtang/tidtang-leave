@@ -180,13 +180,6 @@ html,body{
 .success-icon{font-size:56px;margin-bottom:20px;}
 .success-title{font-size:22px;font-weight:800;color:var(--deep);margin-bottom:8px;}
 .success-sub{font-size:13px;color:var(--warm-tan);line-height:1.7;}
-.success-status{
-  margin-top:18px;padding:10px 20px;border-radius:20px;
-  font-size:12px;font-weight:700;letter-spacing:.05em;
-  font-family:'IBM Plex Mono',monospace;
-}
-.success-status.pending{background:rgba(232,160,32,.12);color:#b8780f;border:1px solid rgba(232,160,32,.35);}
-.success-status.auto{background:rgba(76,175,80,.12);color:#2e7d32;border:1px solid rgba(76,175,80,.35);}
 .success-close{
   margin-top:32px;padding:14px 32px;border:none;border-radius:2px;
   background:var(--deep);color:var(--off-white);
@@ -247,8 +240,6 @@ html,body{
 <div class="success-screen" id="success-screen">
   <div class="success-icon" id="success-icon"></div>
   <div class="success-title" id="success-title">ส่งคำขอแล้วค่ะ</div>
-  <div class="success-sub" id="success-sub">รอผู้อนุมัติตรวจสอบ<br>ระบบจะแจ้งผลทาง Line ค่ะ</div>
-  <div class="success-status" id="success-status">สถานะ: รออนุมัติ</div>
   <button class="success-close" onclick="closeLiff()">ปิดหน้านี้</button>
 </div>
 
@@ -748,19 +739,6 @@ function showSuccess(msg, type) {
   const auto = type === 'ลาป่วย';
   document.getElementById('success-icon').textContent = icons[type] || '';
   document.getElementById('success-title').textContent = auto ? 'บันทึกแล้วค่ะ' : 'ส่งคำขอแล้วค่ะ';
-  document.getElementById('success-sub').textContent = auto
-    ? 'ลาป่วยบันทึกอัตโนมัติ\nขึ้น Calendar แล้วค่ะ'
-    : msg || 'รอผู้อนุมัติตรวจสอบ\nระบบจะแจ้งผลทาง Line ค่ะ';
-
-  const statusEl = document.getElementById('success-status');
-  if (auto) {
-    statusEl.textContent = 'สถานะ: อนุมัติอัตโนมัติ';
-    statusEl.className = 'success-status auto';
-  } else {
-    statusEl.textContent = 'สถานะ: รออนุมัติ';
-    statusEl.className = 'success-status pending';
-  }
-
   document.getElementById('success-screen').classList.add('show');
 }
 
