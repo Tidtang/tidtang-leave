@@ -789,6 +789,7 @@ async function submitForgotCheckOut() {
     const data = await res.json();
 
     if (data.success) {
+      const body = document.getElementById("body");
       body.innerHTML = `
         <div class="emergency-card" style="border-color:var(--green)">
           <div class="emergency-title" style="color:var(--green)">บันทึกแล้วค่ะ</div>
@@ -817,11 +818,16 @@ function showContactAdmin() {
     <div id="alert-box"></div>
     <textarea class="inp" id="contact-reason" rows="4"
       placeholder="อธิบายสถานการณ์ เช่น ลืม Check Out / มีปัญหาระบบ / อยู่นอกพื้นที่..."
-      style="resize:none;line-height:1.6;font-size:14px"
-      oninput="checkContactReady()"></textarea>
+      style="resize:none;line-height:1.6;font-size:14px"></textarea>
     <button class="btn btn-contact" id="btn-contact-submit" style="margin-top:10px" disabled
       onclick="submitContactAdmin()">ส่งข้อความหา Admin / HR</button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+
+  // ใช้ event delegation หลัง inject HTML เสร็จ (ไม่ใช้ oninput inline เพราะ iOS ไม่ trigger ได้)
+  setTimeout(() => {
+    const ta = document.getElementById("contact-reason");
+    if (ta) ta.addEventListener("input", checkContactReady);
+  }, 100);
 }
 
 function checkContactReady() {
