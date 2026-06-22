@@ -177,69 +177,45 @@ function renderMain() {
         ? `<button class="btn btn-checkout" onclick="startCheckOutOnSite()">Check Out On Site</button>`
         : `<button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
            <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
+           <button class="btn btn-retry" style="margin-top:8px" onclick="forgotCheckOut()">ลืม Check Out</button>
            <button class="btn btn-contact" style="margin-top:8px" onclick="showContactAdmin()">ติดต่อ Admin / HR</button>`
-      }`;
+      }
+      <button class="btn btn-retry" style="margin-top:12px" onclick="showMyHistory()">ประวัติเวลาเข้า-ออกงาน</button>`;
   } else {
     // ยังไม่ได้ Check In
     body.innerHTML = `
       <div class="sec-label">Check In</div>
       <button class="btn btn-checkin" style="margin-bottom:10px" onclick="startCheckIn()">Check In Office</button>
       <button class="btn btn-late" onclick="startCheckInOnSite()">Check In On Site</button>
-      <div class="divider" style="margin-top:10px"></div>`;
+      <div class="divider" style="margin-top:10px"></div>
+      <button class="btn btn-retry" style="margin-top:4px" onclick="showMyHistory()">ประวัติเวลาเข้า-ออกงาน</button>`;
   }
 }
 
 // ── CHECK IN FLOW ────────────────────────────────────────────────
 async function startCheckIn() {
-  showPasswordScreen("checkin");
+  await verifyAndCheckIn();
 }
 
-function showPasswordScreen(mode) {
-  const body = document.getElementById("body");
-  body.innerHTML = `
-    <div class="pwd-card">
-      <div class="pwd-title">ยืนยันเครือข่ายบริษัท</div>
-      <div class="pwd-sub">กรอกรหัส WiFi ออฟฟิศเพื่อยืนยันว่าคุณอยู่ที่บริษัทค่ะ</div>
-      <input class="inp" id="pwd-inp" type="password" placeholder="รหัส WiFi ออฟฟิศ" autocomplete="off">
-
-    </div>
-    <div id="alert-box"></div>
-    <button class="btn btn-checkin" onclick="submitPassword('${mode}')">ยืนยัน</button>
-    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyIn()">Emergency Check In</button>
-    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
-
-  document.getElementById("pwd-inp").focus();
-}
-
-async function submitPassword(mode) {
-  const pwd = document.getElementById("pwd-inp").value.trim();
-  if (!pwd) { showAlert("err", "กรุณากรอกรหัส WiFi ค่ะ"); return; }
-
-  if (mode === "checkin") {
-    await verifyAndCheckIn(pwd);
-  } else {
-    await verifyAndCheckOut(pwd);
+async function getPublicIP() {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip || null;
+  } catch(e) {
+    return null;
   }
 }
 
-async function verifyAndCheckIn(pwd) {
-  showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
+async function verifyAndCheckIn() {
+  showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
 
   try {
     const now = new Date();
     const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
-    // ดึง GPS ก่อนส่ง
-    let lat = null, lng = null;
-    try {
-      const pos = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject,
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-      });
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch(gpsErr) {
-      // GPS ไม่ได้ → block ทันที ไม่อนุญาตให้ผ่าน
+    const publicIp = await getPublicIP();
+    if (!publicIp) {
       hide("loading");
       document.getElementById("app").style.display = "block";
       showWifiError();
@@ -252,10 +228,9 @@ async function verifyAndCheckIn(pwd) {
       body: JSON.stringify({
         action: "attendanceCheckin",
         userId, mode: "office",
-        wifiPwd: pwd,
-        lat, lng,
+        publicIp,
         timeIn,
-        method: "WiFi+GPS"
+        method: "WiFi"
       })
     });
     const data = await res.json();
@@ -266,8 +241,7 @@ async function verifyAndCheckIn(pwd) {
     if (data.success) {
       activeCheckin = { timeIn, mode: "office", method: "WiFi Verified" };
       showSuccess("checkin", timeIn);
-    } else if (data.wrongPwd) {
-      // รหัสผิด
+    } else if (data.wrongWifi) {
       showWifiError();
     } else {
       renderMain();
@@ -284,8 +258,8 @@ async function verifyAndCheckIn(pwd) {
 function showWifiError() {
   const body = document.getElementById("body");
   body.innerHTML = `
-    <div class="alert alert-warn">ไม่พบเครือข่ายบริษัทค่ะ<br>หากคุณอยู่ที่ออฟฟิศและพบปัญหาเครือข่าย กรุณาเลือก "Emergency Check In"</div>
-    <button class="btn btn-retry" onclick="showPasswordScreen('checkin')">ลองอีกครั้ง</button>
+    <div class="alert alert-warn">ไม่ได้เชื่อมต่อ WiFi ออฟฟิศค่ะ<br>กรุณาเชื่อมต่อ WiFi ออฟฟิศแล้วลองใหม่ หรือใช้ "Emergency Check In" หากเครือข่ายมีปัญหา</div>
+    <button class="btn btn-retry" onclick="startCheckIn()">ลองอีกครั้ง</button>
     <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyIn()">Emergency Check In</button>`;
 }
 
@@ -372,56 +346,121 @@ function checkEmergencyReady() {
   if (btn) btn.disabled = !(selectedReason && emergencyPhoto);
 }
 
+// ── Watermark timestamp + GPS ลงบนรูปจริง ──────────────────────
+function watermarkPhoto(file, gps) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = reject;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width  = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      const now = new Date();
+      const dateStr = `${now.getDate().toString().padStart(2,"0")}/${(now.getMonth()+1).toString().padStart(2,"0")}/${now.getFullYear()+543}`;
+      const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+      const gpsStr  = gps ? `GPS: ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}` : "GPS: ไม่พบตำแหน่ง";
+
+      const fontSize = Math.max(24, Math.round(canvas.width * 0.038));
+      const padding  = Math.round(fontSize * 0.7);
+      const lineH    = Math.round(fontSize * 1.5);
+      const boxH     = lineH * 3 + padding * 2;
+
+      // พื้นหลังทึบด้านล่างรูป
+      ctx.fillStyle = "rgba(0,0,0,0.72)";
+      ctx.fillRect(0, canvas.height - boxH, canvas.width, boxH);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textBaseline = "top";
+
+      // เพิ่ม shadow ให้ข้อความอ่านง่ายขึ้น
+      ctx.shadowColor = "rgba(0,0,0,0.9)";
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+
+      let y = canvas.height - boxH + padding;
+      ctx.fillText(`TIDTANG STUDIO · Emergency`, padding, y);
+      y += lineH;
+      ctx.fillText(`${dateStr}  ${timeStr}`, padding, y);
+      y += lineH;
+      ctx.fillText(gpsStr, padding, y);
+
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, "image/jpeg", 0.85);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 async function submitEmergency(mode) {
   if (!selectedReason || !emergencyPhoto) return;
+
+  const btn = document.getElementById("btn-emergency-submit");
+  if (btn) { btn.disabled = true; btn.textContent = "กำลังประมวลผลรูป..."; }
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
-  // Convert photo to base64
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const photoBase64 = e.target.result.split(",")[1];
+  try {
+    // ประทับ timestamp+GPS ลงรูปก่อนส่ง
+    const watermarkedBlob = await watermarkPhoto(emergencyPhoto, emergencyGPS);
 
-    try {
-      const res = await fetch(WEBAPP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
-        body: JSON.stringify({
-          action: mode === "checkin" ? "emergencyCheckin" : "emergencyCheckout",
-          userId,
-          time: timeStr,
-          reason: selectedReason,
-          lat: emergencyGPS?.lat || null,
-          lng: emergencyGPS?.lng || null,
-          photo: photoBase64,
-          method: "Emergency"
-        })
-      });
-      const data = await res.json();
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const photoBase64 = e.target.result.split(",")[1];
 
-      if (data.success) {
-        // save activeCheckin เพื่อให้แสดงปุ่ม Check Out
-        if (mode === "checkin") {
-          activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
+      try {
+        const res = await fetch(WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify({
+            action: mode === "checkin" ? "emergencyCheckin" : "emergencyCheckout",
+            userId,
+            time: timeStr,
+            reason: selectedReason,
+            lat: emergencyGPS?.lat || null,
+            lng: emergencyGPS?.lng || null,
+            photo: photoBase64,
+            method: "Emergency"
+          })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (mode === "checkin") {
+            activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
+          } else {
+            activeCheckin = null;
+          }
+          showEmergencySuccess(mode);
+        } else if (data.outOfRange) {
+          const body = document.getElementById("body");
+          body.innerHTML = `
+            <div class="alert alert-err" style="white-space:pre-line">${data.msg}</div>
+            <button class="btn btn-retry" onclick="renderMain()">กลับหน้าหลัก</button>`;
         } else {
-          activeCheckin = null;
+          showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+          if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
         }
-        showEmergencySuccess(mode);
-      } else if (data.outOfRange) {
-        // นอกรัศมีออฟฟิศ
-        const body = document.getElementById("body");
-        body.innerHTML = `
-          <div class="alert alert-err" style="white-space:pre-line">${data.msg}</div>
-          <button class="btn btn-retry" onclick="renderMain()">กลับหน้าหลัก</button>`;
-      } else {
-        showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+      } catch(err) {
+        showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+        if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
       }
-    } catch(err) {
-      showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
-    }
-  };
-  reader.readAsDataURL(emergencyPhoto);
+    };
+    reader.readAsDataURL(watermarkedBlob);
+  } catch(err) {
+    showAlertInBody("err", "เกิดข้อผิดพลาดในการประมวลผลรูป: " + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
+  }
 }
 
 // ── CHECK IN ON SITE ────────────────────────────────────────────
@@ -629,27 +668,18 @@ async function submitCheckOutOnSite() {
 
 // ── CHECK OUT FLOW (Office) ───────────────────────────────────────────
 async function startCheckOut() {
-  showPasswordScreen("checkout");
+  await verifyAndCheckOut();
 }
 
-async function verifyAndCheckOut(pwd) {
-  showLoading("กำลังตรวจสอบเครือข่ายและตำแหน่ง...");
+async function verifyAndCheckOut() {
+  showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
   try {
     const now = new Date();
     const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
     const hour = now.getHours();
 
-    // ดึง GPS
-    let lat = null, lng = null;
-    try {
-      const pos = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject,
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-      });
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch(gpsErr) {
-      // GPS ไม่ได้ → block ทันที
+    const publicIp = await getPublicIP();
+    if (!publicIp) {
       hide("loading");
       document.getElementById("app").style.display = "block";
       showCheckOutWifiError();
@@ -663,9 +693,8 @@ async function verifyAndCheckOut(pwd) {
         action: "attendanceCheckout",
         userId,
         timeOut,
-        lat, lng,
-        wifiPwd: pwd,
-        checkoutMethod: "WiFi+GPS"
+        publicIp,
+        checkoutMethod: "WiFi"
       })
     });
     const data = await res.json();
@@ -676,7 +705,7 @@ async function verifyAndCheckOut(pwd) {
     if (data.success) {
       activeCheckin = null;
       showSuccess("checkout", timeOut, hour);
-    } else if (data.wrongPwd) {
+    } else if (data.wrongWifi) {
       showCheckOutWifiError();
     } else {
       renderMain();
@@ -693,11 +722,9 @@ async function verifyAndCheckOut(pwd) {
 function showCheckOutWifiError() {
   const body = document.getElementById("body");
   body.innerHTML = `
-    <div class="alert alert-warn">ไม่พบเครือข่ายบริษัทค่ะ<br>หากออกจากออฟฟิศแล้ว กรุณาติดต่อ HR/Admin</div>
+    <div class="alert alert-warn">ไม่ได้เชื่อมต่อ WiFi ออฟฟิศค่ะ<br>หากออกจากออฟฟิศแล้ว กรุณาใช้ "Emergency Check Out" หรือติดต่อ HR/Admin</div>
     <button class="btn btn-retry" onclick="startCheckOut()">ลองอีกครั้ง</button>
-    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
-    <button class="btn btn-contact" style="margin-top:8px" onclick="showContactAdmin()">ติดต่อ Admin / HR</button>
-    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>`;
 }
 
 // ── SUCCESS SCREENS ──────────────────────────────────────────────
@@ -731,6 +758,55 @@ function showSuccess(type, time, hour) {
 }
 
 // ── ติดต่อ Admin/HR ──────────────────────────────────────────────
+async function forgotCheckOut() {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="emergency-card" style="border-color:var(--warm-tan)">
+      <div class="emergency-title" style="color:var(--warm-tan)">ลืม Check Out</div>
+      <div class="emergency-sub">ระบบจะบันทึกว่าคุณไม่ได้ Check Out ค่ะ<br>จะปรากฏเป็น "No In-Out" ใน Sheet สำหรับ Admin/HR ตรวจสอบ</div>
+    </div>
+    <div id="alert-box"></div>
+    <button class="btn btn-checkout" id="btn-forgot-submit" style="margin-top:12px"
+      onclick="submitForgotCheckOut()">ยืนยัน — ฉันลืม Check Out จริงๆ</button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+}
+
+async function submitForgotCheckOut() {
+  const btn = document.getElementById("btn-forgot-submit");
+  btn.disabled = true;
+  btn.textContent = "กำลังบันทึก...";
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "forgotCheckOut",
+        userId,
+        timeNow: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      body.innerHTML = `
+        <div class="emergency-card" style="border-color:var(--green)">
+          <div class="emergency-title" style="color:var(--green)">บันทึกแล้วค่ะ</div>
+          <div class="emergency-sub">ระบบบันทึก No In-Out แล้ว<br>Admin/HR จะเห็นรายการนี้ในหน้า Verify ค่ะ</div>
+        </div>
+        <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
+    } else {
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+      btn.disabled = false;
+      btn.textContent = "ยืนยัน — ฉันลืม Check Out จริงๆ";
+    }
+  } catch(err) {
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    btn.disabled = false;
+    btn.textContent = "ยืนยัน — ฉันลืม Check Out จริงๆ";
+  }
+}
+
 function showContactAdmin() {
   const body = document.getElementById("body");
   body.innerHTML = `
@@ -742,10 +818,16 @@ function showContactAdmin() {
     <textarea class="inp" id="contact-reason" rows="4"
       placeholder="อธิบายสถานการณ์ เช่น ลืม Check Out / มีปัญหาระบบ / อยู่นอกพื้นที่..."
       style="resize:none;line-height:1.6;font-size:14px"
-      oninput="document.getElementById('btn-contact-submit').disabled = this.value.trim().length < 5"></textarea>
+      oninput="checkContactReady()"></textarea>
     <button class="btn btn-contact" id="btn-contact-submit" style="margin-top:10px" disabled
       onclick="submitContactAdmin()">ส่งข้อความหา Admin / HR</button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+}
+
+function checkContactReady() {
+  const el = document.getElementById('contact-reason');
+  const btn = document.getElementById('btn-contact-submit');
+  if (el && btn) btn.disabled = el.value.trim().length < 5;
 }
 
 async function submitContactAdmin() {
@@ -801,13 +883,10 @@ function showEmergencySuccess(mode) {
 
 // ── WORKING LATE (จาก Reminder) ─────────────────────────────────
 async function confirmWorkingLate() {
-  const savedPwd = localStorage.getItem(WIFI_PWD_KEY);
-  if (!savedPwd) { showPasswordScreen("late"); return; }
-
   const res = await fetch(WEBAPP_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    body: JSON.stringify({ action: "workingLate", userId, wifiPwd: savedPwd })
+    body: JSON.stringify({ action: "workingLate", userId })
   });
   const data = await res.json();
 
@@ -819,9 +898,8 @@ async function confirmWorkingLate() {
         <div class="status-sub">ขอให้การทำงานราบรื่น\nและอย่าลืมหาเวลาพักผ่อนนะคะ</div>
       </div>
       <button class="btn btn-checkout" style="margin-top:12px" onclick="startCheckOut()">Check Out เมื่อพร้อม</button>`;
-  } else if (data.wrongPwd) {
-    localStorage.removeItem(WIFI_PWD_KEY);
-    body.innerHTML = `<div class="alert alert-warn">ดูเหมือนว่าคุณออกจากออฟฟิศแล้วค่ะ\nกรุณาติดต่อ HR/Admin</div>`;
+  } else {
+    body.innerHTML = `<div class="alert alert-warn">${data.msg || "เกิดข้อผิดพลาดค่ะ"}</div>`;
   }
 }
 
@@ -850,6 +928,139 @@ function showAlert(type, msg) {
   el.className = `alert alert-${type}`;
   el.textContent = msg;
   el.style.display = "block";
+}
+
+// ── ประวัติเวลาเข้า-ออกงาน ────────────────────────────────────────
+const MONTHS_TH = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+let historyMonth = new Date().getMonth() + 1;
+let historyYear  = new Date().getFullYear();
+let historyData  = [];
+
+function fmtTime(raw) {
+  if (!raw) return "—";
+  const s = String(raw);
+  if (s.includes("1899") || (s.includes("T") && s.includes("-"))) {
+    try { const d = new Date(s); if (!isNaN(d)) return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; } catch(e) {}
+    return s.split("T")[1]?.substring(0,5) || "—";
+  }
+  if (s.match(/^\d{2}:\d{2}/)) return s.substring(0,5);
+  return s || "—";
+}
+
+async function showMyHistory() {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <button onclick="renderMain()" style="background:var(--mid);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--off);font-size:13px;cursor:pointer">← กลับ</button>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">ประวัติเวลาเข้า-ออกงาน</div>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:4px" id="hist-month-sel"></div>
+    <div id="hist-summary" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"></div>
+    <div id="hist-list"><div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">กำลังโหลด...</div></div>`;
+
+  renderHistMonthSel();
+  await loadHistory();
+}
+
+function renderHistMonthSel() {
+  const el = document.getElementById("hist-month-sel");
+  if (!el) return;
+  let html = "";
+  for (let m = 1; m <= 12; m++) {
+    const active = m === historyMonth;
+    html += `<button onclick="selHistMonth(${m})"
+      style="flex-shrink:0;padding:6px 12px;background:${active ? "var(--cream)" : "var(--mid)"};
+      border:1px solid ${active ? "var(--cream)" : "var(--border)"};border-radius:6px;
+      color:${active ? "var(--deep)" : "var(--off)"};font-size:12px;cursor:pointer;
+      font-weight:${active ? "700" : "400"};white-space:nowrap">${MONTHS_TH[m]}</button>`;
+  }
+  el.innerHTML = html;
+}
+
+async function selHistMonth(m) {
+  historyMonth = m;
+  renderHistMonthSel();
+  await loadHistory();
+}
+
+async function loadHistory() {
+  const listEl = document.getElementById("hist-list");
+  const sumEl  = document.getElementById("hist-summary");
+  if (!listEl) return;
+  listEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">กำลังโหลด...</div>`;
+
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getMyAttendance&userId=${encodeURIComponent(userId)}&month=${historyMonth}&year=${historyYear}`);
+    const data = await res.json();
+    if (!data.success) { listEl.innerHTML = `<div style="color:#fca5a5;font-size:12px;padding:12px">${data.msg}</div>`; return; }
+
+    historyData = data.records || [];
+
+    // Summary
+    let totalDays = 0, totalHours = 0, noOutCount = 0;
+    historyData.forEach(r => {
+      if (r.timeIn && r.timeOut && r.timeOut !== "No Out" && r.timeOut !== "No In-Out") totalDays++;
+      if (r.hours) totalHours += parseFloat(r.hours) || 0;
+      if (!r.timeOut || r.timeOut === "No Out" || r.timeOut === "No In-Out") noOutCount++;
+    });
+
+    if (sumEl) sumEl.innerHTML = `
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--cream)">${totalDays}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">วันที่มา</div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#4caf50">${totalHours.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">ชม.รวม</div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:${noOutCount > 0 ? "#e03535" : "var(--muted)"}">${noOutCount}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">No Out</div>
+      </div>`;
+
+    if (!historyData.length) {
+      listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">ไม่มีข้อมูลเดือน ${MONTHS_TH[historyMonth]} ค่ะ</div>`;
+      return;
+    }
+
+    // Table
+    let html = `
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)">วันที่</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)">เข้า</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)">ออก</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)">ชม.</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)">Mode</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    historyData.forEach(r => {
+      const timeIn  = fmtTime(r.timeIn);
+      const timeOut = fmtTime(r.timeOut);
+      const isNoOut = !r.timeOut || r.timeOut === "No Out" || r.timeOut === "No In-Out";
+      const isEmg   = String(r.mode||"").includes("Emergency") || String(r.note||"").includes("Emergency");
+      const hours   = r.hours ? parseFloat(r.hours).toFixed(1) : "—";
+      const modeLabel = isEmg ? "EMG" : (r.mode || "Office");
+      const modeColor = isEmg ? "#e8a020" : (r.mode === "On Site" ? "#4caf50" : "var(--muted)");
+
+      html += `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:9px 4px;font-family:'IBM Plex Mono',monospace">${r.date||"—"}</td>
+        <td style="padding:9px 4px;font-family:'IBM Plex Mono',monospace">${timeIn}</td>
+        <td style="padding:9px 4px;font-family:'IBM Plex Mono',monospace;color:${isNoOut ? "#e03535" : "var(--off)"}">${isNoOut ? "No Out" : timeOut}</td>
+        <td style="padding:9px 4px;font-family:'IBM Plex Mono',monospace">${hours}</td>
+        <td style="padding:9px 4px;font-size:10px;color:${modeColor}">${modeLabel}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table>`;
+    listEl.innerHTML = html;
+
+  } catch(err) {
+    if (listEl) listEl.innerHTML = `<div style="color:#fca5a5;font-size:12px;padding:12px">เกิดข้อผิดพลาด: ${err.message}</div>`;
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
