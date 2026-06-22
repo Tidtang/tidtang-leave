@@ -146,8 +146,20 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
     <div class="header-date" id="header-date"></div>
   </div>
 
+  <div id="office-ip-card" style="display:none;margin:14px 16px 0;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">Office WiFi IP</div>
+        <div id="office-ip-display" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--cream)">—</div>
+        <div id="office-ip-updated" style="font-size:10px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button onclick="saveOfficeIP()" id="btn-save-ip" style="flex-shrink:0;padding:9px 14px;background:var(--cream);color:var(--deep);border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:12px;font-weight:700;cursor:pointer">บันทึก IP วันนี้</button>
+    </div>
+  </div>
+
   <div class="tabs">
     <div class="tab active" onclick="switchTab(0)">วันนี้</div>
+
     <div class="tab" onclick="switchTab(1)">วันลา</div>
     <div class="tab" onclick="switchTab(2)">โควต้า</div>
     <div class="tab" onclick="switchTab(3)">Check In/Out</div>
@@ -290,10 +302,66 @@ async function init() {
       `${now.getDate()} ${MONTHS_TH[now.getMonth()+1]} ${now.getFullYear()+543} · ${data.emp.nick}`;
 
     hide("loading"); showEl("app");
+    document.getElementById("office-ip-card").style.display = "block";
     renderMonthSel();
     await loadAll();
+    await loadOfficeIPStatus();
   } catch(err) {
     setLoad("เกิดข้อผิดพลาด: " + err.message);
+  }
+}
+
+// ── Office IP Management ──────────────────────────────────────────
+async function getMyPublicIP() {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip || null;
+  } catch(e) { return null; }
+}
+
+async function loadOfficeIPStatus() {
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getOfficeIP`);
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("office-ip-display").textContent = data.ip || "ยังไม่ได้บันทึก";
+      document.getElementById("office-ip-updated").textContent =
+        data.ip ? `อัปเดตล่าสุด: ${data.updatedAt} · โดย ${data.updatedBy}` : "";
+    }
+  } catch(e) {}
+}
+
+async function saveOfficeIP() {
+  const btn = document.getElementById("btn-save-ip");
+  btn.disabled = true; btn.textContent = "กำลังตรวจสอบ...";
+
+  try {
+    const myIp = await getMyPublicIP();
+    if (!myIp) {
+      btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
+      alert("ไม่สามารถตรวจสอบ IP ได้ค่ะ ลองใหม่อีกครั้ง");
+      return;
+    }
+
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "setOfficeIP", userId, ip: myIp })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      await loadOfficeIPStatus();
+      btn.textContent = "บันทึกแล้วค่ะ";
+      setTimeout(() => { btn.textContent = "บันทึก IP วันนี้"; btn.disabled = false; }, 2000);
+    } else {
+      alert(data.msg || "เกิดข้อผิดพลาดค่ะ");
+      btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
+    }
+  } catch(err) {
+    alert("เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
   }
 }
 
