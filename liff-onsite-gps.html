@@ -167,6 +167,9 @@ html,body{font-family:'Anuphan',sans-serif;background:var(--off-white);min-heigh
 </div>
 
 <script>
+function bangkokNow() {
+  return new Date(bangkokNow().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
 const LIFF_ID   = "2010134572-8x55QxIM";
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
 
@@ -274,13 +277,13 @@ async function getGPS(isCheckout = false) {
         // คำนวณระยะ
         const dist = getDistance(activeCheckin.lat, activeCheckin.lng, lat, lng);
         const distAlert = document.getElementById('distance-alert');
-        if (dist > 500) {
+        if (dist > 200) {
           distAlert.className = 'alert alert-ok';
-          distAlert.textContent = ` ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบจะ Check Out อัตโนมัติค่ะ`;
+          distAlert.textContent = `ออกนอกรัศมีแล้ว (${Math.round(dist)}m) — ระบบจะบันทึกเวลางาน 1 ชั่วโมงอัตโนมัติค่ะ`;
           distAlert.style.display = 'block';
         } else {
           distAlert.className = 'alert alert-warn';
-          distAlert.textContent = `ยังอยู่ในรัศมี ${Math.round(dist)}m — กด Check Out ด้วยตนเองได้ค่ะ`;
+          distAlert.textContent = `อยู่ในรัศมี ${Math.round(dist)}m — กด Check Out ด้วยตนเองได้ค่ะ`;
           distAlert.style.display = 'block';
         }
       } else {
@@ -311,7 +314,7 @@ async function doCheckin() {
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก...';
 
-  const now  = new Date();
+  const now  = bangkokNow();
   const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   try {
@@ -347,24 +350,38 @@ async function doCheckout() {
   btn.disabled = true;
   btn.textContent = 'กำลังบันทึก...';
 
-  const now  = new Date();
+  const now  = bangkokNow();
   const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // คำนวณ dist จาก GPS ปัจจุบัน vs GPS ตอน Check In
+  const curLat = lat || activeCheckin.lat;
+  const curLng = lng || activeCheckin.lng;
+  const dist   = (lat && lng && activeCheckin)
+    ? getDistance(activeCheckin.lat, activeCheckin.lng, lat, lng)
+    : 0;
+  const isAutoOut = dist > 200; // เกิน 200m → ตัด 1 ชั่วโมง
 
   try {
     const res = await fetch(WEBAPP_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'onSiteCheckout',
-        userId, lat: lat || activeCheckin.lat, lng: lng || activeCheckin.lng, timeOut: time
+        userId,
+        lat: curLat,
+        lng: curLng,
+        timeOut: time,
+        distFromCheckin: Math.round(dist),
+        autoOut: isAutoOut
       })
     });
     const data = await res.json();
 
     if (data.success) {
+      const hoursLabel = isAutoOut ? '1 ชั่วโมง (Auto — ออกนอกรัศมี)' : (data.method || 'Manual');
       document.getElementById('success-icon').textContent = '';
       document.getElementById('success-title').textContent = 'Check Out แล้วค่ะ!';
       document.getElementById('success-sub').textContent =
-        `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${time} น.\nวิธี: ${data.method || 'Manual'}`;
+        `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${isAutoOut ? '(+1hr)' : time} น.\nวิธี: ${hoursLabel}`;
       document.getElementById('success-screen').classList.add('show');
     } else {
       showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');

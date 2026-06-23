@@ -394,6 +394,9 @@ html,body{
 </div>
 
 <script>
+function bangkokNow() {
+  return new Date(bangkokNow().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
 //  State 
 const LIFF_ID = "2010134572-IRYeubTe"; // ← ใส่ LIFF ID จาก LINE Developers
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";  // ← ใส่ Apps Script Webhook URL
@@ -492,7 +495,7 @@ function renderEmployee() {
   }
 
   // แสดงวันที่ default
-  const today = new Date();
+  const today = bangkokNow();
   const todayStr = today.toISOString().split('T')[0];
   document.getElementById('date-start').value = todayStr;
   document.getElementById('date-end').value = todayStr;
@@ -628,7 +631,7 @@ function checkAdvance(start, days) {
   const req = advance[selectedType];
 
   if (req) {
-    const today = new Date();
+    const today = bangkokNow();
     today.setHours(0,0,0,0);
     const diffDays = Math.round((start - today) / 86400000);
     if (diffDays < req) {
@@ -715,7 +718,7 @@ function countWorkdays(start, end) {
 function checkOneYear(startDate) {
   if (!startDate) return true;
   const s = new Date(startDate);
-  const now = new Date();
+  const now = bangkokNow();
   return (now - s) >= 365.25 * 24 * 60 * 60 * 1000;
 }
 

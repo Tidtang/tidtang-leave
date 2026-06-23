@@ -115,6 +115,10 @@ const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 
 let userId = null, emp = null, activeCheckin = null;
 
+function bangkokNow() {
+  return new Date(bangkokNow().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
+
 // ── Init ────────────────────────────────────────────────────────
 async function init() {
   try {
@@ -140,7 +144,7 @@ async function init() {
     document.getElementById("app").style.display = "block";
 
     // Header
-    const now = new Date();
+    const now = bangkokNow();
     document.getElementById("hdr-date").textContent =
       `${now.toLocaleDateString("th-TH", {weekday:"long",day:"numeric",month:"long",year:"numeric"})}`;
     document.getElementById("av").textContent = (emp.nick||"?").substring(0,2).toUpperCase();
@@ -156,7 +160,7 @@ async function init() {
 // ── Main screen ─────────────────────────────────────────────────
 function renderMain() {
   const body = document.getElementById("body");
-  const now  = new Date();
+  const now  = bangkokNow();
   const timeStr = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
   if (activeCheckin) {
@@ -210,7 +214,7 @@ async function verifyAndCheckIn() {
   showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
 
   try {
-    const now = new Date();
+    const now = bangkokNow();
     const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
     const publicIp = await getPublicIP();
@@ -360,7 +364,7 @@ function watermarkPhoto(file, gps) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0);
 
-      const now = new Date();
+      const now = bangkokNow();
       const dateStr = `${now.getDate().toString().padStart(2,"0")}/${(now.getMonth()+1).toString().padStart(2,"0")}/${now.getFullYear()+543}`;
       const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
       const gpsStr  = gps ? `GPS: ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}` : "GPS: ไม่พบตำแหน่ง";
@@ -406,7 +410,7 @@ async function submitEmergency(mode) {
   const btn = document.getElementById("btn-emergency-submit");
   if (btn) { btn.disabled = true; btn.textContent = "กำลังประมวลผลรูป..."; }
 
-  const now = new Date();
+  const now = bangkokNow();
   const timeStr = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
   try {
@@ -514,7 +518,7 @@ async function submitCheckInOnSite() {
   if (!project) { showAlert("err", "กรุณากรอกชื่อโปรเจกต์ค่ะ"); return; }
   if (!onsiteGPS) { showAlert("err", "ยังไม่ได้รับ GPS ค่ะ"); return; }
 
-  const now    = new Date();
+  const now    = bangkokNow();
   const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
   showLoading("กำลัง Check In On Site...");
@@ -621,7 +625,7 @@ function checkOnsiteOutReady() {
 async function submitCheckOutOnSite() {
   if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
 
-  const now     = new Date();
+  const now     = bangkokNow();
   const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
   const hour    = now.getHours();
 
@@ -673,7 +677,7 @@ async function startCheckOut() {
 async function verifyAndCheckOut() {
   showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
   try {
-    const now = new Date();
+    const now = bangkokNow();
     const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
     const hour = now.getHours();
 
@@ -735,7 +739,7 @@ function showSuccess(type, time, hour) {
     title = "Check In เรียบร้อยค่ะ";
     msg   = `${time} น.\n\nขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
   } else {
-    const h = hour ?? new Date().getHours();
+    const h = hour ?? bangkokNow().getHours();
     if (h >= 0 && h < 3) {
       title = "Check Out เรียบร้อยค่ะ";
       msg   = `${time} น.\n\nขอบคุณที่ทุ่มเทกับงานจนดึกค่ะ\nเดินทางกลับบ้านปลอดภัย และพักผ่อนให้เต็มที่นะคะ`;
@@ -782,7 +786,7 @@ async function submitForgotCheckOut() {
       body: JSON.stringify({
         action: "forgotCheckOut",
         userId,
-        timeNow: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+        timeNow: bangkokNow().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
       })
     });
     const data = await res.json();
@@ -851,7 +855,7 @@ async function submitContactAdmin() {
         action: "contactAdminHR",
         userId,
         reason,
-        timeNow: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+        timeNow: bangkokNow().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
       })
     });
     const data = await res.json();
@@ -937,8 +941,8 @@ function showAlert(type, msg) {
 
 // ── ประวัติเวลาเข้า-ออกงาน ────────────────────────────────────────
 const MONTHS_TH = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-let historyMonth = new Date().getMonth() + 1;
-let historyYear  = new Date().getFullYear();
+let historyMonth = bangkokNow().getMonth() + 1;
+let historyYear  = bangkokNow().getFullYear();
 let historyData  = [];
 
 function fmtTime(raw) {

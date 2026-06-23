@@ -236,10 +236,14 @@ const LEAVE_COLORS = {
 };
 
 let userId = null;
-let curMonth = new Date().getMonth() + 1;
-let curYear  = new Date().getFullYear();
-let calMonth = new Date().getMonth() + 1;
-let calYear  = new Date().getFullYear();
+function bangkokNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
+
+let curMonth = bangkokNow().getMonth() + 1;
+let curYear  = bangkokNow().getFullYear();
+let calMonth = bangkokNow().getMonth() + 1;
+let calYear  = bangkokNow().getFullYear();
 
 let allQuotaData = [];
 let allLeaveData = {};
@@ -258,7 +262,8 @@ function fmtDateTime(raw) {
     const d = new Date(raw);
     if (isNaN(d)) return String(raw);
     const ymd = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-    const hm  = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    const bkk = bangkokNow();
+    const hm  = `${String(bkk.getHours()).padStart(2,"0")}:${String(bkk.getMinutes()).padStart(2,"0")}`;
     return `${ymd} (${hm})`;
   }
   // ถ้าเป็น string เวลาธรรมดา เช่น "09:30"
@@ -277,7 +282,7 @@ function fmtTime(raw) {
 
 function todayISO() {
   // ใช้ offset ของไทย GMT+7 เพื่อป้องกัน date ผิดตอนดึก
-  const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  const d = bangkokNow();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
@@ -298,7 +303,7 @@ async function init() {
     if (!data.success || !data.emp) { setLoad("ไม่พบข้อมูลในระบบค่ะ"); return; }
     if (!["Full Access","HR","Admin"].includes(data.emp.role)) { setLoad("ไม่มีสิทธิ์เข้าถึง Dashboard ค่ะ"); return; }
 
-    const now = new Date();
+    const now = bangkokNow();
     document.getElementById("header-date").textContent =
       `${now.getDate()} ${MONTHS_TH[now.getMonth()+1]} ${now.getFullYear()+543} · ${data.emp.nick}`;
 
@@ -492,7 +497,7 @@ function renderCalHeader() {
 }
 
 function renderCalGrid(dayMap) {
-  const today = new Date();
+  const today = bangkokNow();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const firstDay = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
   const daysInMonth = new Date(calYear, calMonth, 0).getDate();
