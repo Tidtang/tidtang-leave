@@ -276,7 +276,8 @@ function fmtTime(raw) {
 }
 
 function todayISO() {
-  const d = new Date();
+  // ใช้ offset ของไทย GMT+7 เพื่อป้องกัน date ผิดตอนดึก
+  const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
@@ -400,18 +401,19 @@ async function loadTodayTab() {
     checkins.forEach(p => {
       const timeIn  = fmtTime(p.timeIn);
       const timeOut = fmtTime(p.timeOut);
-      const hasOut  = p.timeOut && p.timeOut !== "" && p.timeOut !== "No Out";
+      const hasOut  = p.timeOut && p.timeOut !== "" && p.timeOut !== "No Out" && p.timeOut !== "No In-Out";
+      const isNoOut = p.mode === "No-Out" || String(p.timeOut || "").includes("No Out") || String(p.timeOut || "").includes("No In-Out");
       const isEmg   = String(p.mode || "").includes("Emergency") || String(p.hours || "").includes("Emergency");
       ciHtml += `
         <div class="person-row" onclick="openAttDetail('${p.nick}')">
           <div class="person-left">
-            <div class="person-av" style="${isEmg ? 'background:rgba(232,160,32,.2);color:var(--amber)' : ''}">${(p.nick||"?").substring(0,2)}</div>
+            <div class="person-av" style="${isEmg ? 'background:rgba(232,160,32,.2);color:var(--amber)' : isNoOut ? 'background:rgba(239,68,68,.15);color:#ef4444' : ''}">${(p.nick||"?").substring(0,2)}</div>
             <div>
-              <div class="person-name">${p.nick}${isEmg ? ' <span style="color:var(--amber);font-size:10px">EMG</span>' : ''}</div>
-              <div class="person-sub">IN ${timeIn}${hasOut ? ` · OUT ${timeOut}` : ''} · ${p.mode || "Office"}</div>
+              <div class="person-name">${p.nick}${isEmg ? ' <span style="color:var(--amber);font-size:10px">EMG</span>' : isNoOut ? ' <span style="color:#ef4444;font-size:10px">NO OUT</span>' : ''}</div>
+              <div class="person-sub">IN ${timeIn}${hasOut ? ` · OUT ${timeOut}` : isNoOut ? ' · ลืม Check Out' : ''} · ${p.mode || "Office"}</div>
             </div>
           </div>
-          <span class="badge ${hasOut ? 'badge-out' : 'badge-in'}">${hasOut ? `OUT ${timeOut}` : 'IN'}</span>
+          <span class="badge ${hasOut ? 'badge-out' : isNoOut ? '' : 'badge-in'}" style="${isNoOut ? 'background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)' : ''}">${hasOut ? `OUT ${timeOut}` : isNoOut ? 'NO OUT' : 'IN'}</span>
         </div>`;
     });
     document.getElementById("today-checkin-list").innerHTML = ciHtml || `<div class="empty" style="padding:16px 0">ยังไม่มีพนักงาน Check In ค่ะ</div>`;
