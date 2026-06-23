@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TIDTANG — บันทึก IP</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{--bg:#eae7e4;--card:#fff;--deep:#191919;--border:#e0dbd6;--cream:#C8B8A2;--muted:#999;--green:#4caf50;--red:#e03535;--amber:#e8a020;--r:14px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+
+.loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.spin{width:24px;height:24px;border:1.5px solid #ccc;border-top-color:#555;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.wrap{width:100%;max-width:360px}
+
+/* Header */
+.hdr{margin-bottom:24px}
+.hdr-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.hdr-title{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--deep)}
+
+/* Card */
+.card{background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-bottom:12px}
+
+.card-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+
+/* IP display */
+.ip-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.ip-key{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.ip-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:var(--deep)}
+.ip-val.muted{color:var(--muted);font-size:12px}
+
+.status-row{display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.status-dot.green{background:var(--green)}
+.status-dot.amber{background:var(--amber)}
+.status-txt{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+
+/* Buttons */
+.btn{
+  width:100%;padding:16px;border:none;border-radius:10px;
+  font-family:'Anuphan',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:opacity .15s;
+}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--deep);color:#eae7e4;margin-bottom:10px}
+.btn-close{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;padding:12px}
+
+/* Success state */
+.success-card{background:#f0faf0;border:1px solid rgba(76,175,80,.2);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:12px}
+.success-icon{font-size:32px;margin-bottom:8px}
+.success-title{font-size:16px;font-weight:700;color:var(--deep);margin-bottom:4px}
+.success-sub{font-size:12px;color:#555}
+
+/* Error */
+.err-card{background:#fff5f5;border:1px solid rgba(224,53,53,.2);border-radius:var(--r);padding:16px;font-size:12px;color:var(--red);margin-bottom:12px}
+
+/* Role guard */
+.no-access{text-align:center;padding:32px 0;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="spin"></div></div>
+
+<div id="app" style="display:none" class="wrap">
+
+  <!-- IP Info card -->
+  <div class="hdr">
+    <div class="hdr-tag">TIDTANG STUDIO</div>
+    <div class="hdr-title">บันทึก IP ออฟฟิศ</div>
+  </div>
+
+  <div id="error-box" class="err-card" style="display:none"></div>
+  <div id="success-box" class="success-card" style="display:none">
+    <div class="success-icon">✓</div>
+    <div class="success-title">บันทึกสำเร็จแล้วค่ะ</div>
+    <div class="success-sub" id="success-ip-txt">—</div>
+  </div>
+
+  <div class="card" id="ip-card">
+    <div class="card-label">Public IP</div>
+    <div class="ip-row">
+      <span class="ip-key">ตอนนี้</span>
+      <span class="ip-val" id="current-ip">กำลังโหลด...</span>
+    </div>
+    <div class="ip-row">
+      <span class="ip-key">บันทึกล่าสุด</span>
+      <span class="ip-val" id="saved-ip">—</span>
+    </div>
+    <div class="status-row">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-txt" id="status-txt">กำลังตรวจสอบ...</span>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="btn-save" onclick="saveIP()" disabled>
+    บันทึก IP นี้เป็น IP ออฟฟิศ
+  </button>
+  <button class="btn btn-close" onclick="liff.closeWindow()">ปิดหน้านี้</button>
+
+</div>
+
+<script>
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
+const LIFF_ID    = "IP_LIFF_ID"; // ← ใส่ LIFF ID ใหม่
+
+const ALLOWED_ROLES = ["Full Access","HR","Admin","Senior"];
+let userId = null;
+let currentIP = null;
+
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    const p = await liff.getProfile();
+    userId = p.userId;
+
+    // เช็ค role
+    const empRes  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
+    const empData = await empRes.json();
+    if (!empData.success || !ALLOWED_ROLES.includes(empData.emp?.role)) {
+      document.getElementById("loading").innerHTML =
+        `<div class="no-access">ไม่มีสิทธิ์เข้าถึงหน้านี้ค่ะ<br><br>สำหรับ HR / Admin / Senior เท่านั้น</div>`;
+      return;
+    }
+
+    // โหลด IP พร้อมกัน
+    const [myIP, savedIPRes] = await Promise.all([
+      getPublicIP(),
+      fetch(`${WEBAPP_URL}?action=getOfficeIP&userId=${encodeURIComponent(userId)}`).then(r => r.json())
+    ]);
+
+    currentIP = myIP;
+    const savedIP = savedIPRes.ip || "";
+
+    document.getElementById("current-ip").textContent = myIP || "ไม่พบ IP";
+    document.getElementById("saved-ip").textContent   = savedIP || "ยังไม่มีค่ะ";
+
+    const match = myIP && savedIP && myIP === savedIP;
+    const dot = document.getElementById("status-dot");
+    const txt = document.getElementById("status-txt");
+
+    if (!savedIP) {
+      dot.className = "status-dot amber";
+      txt.textContent = "ยังไม่มี IP ที่บันทึกไว้";
+    } else if (match) {
+      dot.className = "status-dot green";
+      txt.textContent = "IP ตรงกับที่บันทึกไว้แล้วค่ะ";
+    } else {
+      dot.className = "status-dot";
+      txt.textContent = "IP เปลี่ยนแปลงจากที่บันทึกไว้";
+    }
+
+    document.getElementById("btn-save").disabled = !myIP;
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "";
+  } catch(err) {
+    document.getElementById("loading").innerHTML =
+      `<div style="font-size:12px;color:#aaa;padding:32px;text-align:center">${err.message}</div>`;
+  }
+}
+
+async function getPublicIP() {
+  try {
+    const r = await fetch("https://api.ipify.org?format=json");
+    const d = await r.json();
+    return d.ip || "";
+  } catch { return ""; }
+}
+
+async function saveIP() {
+  const btn = document.getElementById("btn-save");
+  btn.disabled = true;
+  btn.textContent = "กำลังบันทึก...";
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "setOfficeIP", userId, ip: currentIP })
+    });
+    const data = await res.json();
+
+    document.getElementById("ip-card").style.display = "none";
+    btn.style.display = "none";
+
+    if (data.success) {
+      document.getElementById("success-ip-txt").textContent = `IP: ${currentIP}`;
+      document.getElementById("success-box").style.display = "block";
+    } else {
+      document.getElementById("error-box").textContent = data.msg || "เกิดข้อผิดพลาดค่ะ";
+      document.getElementById("error-box").style.display = "block";
+      btn.style.display = "";
+      btn.disabled = false;
+      btn.textContent = "บันทึก IP นี้เป็น IP ออฟฟิศ";
+    }
+  } catch(err) {
+    document.getElementById("error-box").textContent = err.message;
+    document.getElementById("error-box").style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "บันทึก IP นี้เป็น IP ออฟฟิศ";
+  }
+}
+
+init();
+</script>
+</body>
+</html>
