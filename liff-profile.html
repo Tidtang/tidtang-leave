@@ -6,76 +6,75 @@
 <title>TIDTANG — Profile</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<!-- QR Code library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
-  --deep:#191919;--dark:#1e1e1e;--mid:#2a2a2a;--border:#333;
-  --off:#EBE7E4;--cream:#C8B8A2;--muted:#666;--green:#4caf50;
+  --bg:#eae7e4;
+  --card:#ffffff;
+  --border:#d4cfc9;
+  --deep:#191919;
+  --cream:#8a7a6a;
+  --muted:#999;
+  --text:#2a2a2a;
+  --sub:#666;
   --r:14px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh;padding-bottom:32px}
+body{font-family:'Anuphan',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:40px}
 
 /* Loading */
-.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100}
-.spin{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+.loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-txt{font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
 
 /* Header */
-.header{background:var(--dark);border-bottom:1px solid var(--border);padding:16px 20px 14px}
-.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:3px}
-.header-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.header{background:var(--bg);padding:20px 20px 4px}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:4px}
+.header-title{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--deep)}
 
 /* Card */
-.card{margin:16px;background:var(--mid);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
-.card-header{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
-.card-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--cream);margin-bottom:8px}
+.card{margin:12px 16px;background:var(--card);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
 
-/* Avatar */
-.avatar-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
-.avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#3a3228,#5a4a3a);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:var(--cream);flex-shrink:0;letter-spacing:-.5px}
-.emp-name{font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.2}
-.emp-nick{font-size:12px;color:var(--cream);font-family:'IBM Plex Mono',monospace;margin-top:2px}
-.emp-pos{font-size:11px;color:var(--muted);margin-top:2px}
+/* Personal card header */
+.card-header{padding:22px 20px 18px;border-bottom:1px solid var(--border);background:var(--deep)}
+.card-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(200,184,162,.6);margin-bottom:12px}
+.avatar-row{display:flex;align-items:center;gap:14px}
+.avatar{width:54px;height:54px;border-radius:50%;background:rgba(200,184,162,.15);border:1px solid rgba(200,184,162,.25);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#C8B8A2;flex-shrink:0;letter-spacing:-.5px}
+.emp-name{font-size:17px;font-weight:800;line-height:1.2;color:#EBE7E4}
+.emp-nick{font-size:11px;color:rgba(200,184,162,.7);font-family:'IBM Plex Mono',monospace;margin-top:3px}
+.emp-pos{font-size:11px;color:rgba(235,231,228,.45);margin-top:2px}
 
 /* Info rows */
-.info-list{padding:4px 0}
-.info-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.info-list{padding:0}
+.info-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)}
 .info-row:last-child{border-bottom:none}
-.info-icon{width:32px;height:32px;border-radius:8px;background:rgba(200,184,162,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.info-icon-box{width:30px;height:30px;border-radius:8px;background:#f5f3f1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.info-icon-letter{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:var(--cream);letter-spacing:.05em}
 .info-content{min-width:0;flex:1}
-.info-label{font-size:10px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace}
-.info-value{font-size:13px;font-weight:500;word-break:break-all}
-.info-value a{color:var(--cream);text-decoration:none}
-.info-value a:active{opacity:.7}
+.info-label{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace}
+.info-value{font-size:13px;font-weight:500;color:var(--text);word-break:break-all}
+.info-value a{color:var(--deep);text-decoration:none;border-bottom:1px solid var(--border)}
+.info-value a:active{opacity:.6}
 
-/* QR section */
-.qr-section{display:flex;flex-direction:column;align-items:center;padding:20px;gap:10px;border-top:1px solid var(--border)}
-.qr-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center}
-.qr-box{background:#fff;border-radius:10px;padding:10px;display:inline-block}
-.qr-box canvas, .qr-box img{display:block;border-radius:4px}
+/* LINE QR section */
+.qr-section{display:flex;flex-direction:column;align-items:center;padding:22px 20px;gap:10px;border-top:1px solid var(--border);background:#f9f8f7}
+.qr-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);text-align:center}
+.qr-box{background:#fff;border-radius:10px;padding:10px;display:inline-block;border:1px solid var(--border)}
+.qr-box canvas,.qr-box img{display:block;border-radius:4px}
 
-/* Company logo area */
+/* Company section */
 .company-top{display:flex;align-items:center;gap:14px;padding:18px 20px 14px}
-.company-logo{width:48px;height:48px;border-radius:10px;background:var(--deep);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border)}
-.company-logo img{width:100%;height:100%;object-fit:contain}
-.company-logo-txt{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:var(--cream);text-align:center;letter-spacing:.05em}
-.company-name-th{font-size:14px;font-weight:700;line-height:1.3}
+.company-logo-box{width:44px;height:44px;border-radius:10px;background:var(--deep);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.company-logo-txt{font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:700;color:#C8B8A2;text-align:center;letter-spacing:.05em;line-height:1.4}
+.company-name-th{font-size:14px;font-weight:700;line-height:1.3;color:var(--deep)}
 .company-name-en{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px}
+.divider{height:1px;background:var(--border)}
 
-/* Divider */
-.divider{height:1px;background:var(--border);margin:0 20px}
-
-/* Copy button */
-.copy-btn{background:rgba(200,184,162,.1);border:1px solid rgba(200,184,162,.2);color:var(--cream);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;margin-left:6px;font-family:'Anuphan',sans-serif;vertical-align:middle;white-space:nowrap}
-.copy-btn:active{background:rgba(200,184,162,.2)}
-.copy-btn.copied{color:var(--green);border-color:rgba(76,175,80,.3)}
-
-/* Website button */
-.web-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 20px 4px;padding:13px;background:rgba(200,184,162,.1);border:1px solid rgba(200,184,162,.25);border-radius:10px;text-decoration:none;color:var(--cream);font-size:13px;font-weight:600;transition:background .15s}
-.web-btn:active{background:rgba(200,184,162,.2)}
+/* Website link */
+.web-link-row{padding:16px 20px 20px}
+.web-link{display:inline-flex;align-items:center;gap:6px;color:var(--deep);font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--deep);padding-bottom:1px}
+.web-link-sub{font-size:11px;color:var(--muted);margin-top:4px;font-family:'IBM Plex Mono',monospace}
 </style>
 </head>
 <body>
@@ -86,51 +85,44 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 </div>
 
 <div id="app" style="display:none">
-  <!-- Header -->
   <div class="header">
     <div class="header-tag">TIDTANG STUDIO</div>
     <div class="header-title">Profile</div>
   </div>
 
   <!-- Personal Card -->
-  <div class="card" id="personal-card">
+  <div class="card">
     <div class="card-header">
       <div class="card-label">Personal Info</div>
       <div class="avatar-row">
         <div class="avatar" id="emp-avatar">—</div>
         <div>
           <div class="emp-name" id="emp-name">—</div>
-          <div class="emp-nick" id="emp-nick">—</div>
-          <div class="emp-pos" id="emp-pos">—</div>
+          <div class="emp-nick" id="emp-nick"></div>
+          <div class="emp-pos" id="emp-pos"></div>
         </div>
       </div>
     </div>
     <div class="info-list">
       <div class="info-row">
-        <div class="info-icon">✉️</div>
+        <div class="info-icon-box"><span class="info-icon-letter">@</span></div>
         <div class="info-content">
           <div class="info-label">Email</div>
-          <div class="info-value"><a id="emp-email-link" href="#">—</a>
-            <button class="copy-btn" onclick="copyText('emp-email-val','this')">copy</button>
-            <span id="emp-email-val" style="display:none"></span>
-          </div>
+          <div class="info-value"><a id="emp-email-link" href="#">—</a></div>
         </div>
       </div>
       <div class="info-row" id="phone-row">
-        <div class="info-icon">📱</div>
+        <div class="info-icon-box"><span class="info-icon-letter">TEL</span></div>
         <div class="info-content">
           <div class="info-label">เบอร์โทร</div>
-          <div class="info-value"><a id="emp-phone-link" href="#">—</a>
-            <button class="copy-btn" onclick="copyText('emp-phone-val','this')">copy</button>
-            <span id="emp-phone-val" style="display:none"></span>
-          </div>
+          <div class="info-value"><a id="emp-phone-link" href="#">—</a></div>
         </div>
       </div>
       <div class="info-row">
-        <div class="info-icon">🏢</div>
+        <div class="info-icon-box"><span class="info-icon-letter">POS</span></div>
         <div class="info-content">
-          <div class="info-label">แผนก</div>
-          <div class="info-value" id="emp-dept">—</div>
+          <div class="info-label">ตำแหน่ง</div>
+          <div class="info-value" id="emp-pos-field">—</div>
         </div>
       </div>
     </div>
@@ -144,7 +136,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
   <!-- Company Card -->
   <div class="card">
     <div class="company-top">
-      <div class="company-logo">
+      <div class="company-logo-box">
         <div class="company-logo-txt">TIDT<br>ANG</div>
       </div>
       <div>
@@ -155,63 +147,47 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
     <div class="divider"></div>
     <div class="info-list">
       <div class="info-row">
-        <div class="info-icon">📍</div>
+        <div class="info-icon-box"><span class="info-icon-letter">ADR</span></div>
         <div class="info-content">
           <div class="info-label">ที่อยู่</div>
           <div class="info-value">511 ซอยศรีอยุธยา 6 แขวงถนนพญาไท<br>เขตราชเทวี กรุงเทพฯ 10400</div>
         </div>
       </div>
       <div class="info-row">
-        <div class="info-icon">📞</div>
+        <div class="info-icon-box"><span class="info-icon-letter">TEL</span></div>
         <div class="info-content">
           <div class="info-label">โทรศัพท์</div>
-          <div class="info-value">
-            <a href="tel:022464664">02 246 4664</a>
-            <button class="copy-btn" onclick="copyText('company-phone-val','this')">copy</button>
-            <span id="company-phone-val" style="display:none">022464664</span>
-          </div>
+          <div class="info-value"><a href="tel:022464664">02 246 4664</a></div>
         </div>
       </div>
       <div class="info-row">
-        <div class="info-icon">🔢</div>
+        <div class="info-icon-box"><span class="info-icon-letter">TAX</span></div>
         <div class="info-content">
           <div class="info-label">เลขทะเบียนนิติบุคคล</div>
-          <div class="info-value">
-            0105555095600
-            <button class="copy-btn" onclick="copyText('tax-val','this')">copy</button>
-            <span id="tax-val" style="display:none">0105555095600</span>
-          </div>
+          <div class="info-value">0105555095600</div>
         </div>
       </div>
       <div class="info-row">
-        <div class="info-icon">🌐</div>
+        <div class="info-icon-box"><span class="info-icon-letter">WEB</span></div>
         <div class="info-content">
           <div class="info-label">Website</div>
           <div class="info-value"><a href="https://www.tidtangstudio.com" target="_blank">tidtangstudio.com</a></div>
         </div>
       </div>
     </div>
-
-    <!-- Website button -->
-    <a class="web-btn" href="https://www.tidtangstudio.com" target="_blank">
-      🌐 เปิดเว็บไซต์ tidtangstudio.com
-    </a>
-
-    <!-- Website QR -->
-    <div class="qr-section">
-      <div class="qr-label">Scan เพื่อเข้าเว็บไซต์</div>
-      <div class="qr-box" id="website-qr"></div>
+    <div class="web-link-row">
+      <a class="web-link" href="https://www.tidtangstudio.com" target="_blank">www.tidtangstudio.com</a>
+      <div class="web-link-sub">กดเพื่อเข้าเว็บไซต์</div>
     </div>
   </div>
 </div>
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
-const LIFF_ID    = "2010134572-FYjmDiXI"; // ← ใส่ LIFF ID ใหม่หลังสร้างใน LINE Developers
+const LIFF_ID    = "2010134572-FYjmDiXI";
 
 let userId = null;
 
-// ── Init ─────────────────────────────────────────────────────
 async function init() {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -228,7 +204,7 @@ async function init() {
     }
 
     renderProfile(data.emp);
-    generateQRs(data.emp);
+    generateLineQR(data.emp);
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("app").style.display = "";
@@ -237,45 +213,34 @@ async function init() {
   }
 }
 
-// ── Render profile ────────────────────────────────────────────
 function renderProfile(emp) {
-  // Avatar
   const initials = (emp.nick || emp.name || "?").substring(0, 2);
   document.getElementById("emp-avatar").textContent = initials;
+  document.getElementById("emp-name").textContent   = emp.name || "—";
+  document.getElementById("emp-nick").textContent   = emp.nick ? emp.nick : "";
+  document.getElementById("emp-pos").textContent    = emp.dept ? emp.dept : "";
+  // ตำแหน่ง = col D = pos
+  document.getElementById("emp-pos-field").textContent = emp.pos || "—";
 
-  // Name/nick/pos
-  document.getElementById("emp-name").textContent = emp.name || "—";
-  document.getElementById("emp-nick").textContent  = emp.nick ? `· ${emp.nick} ·` : "";
-  document.getElementById("emp-pos").textContent   = [emp.pos, emp.dept].filter(Boolean).join(" · ");
-  document.getElementById("emp-dept").textContent  = emp.dept || "—";
-
-  // Email
   if (emp.email) {
     document.getElementById("emp-email-link").textContent = emp.email;
     document.getElementById("emp-email-link").href = `mailto:${emp.email}`;
-    document.getElementById("emp-email-val").textContent  = emp.email;
   }
 
-  // Phone
   if (emp.phone) {
     const tel = emp.phone.replace(/[^0-9+]/g, "");
     document.getElementById("emp-phone-link").textContent = emp.phone;
     document.getElementById("emp-phone-link").href = `tel:${tel}`;
-    document.getElementById("emp-phone-val").textContent  = emp.phone;
   } else {
     document.getElementById("phone-row").style.display = "none";
   }
 }
 
-// ── Generate QR codes ─────────────────────────────────────────
-function generateQRs(emp) {
-  // LINE QR — ใช้ line.me/ti/p/~{lineId} ถ้ามี หรือ qr.line.me/r/ti/p/{userId}
-  const lineQrEl = document.getElementById("line-qr");
+function generateLineQR(emp) {
+  const el = document.getElementById("line-qr");
   if (emp.lineId) {
-    const lineUrl = `https://line.me/ti/p/~${emp.lineId}`;
-    // ใช้ QRCode library
-    new QRCode(lineQrEl, {
-      text: lineUrl,
+    new QRCode(el, {
+      text: `https://line.me/ti/p/~${emp.lineId}`,
       width: 160, height: 160,
       colorDark: "#191919", colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
@@ -283,38 +248,6 @@ function generateQRs(emp) {
   } else {
     document.getElementById("line-qr-section").style.display = "none";
   }
-
-  // Website QR
-  new QRCode(document.getElementById("website-qr"), {
-    text: "https://www.tidtangstudio.com",
-    width: 160, height: 160,
-    colorDark: "#191919", colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.M
-  });
-}
-
-// ── Copy helper ───────────────────────────────────────────────
-function copyText(spanId, btnEl) {
-  const val = document.getElementById(spanId).textContent;
-  if (!val) return;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(val).then(() => flashCopied(btnEl));
-  } else {
-    const ta = document.createElement("textarea");
-    ta.value = val; document.body.appendChild(ta);
-    ta.select(); document.execCommand("copy");
-    document.body.removeChild(ta);
-    flashCopied(btnEl);
-  }
-}
-
-function flashCopied(btnEl) {
-  if (typeof btnEl === "string") btnEl = document.querySelector(btnEl);
-  if (!btnEl) return;
-  const orig = btnEl.textContent;
-  btnEl.textContent = "✓ copied";
-  btnEl.classList.add("copied");
-  setTimeout(() => { btnEl.textContent = orig; btnEl.classList.remove("copied"); }, 1800);
 }
 
 init();
