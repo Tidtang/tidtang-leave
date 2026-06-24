@@ -11,28 +11,28 @@
   --deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;
   --off:#EBE7E4;--cream:#C8B8A2;--muted:#666;
   --green:#4caf50;--red:#e03535;--amber:#e8a020;--blue:#3b82f6;
-  --holiday:#5eead4;--r:10px;
+  --holiday:#afa89e;--r:10px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:'Anuphan',sans-serif;background:#eae7e4;color:var(--deep);min-height:100vh}
+body{font-family:'Anuphan',sans-serif;background:#e9e7e4;color:var(--deep);min-height:100vh}
 
-.loading{position:fixed;inset:0;background:#eae7e4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.loading{position:fixed;inset:0;background:#e9e7e4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
 .spin{width:36px;height:36px;border:2px solid #d4cfc9;border-top-color:#555;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .load-txt{font-size:12px;color:#999;letter-spacing:.1em}
 
-.header{background:#eae7e4;border-bottom:1px solid var(--border);padding:14px 18px;position:sticky;top:0;z-index:10}
+.header{background:#e9e7e4;border-bottom:1px solid var(--border);padding:14px 18px;position:sticky;top:0;z-index:10}
 .header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .header-title{font-size:17px;font-weight:800}
 
 /* Legend */
-.legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#eae7e4;border-bottom:1px solid var(--border)}
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#e9e7e4;border-bottom:1px solid var(--border)}
 .leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)}
 .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 /* Nav */
 .cal-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}
-.cal-btn{background:var(--mid);border:1px solid var(--border);color:var(--off);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cal-btn{background:#32312f;border:1px solid #32312f;color:#eae7e4;border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cal-title{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.03em}
 
 /* Grid */
@@ -42,8 +42,8 @@ body{font-family:'Anuphan',sans-serif;background:#eae7e4;color:var(--deep);min-h
 .cal-day{background:#ffffff;border-radius:6px;min-height:58px;padding:4px;cursor:pointer;transition:background .12s;border:1px solid transparent;position:relative;overflow:hidden}
 .cal-day.empty{background:transparent;border-color:transparent;cursor:default}
 .cal-day.today{border-color:var(--cream)}
-.cal-day.weekend .cal-dn{color:var(--muted)}
-.cal-day.holiday{background:#e8f8f6}
+.cal-day.weekend{background:#d7d3ce}.cal-day.weekend .cal-dn{color:var(--muted)}
+.cal-day.holiday{background:#e8e5e0}
 .cal-day.has-leave{background:#ffffff}
 .cal-day:not(.empty):hover{background:var(--border)}
 .cal-dn{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--deep);margin-bottom:3px}
@@ -85,10 +85,10 @@ body{font-family:'Anuphan',sans-serif;background:#eae7e4;color:var(--deep);min-h
   </div>
 
   <div class="legend" id="legend">
-    <div class="leg"><div class="leg-dot" style="background:var(--holiday)"></div>วันหยุดออฟฟิศ</div>
-    <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>ลาป่วย</div>
-    <div class="leg"><div class="leg-dot" style="background:var(--blue)"></div>ลาพักร้อน</div>
-    <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div>ลากิจ</div>
+    <div class="leg"><div class="leg-dot" style="background:#afa89e"></div>วันหยุดออฟฟิศ</div>
+    <div class="leg"><div class="leg-dot" style="background:#8d2621"></div>ลาป่วย</div>
+    <div class="leg"><div class="leg-dot" style="background:#2148a1"></div>ลาพักร้อน</div>
+    <div class="leg"><div class="leg-dot" style="background:#c29100"></div>ลากิจ</div>
     <div class="leg"><div class="leg-dot" style="background:#ec4899"></div>ลาฉุกเฉิน</div>
   </div>
 
@@ -118,8 +118,8 @@ const LIFF_ID    = "2010134572-wCYr1N6t";
 
 const MONTHS_TH = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 const LEAVE_COLORS = {
-  "ลาป่วย":"#e03535","ลาพักร้อน":"#3b82f6","ลากิจ":"#e8a020",
-  "ลาฉุกเฉินพิเศษ":"#ec4899","ลาเกินโควต้า":"#f97316","Leave Without Pay":"#6b7280",
+  "ลาป่วย":"#8d2621","ลาพักร้อน":"#2148a1","ลากิจ":"#c29100",
+  "ลาฉุกเฉินพิเศษ":"#42126a","ลาเกินโควต้า":"#f97316","Leave Without Pay":"#6b7280",
   "On Site":"#5eead4",
 };
 
