@@ -116,7 +116,7 @@ const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 let userId = null, emp = null, activeCheckin = null;
 
 function bangkokNow() {
-  return new Date(bangkokNow().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
 }
 
 // ── Init ────────────────────────────────────────────────────────

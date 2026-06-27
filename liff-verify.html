@@ -165,11 +165,11 @@ async function loadAll() {
 }
 
 function renderAll() {
-  const emg  = allItems.filter(p => p.category === "emergency" && p.status === "รอดำเนินการ");
-  const con  = allItems.filter(p => p.category === "contact"   && p.status === "รอดำเนินการ");
-  const no   = allItems.filter(p => p.category === "noout"     && p.status === "รอดำเนินการ");
-  const os   = allItems.filter(p => p.category === "onsite"    && p.status === "รอดำเนินการ");
-  const done = allItems.filter(p => p.status !== "รอดำเนินการ");
+  const emg  = allItems.filter(p => p.category === "emergency" && (p.verifyStatus || "") === "Unverified");
+  const con  = allItems.filter(p => p.category === "contact"   && (p.verifyStatus || "") === "Unverified");
+  const no   = allItems.filter(p => p.category === "noout"     && (p.verifyStatus || "") === "Unverified");
+  const os   = allItems.filter(p => p.category === "onsite"    && (p.verifyStatus || "") === "Unverified");
+  const done = allItems.filter(p => (p.verifyStatus || "") !== "Unverified");
 
   document.getElementById("cnt-emg").textContent = emg.length;
   document.getElementById("cnt-con").textContent = con.length;
@@ -207,8 +207,8 @@ function cardEmg(p) {
     <div class="ref">REF: ${p.id}</div>
     <div class="card-footer">
       <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','approve')">Approve</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','decline')">Decline</button>
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">Approve</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">Decline</button>
       </div>
     </div>
   </div>`;
@@ -232,8 +232,8 @@ function cardCon(p) {
         oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
       <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">ส่งข้อความหาพนักงาน</button>
       <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">ยืนยัน Check Out</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">ปฏิเสธ</button>
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ยืนยัน Check Out</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ปฏิเสธ</button>
       </div>
     </div>
   </div>`;
@@ -256,8 +256,8 @@ function cardNoOut(p) {
         oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
       <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">แจ้งพนักงาน</button>
       <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">รับทราบ / แก้ไขแล้ว</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">คง No Out</button>
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">รับทราบ / แก้ไขแล้ว</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','noout','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">คง No Out</button>
       </div>
     </div>
   </div>`;
@@ -278,8 +278,8 @@ function cardOnSite(p) {
     <div class="ref">REF: ${p.id}</div>
     <div class="card-footer">
       <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','approve','${p.empNick}')">Verify</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','decline','${p.empNick}')">ปฏิเสธ</button>
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">Verify</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','onsite-verify','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ปฏิเสธ</button>
       </div>
     </div>
   </div>`;
@@ -301,7 +301,7 @@ function cardDone(p) {
 }
 
 // ── Actions ──────────────────────────────────────────────────────
-async function doAction(id, empLineId, type, time, timeIn, decision, empNick) {
+async function doAction(id, empLineId, type, time, timeIn, decision, empNick, row6="", sheetRow="") {
   const card = document.getElementById(`card-${id}`);
   const btns = card?.querySelectorAll(".btn");
   btns?.forEach(b => b.disabled = true);
@@ -309,7 +309,7 @@ async function doAction(id, empLineId, type, time, timeIn, decision, empNick) {
     const res  = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
-      body: JSON.stringify({ action: "approveAttendance", userId, id, empLineId, type, time, timeIn, decision, empNick })
+      body: JSON.stringify({ action: "approveAttendance", userId, id, empLineId, type, time, timeIn, decision, empNick, row6, sheetRow })
     });
     const data = await res.json();
     if (data.success) {
