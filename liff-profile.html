@@ -87,6 +87,19 @@ body{
   color:rgba(235,231,228,.35);margin-bottom:4px;
 }
 .qr-sub{font-size:11px;color:rgba(235,231,228,.5);line-height:1.5}
+.qr-placeholder{
+  width:80px;height:80px;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:#999;background:#f4f4f4;text-align:center;line-height:1.4;
+}
+.line-open{
+  display:none;margin-top:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:#eae7e4;text-decoration:none;
+  border-bottom:1px solid rgba(235,231,228,.3);
+}
 
 /* ── COMPANY CARD ──────────────────────────────────────── */
 .card-company{
@@ -146,7 +159,8 @@ body{
       <div class="qr-box" id="line-qr"></div>
       <div class="qr-info">
         <div class="qr-label">Add LINE</div>
-        <div class="qr-sub">Scan QR เพื่อ<br>เพิ่มเพื่อนใน LINE</div>
+        <div class="qr-sub" id="line-qr-sub">Scan QR เพื่อ<br>เพิ่มเพื่อนใน LINE</div>
+        <a class="line-open" id="line-open" href="#" target="_blank">Open LINE</a>
       </div>
     </div>
   </div>
@@ -224,17 +238,47 @@ function render(e) {
     document.getElementById("emp-phone").href = `tel:${e.phone.replace(/[^0-9+]/g,"")}`;
   }
 
-  // LINE QR
-  if (e.lineId) {
-    new QRCode(document.getElementById("line-qr"), {
-      text: `https://line.me/ti/p/~${e.lineId}`,
+  renderLineQr(e);
+}
+
+function normalizeLineAddUrl(e) {
+  // LINE User ID จาก LIFF มักขึ้นต้นด้วย U... ใช้กับระบบเท่านั้น
+  // ไม่สามารถนำไปสร้าง Add Friend QR ได้
+  // สำหรับนามบัตร ให้ใช้ LINE ID จริง หรือ LINE add URL จาก Apps Script แทน
+  const fromServer = (e.lineAddUrl || "").trim();
+  if (fromServer) return fromServer;
+
+  const publicId = (e.linePublicId || e.lineOfficialId || "").trim();
+  if (!publicId) return "";
+
+  if (/^https?:\/\//i.test(publicId) || /^line:\/\//i.test(publicId)) return publicId;
+  return `https://line.me/ti/p/~${encodeURIComponent(publicId.replace(/^@|^~/, ""))}`;
+}
+
+function renderLineQr(e) {
+  const qrEl   = document.getElementById("line-qr");
+  const subEl  = document.getElementById("line-qr-sub");
+  const openEl = document.getElementById("line-open");
+  qrEl.innerHTML = "";
+
+  const lineUrl = normalizeLineAddUrl(e);
+
+  if (lineUrl) {
+    new QRCode(qrEl, {
+      text: lineUrl,
       width: 80, height: 80,
       colorDark: "#191919", colorLight: "#ffffff",
       correctLevel: QRCode.CorrectLevel.M
     });
-  } else {
-    document.getElementById("line-qr-block").style.display = "none";
+    subEl.innerHTML = "Scan QR เพื่อ<br>เพิ่มเพื่อนใน LINE";
+    openEl.href = lineUrl;
+    openEl.style.display = "inline-block";
+    return;
   }
+
+  qrEl.innerHTML = `<div class="qr-placeholder">LINE ID<br>ยังไม่ระบุ</div>`;
+  subEl.innerHTML = "กรุณาใส่ LINE ID จริง<br>ในคอลัมน์ M";
+  openEl.style.display = "none";
 }
 
 init();
