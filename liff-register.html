@@ -109,6 +109,14 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
         oninput="validateEmail()">
     </div>
 
+    <!-- LINE ID นามบัตร -->
+    <div class="field">
+      <label class="field-label">LINE ID นามบัตร</label>
+      <div class="field-sub">ไม่บังคับกรอก · ใช้สร้าง QR เพิ่มเพื่อนในหน้า Profile เช่น ploy.tidtang</div>
+      <input class="inp" id="inp-line-public" type="text" placeholder="LINE ID หรือ https://line.me/ti/p/~..." autocomplete="off"
+        oninput="validateLinePublicId()">
+    </div>
+
     <div class="divider"></div>
 
     <button class="btn-submit" id="btn-submit" onclick="doRegister()" disabled>
@@ -201,6 +209,7 @@ async function searchNick(nick) {
       // Auto-fill ถ้ามีข้อมูล
       if (data.emp.name)  document.getElementById("inp-name").value  = data.emp.name;
       if (data.emp.email) document.getElementById("inp-email").value = data.emp.email;
+      if (data.emp.linePublicId) document.getElementById("inp-line-public").value = data.emp.linePublicId;
 
     } else {
       matchedEmp = null;
@@ -218,9 +227,19 @@ async function searchNick(nick) {
 
 function validateEmail() {
   const email = document.getElementById("inp-email").value.trim();
+  const linePublicId = document.getElementById("inp-line-public").value.trim();
   const inp   = document.getElementById("inp-email");
   const valid = email.endsWith("@tidtangstudio.com") && email.length > 20;
   inp.className = valid || email === "" ? "inp" : "inp err";
+  checkReady();
+}
+
+function validateLinePublicId() {
+  const inp = document.getElementById("inp-line-public");
+  const val = inp.value.trim();
+  // ห้ามกรอก LINE User ID ของระบบที่ขึ้นต้นด้วย U... เพราะเอาไป Add Friend ไม่ได้
+  const looksLikeLineUserId = /^U[a-fA-F0-9]{20,}$/i.test(val);
+  inp.className = looksLikeLineUserId ? "inp err" : "inp";
   checkReady();
 }
 
@@ -229,7 +248,9 @@ function checkReady() {
   const name  = document.getElementById("inp-name").value.trim();
   const email = document.getElementById("inp-email").value.trim();
   const emailOk = email.endsWith("@tidtangstudio.com");
-  const ready = nick.length >= 2 && name.length >= 3 && emailOk;
+  const linePublicId = document.getElementById("inp-line-public").value.trim();
+  const lineOk = !/^U[a-fA-F0-9]{20,}$/i.test(linePublicId);
+  const ready = nick.length >= 2 && name.length >= 3 && emailOk && lineOk;
   document.getElementById("btn-submit").disabled = !ready;
 }
 
@@ -237,9 +258,14 @@ async function doRegister() {
   const nick  = document.getElementById("inp-nick").value.trim();
   const name  = document.getElementById("inp-name").value.trim();
   const email = document.getElementById("inp-email").value.trim();
+  const linePublicId = document.getElementById("inp-line-public").value.trim();
 
   if (!email.endsWith("@tidtangstudio.com")) {
     showAlert("err", "กรุณาใช้อีเมลบริษัท @tidtangstudio.com ค่ะ");
+    return;
+  }
+  if (/^U[a-fA-F0-9]{20,}$/i.test(linePublicId)) {
+    showAlert("err", "กรุณากรอก LINE ID จริง ไม่ใช่ LINE User ID ที่ขึ้นต้นด้วย U... ค่ะ");
     return;
   }
 
@@ -250,7 +276,7 @@ async function doRegister() {
   try {
     const payload = JSON.stringify({
       action: "registerEmployee",
-      userId, nick, name, email,
+      userId, nick, name, email, linePublicId,
       matchedEmp: matchedEmp || null
     });
 
