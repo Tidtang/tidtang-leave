@@ -253,6 +253,18 @@ body {
   text-align: left; word-break: break-all;
   max-width: 320px;
 }
+
+/* highlight card ที่รับมาจาก URL */
+.req-card.highlight-target {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+  animation: pulse-highlight 1s ease-in-out 3;
+}
+@keyframes pulse-highlight {
+  0%, 100% { outline-color: var(--cream); }
+  50%       { outline-color: var(--amber); }
+}
+
 </style>
 </head>
 <body>
@@ -308,6 +320,7 @@ let userId   = null;
 let approver = null;
 let requests = [];
 let currentTab = "pending";
+let targetReqId = null;   // reqId จาก URL parameter
 let currentInfoReqId = null;
 let currentInfoEmpId = null;
 
@@ -368,6 +381,15 @@ async function init() {
 
     await loadRequests();
 
+    // อ่าน reqId จาก URL แล้ว scroll/highlight
+    const urlParams = new URLSearchParams(window.location.search);
+    const incomingReqId = urlParams.get("reqId") ||
+      (window.location.hash ? new URLSearchParams(window.location.hash.slice(1)).get("reqId") : null);
+    if (incomingReqId) {
+      targetReqId = incomingReqId;
+      scrollToReqId(incomingReqId);
+    }
+
   } catch (err) {
     console.error("init error:", err);
     showError("เกิดข้อผิดพลาด กรุณาลองใหม่ค่ะ", err.message);
@@ -417,6 +439,30 @@ async function loadRequests() {
       </div>`;
   }
 }
+
+// ── scroll & highlight card จาก reqId ที่รับมาจาก URL ──────────
+function scrollToReqId(reqId) {
+  // หา request ใน list ทั้งหมด (pending + done)
+  const req = requests.find(r => r.reqId === reqId);
+  if (!req) return;
+
+  // ถ้า req อยู่ใน tab done ให้ switch ไป done ก่อน
+  if (req.status !== "รออนุมัติ" && currentTab === "pending") {
+    switchTab("done");
+  }
+
+  // รอ render เสร็จแล้ว scroll
+  setTimeout(() => {
+    const idx  = requests.indexOf(req);
+    const card = document.getElementById(`card-${idx}`);
+    if (!card) return;
+    card.classList.add("highlight-target");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    // เอา highlight ออกหลัง 3 วินาที
+    setTimeout(() => card.classList.remove("highlight-target"), 3000);
+  }, 150);
+}
+
 
 function updateCount() {
   const pending = requests.filter(r => r.status === "รออนุมัติ").length;
