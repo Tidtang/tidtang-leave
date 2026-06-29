@@ -30,11 +30,23 @@ body{
 
 /* ── PERSONAL CARD ─────────────────────────────────────── */
 .card-personal{
-  background:#32312f;
+  background:#191919;
   margin:20px 20px 0;
   border-radius:16px;
   padding:32px 28px 28px;
   color:#eae7e4;
+  position:relative;
+  overflow:hidden;
+}
+
+.company-logo{
+  position:absolute;
+  top:24px;
+  right:24px;
+  width:58px;
+  height:auto;
+  opacity:.94;
+  display:block;
 }
 
 .tag{
@@ -136,6 +148,7 @@ body{
 
   <!-- Personal Card -->
   <div class="card-personal">
+    <img src="logo-white.png" alt="TIDTANG Studio" class="company-logo">
     <div class="tag">TIDTANG STUDIO · PERSONAL</div>
 
     <div class="emp-pos-label" id="emp-dept-label">—</div>
