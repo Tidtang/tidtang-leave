@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TIDTANG — Check In / Out</title>
+<!-- v61: checkout message fixed, removed dawn/late-night copy -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -654,7 +655,7 @@ async function submitCheckOutOnSite() {
 
       if (data.success) {
         activeCheckin = null;
-        showSuccess("checkout", timeOut, hour);
+        showSuccess("onsite-checkout", timeOut, hour);
       } else {
         renderMain();
         showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
@@ -737,19 +738,21 @@ function showSuccess(type, time, hour) {
 
   if (type === "checkin") {
     title = "Check In เรียบร้อยค่ะ";
-    msg   = `${time} น.\n\nขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
+    msg   = `${time} น.
+
+ขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
+  } else if (type === "onsite-checkout") {
+    title = "บันทึก Check Out แล้วค่ะ";
+    msg   = `${time} น.
+
+ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
+รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
   } else {
-    const h = hour ?? bangkokNow().getHours();
-    if (h >= 0 && h < 3) {
-      title = "Check Out เรียบร้อยค่ะ";
-      msg   = `${time} น.\n\nขอบคุณที่ทุ่มเทกับงานจนดึกค่ะ\nเดินทางกลับบ้านปลอดภัย และพักผ่อนให้เต็มที่นะคะ`;
-    } else if (h >= 3) {
-      title = "Check Out เรียบร้อยค่ะ";
-      msg   = `${time} น.\n\nแสงแรกของวันกำลังมาแล้ว\nขอบคุณสำหรับความตั้งใจในคืนนี้\nเดินทางกลับบ้านปลอดภัย และอย่าลืมหาเวลาพักผ่อนนะคะ`;
-    } else {
-      title = "Check Out เรียบร้อยค่ะ";
-      msg   = `${time} น.\n\nขอบคุณสำหรับวันนี้ค่ะ เดินทางกลับบ้านปลอดภัยนะคะ`;
-    }
+    title = "บันทึก Check Out แล้วค่ะ";
+    msg   = `${time} น.
+
+ขอบคุณสำหรับวันนี้ค่ะ
+ระบบบันทึกเวลาออกงานเรียบร้อยแล้ว`;
   }
 
   body.innerHTML = `
