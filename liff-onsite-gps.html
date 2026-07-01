@@ -391,11 +391,16 @@ async function doCheckout() {
     const data = await res.json();
 
     if (data.success) {
-      const hoursLabel = isAutoOut ? '1 ชั่วโมง (Auto — ออกนอกรัศมีเกิน 200m)' : (data.method || 'Manual');
       document.getElementById('success-icon').textContent = '';
-      document.getElementById('success-title').textContent = 'Check Out แล้วค่ะ!';
-      document.getElementById('success-sub').textContent =
-        `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${isAutoOut ? '(+1hr)' : time} น.\nวิธี: ${hoursLabel}`;
+      if (isAutoOut) {
+        document.getElementById('success-title').textContent = 'บันทึก Auto Check Out แล้วค่ะ';
+        document.getElementById('success-sub').textContent =
+          `คุณอยู่นอกรัศมีจากจุด Check In เกิน 200 เมตร\nระบบจึงบันทึกเวลาทำงาน On Site เป็น 1 ชั่วโมงตามเงื่อนไขค่ะ`;
+      } else {
+        document.getElementById('success-title').textContent = 'บันทึก Check Out แล้วค่ะ';
+        document.getElementById('success-sub').textContent =
+          `ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว\nรายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
+      }
       document.getElementById('success-screen').classList.add('show');
     } else {
       showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
@@ -455,9 +460,9 @@ async function doEmergencyCheckout() {
 
     if (data.success) {
       document.getElementById('success-icon').textContent = '';
-      document.getElementById('success-title').textContent = 'ส่ง Emergency Check Out แล้วค่ะ';
+      document.getElementById('success-title').textContent = 'ส่งคำขอ Emergency Check Out แล้วค่ะ';
       document.getElementById('success-sub').textContent =
-        `${activeCheckin.projectName}\n${activeCheckin.timeIn}–${time} น.\nระยะจากจุด Check In: ${Math.round(dist)}m\nรอ HR/Admin Verify เวลาทำงานค่ะ`;
+        `ระบบบันทึกเวลา Check Out จริงของคุณไว้แล้ว\nกรุณารอ HR/Admin ตรวจสอบและยืนยันเวลาทำงานค่ะ`;
       document.getElementById('success-screen').classList.add('show');
     } else {
       showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
