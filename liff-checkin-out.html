@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<!-- TIDTANG_V62_CHECKOUT_MESSAGE_FIXED_2026-07-01 -->
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
 <!-- v61: checkout message fixed, removed dawn/late-night copy -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -734,25 +738,25 @@ function showCheckOutWifiError() {
 // ── SUCCESS SCREENS ──────────────────────────────────────────────
 function showSuccess(type, time, hour) {
   const body = document.getElementById("body");
-  let title, msg;
-
-  if (type === "checkin") {
-    title = "Check In เรียบร้อยค่ะ";
-    msg   = `${time} น.
-
-ขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
-  } else if (type === "onsite-checkout") {
-    title = "บันทึก Check Out แล้วค่ะ";
-    msg   = `${time} น.
-
-ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
-รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
-  } else {
-    title = "บันทึก Check Out แล้วค่ะ";
-    msg   = `${time} น.
+  let title = "บันทึก Check Out แล้วค่ะ";
+  let msg = `${time} น.
 
 ขอบคุณสำหรับวันนี้ค่ะ
 ระบบบันทึกเวลาออกงานเรียบร้อยแล้ว`;
+
+  if (type === "checkin") {
+    title = "Check In เรียบร้อยค่ะ";
+    msg = `${time} น.
+
+ขอให้เป็นวันที่ดีและทำงานอย่างราบรื่นนะคะ`;
+  }
+
+  if (type === "onsite-checkout") {
+    title = "บันทึก Check Out แล้วค่ะ";
+    msg = `${time} น.
+
+ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
+รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
   }
 
   body.innerHTML = `
