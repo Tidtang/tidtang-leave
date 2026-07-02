@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
-<!-- v61: checkout message fixed, removed dawn/late-night copy -->
+<!-- v63: On Site checkout GPS radius + separate Check In/Out location support -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -602,7 +602,21 @@ function startCheckOutOnSite() {
     pos => {
       onsiteCheckoutGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       const el = document.getElementById("gps-out-status");
-      if (el) { el.className = "alert alert-ok"; el.textContent = `GPS พร้อมแล้วค่ะ`; }
+      if (el) {
+        if (activeCheckin && activeCheckin.lat && activeCheckin.lng) {
+          const dist = getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
+          if (dist > 200) {
+            el.className = "alert alert-warn";
+            el.textContent = `คุณอยู่นอกรัศมีจากจุด Check In ${Math.round(dist)}m — ระบบจะให้เลือก Auto Check Out 1 ชม. หรือ Emergency Check Out ค่ะ`;
+          } else {
+            el.className = "alert alert-ok";
+            el.textContent = `GPS พร้อมแล้วค่ะ · อยู่ในรัศมี ${Math.round(dist)}m`;
+          }
+        } else {
+          el.className = "alert alert-ok";
+          el.textContent = `GPS พร้อมแล้วค่ะ`;
+        }
+      }
       checkOnsiteOutReady();
     },
     err => {
@@ -627,51 +641,149 @@ function checkOnsiteOutReady() {
   if (btn) btn.disabled = !(onsiteCheckoutPhoto && onsiteCheckoutGPS);
 }
 
-async function submitCheckOutOnSite() {
+function getOnsiteDistanceFromCheckin() {
+  if (!activeCheckin || !activeCheckin.lat || !activeCheckin.lng || !onsiteCheckoutGPS) return null;
+  return getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), Number(onsiteCheckoutGPS.lat), Number(onsiteCheckoutGPS.lng));
+}
+
+function readOnsitePhotoBase64() {
+  return new Promise((resolve, reject) => {
+    if (!onsiteCheckoutPhoto) return reject(new Error("ยังไม่ได้ถ่ายรูปค่ะ"));
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result.split(",")[1]);
+    reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่ได้ค่ะ"));
+    reader.readAsDataURL(onsiteCheckoutPhoto);
+  });
+}
+
+function showOutOfRadiusOptions(dist) {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="emergency-card" style="border-color:var(--amber)">
+      <div class="emergency-title" style="color:var(--amber)">อยู่นอกรัศมี Check In</div>
+      <div class="emergency-sub">
+        คุณอยู่ห่างจากจุด Check In ประมาณ ${Math.round(dist)} เมตร<br>
+        กรุณาเลือกวิธีบันทึก Check Out ค่ะ
+      </div>
+    </div>
+
+    <button class="btn btn-checkout" style="margin-top:12px" onclick="submitCheckOutOnSite(true)">
+      ยอมรับ Auto Check Out 1 ชม.
+    </button>
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="submitEmergencyCheckOutOnSite(${Math.round(dist)})">
+      ขอ Emergency Check Out เพื่อตรวจสอบเวลา
+    </button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="startCheckOutOnSite()">กลับไปถ่ายรูปใหม่</button>`;
+}
+
+async function submitCheckOutOnSite(acceptAutoOut = false) {
   if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
+
+  const dist = getOnsiteDistanceFromCheckin();
+  if (dist !== null && dist > 200 && !acceptAutoOut) {
+    showOutOfRadiusOptions(dist);
+    return;
+  }
 
   const now     = bangkokNow();
   const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
   const hour    = now.getHours();
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const photoBase64 = e.target.result.split(",")[1];
-    showLoading("กำลัง Check Out On Site...");
-    try {
-      const res = await fetch(WEBAPP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
-        body: JSON.stringify({
-          action: "attendanceCheckout",
-          userId,
-          timeOut,
-          lat: onsiteCheckoutGPS.lat,
-          lng: onsiteCheckoutGPS.lng,
-          photo: photoBase64,
-          checkoutMethod: "On Site"
-        })
-      });
-      const data = await res.json();
+  try {
+    const photoBase64 = await readOnsitePhotoBase64();
+    showLoading(acceptAutoOut ? "กำลังบันทึก Auto Check Out..." : "กำลัง Check Out On Site...");
 
-      hide("loading");
-      document.getElementById("app").style.display = "block";
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "attendanceCheckout",
+        userId,
+        timeOut,
+        lat: onsiteCheckoutGPS.lat,
+        lng: onsiteCheckoutGPS.lng,
+        photo: photoBase64,
+        checkoutMethod: acceptAutoOut ? "auto-onsite" : "On Site",
+        acceptAutoOut: acceptAutoOut
+      })
+    });
+    const data = await res.json();
 
-      if (data.success) {
-        activeCheckin = null;
-        showSuccess("onsite-checkout", timeOut, hour);
-      } else {
-        renderMain();
-        showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
-      }
-    } catch(err) {
-      hide("loading");
-      document.getElementById("app").style.display = "block";
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
+    if (data.success) {
+      activeCheckin = null;
+      if (data.autoOut || acceptAutoOut) showSuccess("onsite-autoout", data.timeOut || timeOut, hour);
+      else showSuccess("onsite-checkout", data.timeOut || timeOut, hour);
+    } else if (data.outOfRadius) {
+      showOutOfRadiusOptions(data.dist || dist || 0);
+    } else {
       renderMain();
-      showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
-  };
-  reader.readAsDataURL(onsiteCheckoutPhoto);
+  } catch(err) {
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+  }
+}
+
+async function submitEmergencyCheckOutOnSite(distFromCheckin) {
+  if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
+  const reason = prompt("กรุณาระบุเหตุผลสำหรับ Emergency Check Out เช่น เดินทางกลับจากไซต์ / เสร็จงานนอกพื้นที่ / GPS เพี้ยน");
+  if (!reason || reason.trim().length < 3) return;
+
+  const now     = bangkokNow();
+  const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+  try {
+    const photoBase64 = await readOnsitePhotoBase64();
+    showLoading("กำลังส่ง Emergency Check Out...");
+
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "onSiteEmergencyCheckout",
+        userId,
+        timeOut,
+        lat: onsiteCheckoutGPS.lat,
+        lng: onsiteCheckoutGPS.lng,
+        photo: photoBase64,
+        reason: reason.trim(),
+        distFromCheckin: Math.round(distFromCheckin || 0)
+      })
+    });
+    const data = await res.json();
+
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
+    if (data.success) {
+      activeCheckin = null;
+      showSuccess("onsite-emergency", timeOut, now.getHours());
+    } else {
+      renderMain();
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+    }
+  } catch(err) {
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+  }
+}
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const p1 = lat1 * Math.PI / 180;
+  const p2 = lat2 * Math.PI / 180;
+  const dp = (lat2 - lat1) * Math.PI / 180;
+  const dl = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dp/2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 // ── CHECK OUT FLOW (Office) ───────────────────────────────────────────
@@ -757,6 +869,22 @@ function showSuccess(type, time, hour) {
 
 ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
 รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
+  }
+
+  if (type === "onsite-autoout") {
+    title = "บันทึก Auto Check Out แล้วค่ะ";
+    msg = `${time} น.
+
+คุณอยู่นอกรัศมีจากจุด Check In เกิน 200 เมตร
+ระบบจึงบันทึกเวลาทำงาน On Site เป็น 1 ชั่วโมงตามเงื่อนไขค่ะ`;
+  }
+
+  if (type === "onsite-emergency") {
+    title = "ส่งคำขอ Emergency Check Out แล้วค่ะ";
+    msg = `${time} น.
+
+ระบบบันทึกเวลา Check Out จริงของคุณไว้แล้ว
+กรุณารอ HR/Admin ตรวจสอบและยืนยันเวลาทำงานค่ะ`;
   }
 
   body.innerHTML = `
