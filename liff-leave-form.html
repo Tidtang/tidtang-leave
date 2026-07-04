@@ -310,24 +310,7 @@ html,body{
     <!-- Emergency notice -->
     <div class="emergency-notice" id="emergency-notice">
       ลาด่วนฉุกเฉินสำหรับเหตุจำเป็นเร่งด่วนที่ไม่สามารถแจ้งล่วงหน้าได้<br>
-      กรุณาเลือกประเภท ระบุวันที่ และเหตุผลให้ครบ เพื่อส่งให้ Senior / Head พิจารณาค่ะ
-    </div>
-
-    <!-- v66: Emergency Leave Type -->
-    <div id="emergency-type-section" style="display:none">
-      <div class="section-label">ประเภทคำขอฉุกเฉิน</div>
-      <div class="lt-grid">
-        <button class="lt-btn sel" id="btn-emg-leave" data-emg-type="ลาฉุกเฉินพิเศษ" onclick="selEmergencyLeaveType('ลาฉุกเฉินพิเศษ')">
-          <span class="lt-icon"></span>
-          <span class="lt-name">ลาฉุกเฉิน</span>
-          <span class="lt-desc">Emergency Leave · EMG</span>
-        </button>
-        <button class="lt-btn" id="btn-lwp-leave" data-emg-type="Leave Without Pay" onclick="selEmergencyLeaveType('Leave Without Pay')">
-          <span class="lt-icon"></span>
-          <span class="lt-name">ลาไม่รับเงินเดือน</span>
-          <span class="lt-desc">Leave Without Pay · LWP</span>
-        </button>
-      </div>
+      กรุณาระบุวันที่และเหตุผลให้ครบ เพื่อส่งให้ Senior / Head พิจารณาค่ะ
     </div>
 
     <!-- Quota -->
@@ -612,32 +595,6 @@ function openOnSite() {
   });
 }
 
-// v66: เลือกประเภทในเมนูฉุกเฉิน — EMG หรือ LWP
-function selEmergencyLeaveType(type) {
-  selectedType = type;
-  document.querySelectorAll('[data-emg-type]').forEach(btn => btn.classList.remove('sel'));
-  const activeBtn = document.querySelector(`[data-emg-type="${type}"]`);
-  if (activeBtn) activeBtn.classList.add('sel');
-
-  const lbl = document.getElementById('selected-type-label');
-  const reasonLabel = document.querySelector('#reason-section .section-label');
-  const reasonInput = document.getElementById('reason');
-  const submitBtn = document.getElementById('submit-btn');
-
-  if (type === 'Leave Without Pay') {
-    if (lbl) lbl.textContent = 'ลาไม่รับเงินเดือน · LWP';
-    if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาแบบไม่รับเงินเดือน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
-    if (reasonInput) reasonInput.placeholder = 'ระบุเหตุผล/รายละเอียดการลาแบบไม่รับเงินเดือน...';
-    if (submitBtn) submitBtn.textContent = 'ส่งคำขอ LWP →';
-  } else {
-    if (lbl) lbl.textContent = 'ลาฉุกเฉิน · EMG';
-    if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาด่วนฉุกเฉิน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
-    if (reasonInput) reasonInput.placeholder = 'ระบุเหตุผล/รายละเอียดเหตุฉุกเฉิน...';
-    if (submitBtn) submitBtn.textContent = 'ส่งคำขอลาฉุกเฉิน →';
-  }
-  calcDays();
-}
-
 // v65: โหมดลาด่วนฉุกเฉิน — ใช้หน้าเดิม แต่ซ่อน quota/type selector ให้เป็นฟอร์มเฉพาะ
 function initEmergencyLeave() {
   isEmergencyLeave = true;
@@ -646,15 +603,13 @@ function initEmergencyLeave() {
   halfPart = null;
 
   document.getElementById('header-title').textContent = 'ลาด่วนฉุกเฉิน';
-  document.getElementById('header-sub').textContent = 'เลือกประเภท ระบุวันที่และเหตุผล เพื่อส่งคำขออนุมัติค่ะ';
+  document.getElementById('header-sub').textContent = 'กรอกวันที่และเหตุผล เพื่อส่งคำขออนุมัติค่ะ';
 
   const typeSection = document.getElementById("lt-grid");
   if (typeSection) typeSection.closest("div").style.display = "none";
   document.getElementById('quota-section').style.display = 'none';
   document.getElementById('vacation-notice').classList.remove('show');
   document.getElementById('emergency-notice').classList.add('show');
-  const emgTypeSection = document.getElementById('emergency-type-section');
-  if (emgTypeSection) emgTypeSection.style.display = 'block';
   document.getElementById('halfday-section').style.display = 'none';
 
   const userQuota = document.querySelector('.user-quota');
@@ -663,8 +618,8 @@ function initEmergencyLeave() {
   const bar = document.getElementById('selected-type-bar');
   const lbl = document.getElementById('selected-type-label');
   if (bar && lbl) {
-    lbl.textContent = 'ลาฉุกเฉิน · EMG';
-    bar.style.display = 'flex';
+    lbl.textContent = 'ลาด่วนฉุกเฉิน';
+    bar.style.display = 'none';
     const changeBtn = bar.querySelector('button');
     if (changeBtn) changeBtn.style.display = 'none';
   }
@@ -674,10 +629,9 @@ function initEmergencyLeave() {
   const reasonLabel = document.querySelector('#reason-section .section-label');
   if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาด่วนฉุกเฉิน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
   document.getElementById('reason').placeholder = 'ระบุเหตุผล/รายละเอียดเหตุฉุกเฉิน...';
-  document.getElementById('submit-btn').textContent = 'ส่งคำขอลาฉุกเฉิน →';
+  document.getElementById('submit-btn').textContent = 'ส่งคำขอลาด่วนฉุกเฉิน →';
   document.getElementById('submit-btn').style.display = 'block';
   document.getElementById('alert-box').style.display = 'none';
-  selEmergencyLeaveType('ลาฉุกเฉินพิเศษ');
 
   calcDays();
 }
@@ -722,7 +676,7 @@ function calcDays() {
 function checkAdvance(start, days) {
   const alert = document.getElementById('alert-box');
   const advance = { 'ลากิจ': 7, 'ลาพักร้อน': 30, 'Leave Without Pay': 30 };
-  const req = isEmergencyLeave ? 0 : advance[selectedType];
+  const req = advance[selectedType];
 
   if (req) {
     const today = bangkokNow();
@@ -751,9 +705,9 @@ async function submitLeave() {
     return;
   }
 
-  // v66: EMG/LWP ในเมนูฉุกเฉินต้องมีเหตุผล
+  // v65: ลาด่วนฉุกเฉินต้องมีเหตุผล
   if (isEmergencyLeave && !document.getElementById('reason').value.trim()) {
-    showAlertBox(selectedType === 'Leave Without Pay' ? 'กรุณาระบุเหตุผลการลาแบบไม่รับเงินเดือนค่ะ' : 'กรุณาระบุเหตุผลการลาด่วนฉุกเฉินค่ะ', 'err');
+    showAlertBox('กรุณาระบุเหตุผลการลาด่วนฉุกเฉินค่ะ', 'err');
     return;
   }
 
@@ -780,7 +734,6 @@ async function submitLeave() {
     timeFrom:  dayMode === 'half' ? timeMap[halfPart].from : null,
     timeTo:    dayMode === 'half' ? timeMap[halfPart].to   : null,
     days:      dayMode === 'half' ? 0.5 : null,
-    emergencyMode: isEmergencyLeave,
   };
 
   try {
