@@ -288,11 +288,6 @@ html,body{
           <span class="lt-name">ลากิจ</span>
           <span class="lt-desc">ล่วงหน้า 7 วัน</span>
         </button>
-        <button class="lt-btn" data-type="WFH" onclick="selType(this)">
-          <span class="lt-icon"></span>
-          <span class="lt-name">WFH</span>
-          <span class="lt-desc">ไม่หักโควต้า</span>
-        </button>
         <button class="lt-btn full-width" data-type="On Site" onclick="openOnSite()" id="btn-onsite">
           <span class="lt-icon"></span>
           <span class="lt-name">On Site</span>
@@ -317,7 +312,6 @@ html,body{
         <div class="q-bar-bg"><div class="q-bar good" id="q-vacation-bar" style="width:0%"></div></div>
         <div class="q-row"><span class="q-key"> ลากิจ</span><span class="q-val" id="q-personal-val">—</span></div>
         <div class="q-bar-bg"><div class="q-bar good" id="q-personal-bar" style="width:0%"></div></div>
-        <div class="q-row" style="margin-bottom:0"><span class="q-key"> WFH</span><span class="q-val" id="q-wfh-val">—</span></div>
       </div>
     </div>
 
@@ -473,7 +467,6 @@ function renderEmployee() {
     document.getElementById('q-sick-val').textContent = `${quotaData.sickLeft}/${quotaData.sickTotal} วัน`;
     document.getElementById('q-vacation-val').textContent = `${quotaData.vacationLeft}/${quotaData.vacationTotal} วัน`;
     document.getElementById('q-personal-val').textContent = `${quotaData.personalLeft}/${quotaData.personalTotal} วัน`;
-    document.getElementById('q-wfh-val').textContent = `${quotaData.wfhCount} ครั้ง`;
 
     setBar('q-sick-bar', quotaData.sickLeft, quotaData.sickTotal);
     setBar('q-vacation-bar', quotaData.vacationLeft, quotaData.vacationTotal);
@@ -737,7 +730,7 @@ function setBar(id, left, total) {
 
 function showSuccess(msg, type) {
   const icons = {
-    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'WFH':'', 'On Site':''
+    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'On Site':''
   };
   const auto = type === 'ลาป่วย';
   document.getElementById('success-icon').textContent = icons[type] || '';

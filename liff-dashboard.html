@@ -232,7 +232,7 @@ const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQV
 const MONTHS_TH  = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 const LEAVE_COLORS = {
   "ลาป่วย":"#e8a020","ลาพักร้อน":"#3b82f6","ลากิจ":"#4caf50",
-  "WFH":"#a855f7","On Site":"#ef4444","ลาเกินโควต้า":"#ec4899","Leave Without Pay":"#6b7280"
+  "On Site":"#ef4444","ลาเกินโควต้า":"#ec4899","Leave Without Pay":"#6b7280"
 };
 
 let userId = null;
@@ -626,8 +626,7 @@ function openEmpQuota(nick) {
         <div class="qdb-track"><div class="qdb-fill" style="width:${q.personalTotal>0?Math.round(q.personalLeft/q.personalTotal*100):0}%;background:var(--green)"></div></div>
         <span class="qdb-val">${q.personalLeft}/${q.personalTotal}</span>
       </div>
-    </div>
-    <div class="detail-row"><span>WFH</span><span class="detail-val">${q.wfhCount} ครั้ง</span></div>`;
+    </div>`;
   }
 
   // ประวัติลาเดือนนี้
