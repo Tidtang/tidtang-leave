@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TIDTANG — Verify</title>
+<!-- v69: removed Contact Admin/HR tab and items -->
 <!-- v63: separate Check In / Check Out location links -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -99,28 +100,23 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
   </div>
   <div class="tabs">
     <div class="tab active" onclick="switchTab(0)">Emergency<span class="cnt" id="cnt-emg">0</span></div>
-    <div class="tab" onclick="switchTab(1)">ติดต่อ Admin/HR<span class="cnt" id="cnt-con">0</span></div>
-    <div class="tab" onclick="switchTab(2)">No In-Out<span class="cnt" id="cnt-no">0</span></div>
-    <div class="tab" onclick="switchTab(3)">On Site<span class="cnt" id="cnt-os">0</span></div>
-    <div class="tab" onclick="switchTab(4)">ดำเนินการแล้ว</div>
+    <div class="tab" onclick="switchTab(1)">No In-Out<span class="cnt" id="cnt-no">0</span></div>
+    <div class="tab" onclick="switchTab(2)">On Site<span class="cnt" id="cnt-os">0</span></div>
+    <div class="tab" onclick="switchTab(3)">ดำเนินการแล้ว</div>
   </div>
   <div class="content active" id="tab-0">
     <div class="sec-label">Emergency Check In / Out รออนุมัติ</div>
     <div id="emg-list"></div>
   </div>
   <div class="content" id="tab-1">
-    <div class="sec-label">ขอความช่วยเหลือ / พิมพ์คำร้อง</div>
-    <div id="con-list"></div>
-  </div>
-  <div class="content" id="tab-2">
     <div class="sec-label">No In-Out รอชี้แจง</div>
     <div id="no-list"></div>
   </div>
-  <div class="content" id="tab-3">
+  <div class="content" id="tab-2">
     <div class="sec-label">On Site รอ Verify</div>
     <div id="os-list"></div>
   </div>
-  <div class="content" id="tab-4">
+  <div class="content" id="tab-3">
     <div class="sec-label">ดำเนินการแล้ว</div>
     <div id="done-list"></div>
   </div>
@@ -158,7 +154,7 @@ async function loadAll() {
       document.getElementById("emg-list").innerHTML = `<div class="err-box">${data.msg || "โหลดไม่สำเร็จค่ะ"}</div>`;
       return;
     }
-    allItems = data.items || [];
+    allItems = (data.items || []).filter(p => p.category !== "contact");
     renderAll();
   } catch(err) {
     document.getElementById("emg-list").innerHTML = `<div class="err-box">${err.message}</div>`;
@@ -167,18 +163,15 @@ async function loadAll() {
 
 function renderAll() {
   const emg  = allItems.filter(p => p.category === "emergency" && (p.verifyStatus || "") === "Unverified");
-  const con  = allItems.filter(p => p.category === "contact"   && (p.verifyStatus || "") === "Unverified");
   const no   = allItems.filter(p => p.category === "noout"     && (p.verifyStatus || "") === "Unverified");
   const os   = allItems.filter(p => p.category === "onsite"    && (p.verifyStatus || "") === "Unverified");
   const done = allItems.filter(p => (p.verifyStatus || "") !== "Unverified");
 
   document.getElementById("cnt-emg").textContent = emg.length;
-  document.getElementById("cnt-con").textContent = con.length;
   document.getElementById("cnt-no").textContent  = no.length;
   document.getElementById("cnt-os").textContent  = os.length;
 
   document.getElementById("emg-list").innerHTML  = emg.length  ? emg.map(cardEmg).join("")  : `<div class="empty">ไม่มีรายการ Emergency รอค่ะ</div>`;
-  document.getElementById("con-list").innerHTML  = con.length  ? con.map(cardCon).join("")  : `<div class="empty">ไม่มีรายการติดต่อ Admin/HR ค่ะ</div>`;
   document.getElementById("no-list").innerHTML   = no.length   ? no.map(cardNoOut).join("") : `<div class="empty">ไม่มีรายการ No In-Out ค่ะ</div>`;
   document.getElementById("os-list").innerHTML   = os.length   ? os.map(cardOnSite).join(""): `<div class="empty">ไม่มีรายการ On Site รอ Verify ค่ะ</div>`;
   document.getElementById("done-list").innerHTML = done.length ? done.map(cardDone).join(""): `<div class="empty">ยังไม่มีรายการที่ดำเนินการแล้วค่ะ</div>`;
@@ -210,31 +203,6 @@ function cardEmg(p) {
       <div class="btn-row">
         <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">Approve</button>
         <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','${p.type}','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">Decline</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function cardCon(p) {
-  return `<div class="card type-contact" id="card-${p.id}">
-    <div class="card-header"><span class="type-badge b-contact">CHECK OUT ASSISTANCE</span></div>
-    <div class="card-name">${p.empNick}</div>
-    <div class="card-dept">${p.empDept||"—"}</div>
-    <div class="card-body">
-      <div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
-      <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
-      <div class="row"><span class="lbl">แจ้งเมื่อ</span><span class="val">${p.time||"—"} น.</span></div>
-      <div class="row"><span class="lbl">คำร้อง</span><span class="reason-txt">${p.reason||"—"}</span></div>
-    </div>
-    <div class="ref">REF: ${p.id}</div>
-    <div class="card-footer">
-      <textarea class="reply-area" id="reply-${p.id}" rows="3"
-        placeholder="พิมพ์ข้อความตอบกลับพนักงาน หรือขอหลักฐานเพิ่มเติมค่ะ..."
-        oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
-      <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">ส่งข้อความหาพนักงาน</button>
-      <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ยืนยัน Check Out</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','contact-checkout','${p.time}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ปฏิเสธ</button>
       </div>
     </div>
   </div>`;
@@ -289,7 +257,7 @@ function cardOnSite(p) {
 }
 
 function cardDone(p) {
-  const lblMap = { emergency:"EMG", contact:"CONTACT", noout:"NO OUT", onsite:"ON SITE" };
+  const lblMap = { emergency:"EMG", noout:"NO OUT", onsite:"ON SITE" };
   const lbl = lblMap[p.category] || p.category;
   const cls = (p.status.includes("อนุมัติ")||p.status.includes("ยืนยัน")||p.status.includes("รับทราบ")||p.status.includes("Verify")) ? "b-done-ok" : "b-done-no";
   return `<div class="card done">
