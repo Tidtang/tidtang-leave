@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>TIDTANG — Verify</title>
+<!-- v70: show On Site photo evidence link -->
 <!-- v69: removed Contact Admin/HR tab and items -->
 <!-- v63: separate Check In / Check Out location links -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -245,6 +246,7 @@ function cardOnSite(p) {
       ${p.checkInMap ? `<div class="row"><span class="lbl">GPS In</span><a class="photo-link" style="font-size:11px" href="${p.checkInMap}" target="_blank">ดูจุด Check In</a></div>` : ""}
       ${p.checkOutMap ? `<div class="row"><span class="lbl">GPS Out</span><a class="photo-link" style="font-size:11px" href="${p.checkOutMap}" target="_blank">ดูจุด Check Out</a></div>` : ""}
       ${(!p.checkInMap && !p.checkOutMap && p.mapsLink) ? `<div class="row"><span class="lbl">GPS</span><a class="photo-link" style="font-size:11px" href="${p.mapsLink}" target="_blank">ดูแผนที่</a></div>` : ""}
+      ${p.photoLink ? `<div class="row"><span class="lbl">หลักฐาน</span><a class="photo-link" style="font-size:11px" href="${p.photoLink}" target="_blank">ดูรูปหลักฐานแนบ</a></div>` : ""}
     </div>
     <div class="ref">REF: ${p.id}</div>
     <div class="card-footer">
