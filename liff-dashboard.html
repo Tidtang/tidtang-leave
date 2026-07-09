@@ -307,11 +307,19 @@ async function init() {
     document.getElementById("header-date").textContent =
       `${now.getDate()} ${MONTHS_TH[now.getMonth()+1]} ${now.getFullYear()+543} · ${data.emp.nick}`;
 
+    // v73 FAST: แสดงหน้า Dashboard ก่อน แล้วค่อยโหลดข้อมูลแต่ละ tab แบบ background
     hide("loading"); showEl("app");
     document.getElementById("office-ip-card").style.display = "block";
     renderMonthSel();
-    await loadAll();
-    await loadOfficeIPStatus();
+
+    // โหลด tab แรกทันที / tab อื่นโหลดตามหลัง ไม่บล็อกการเปิดหน้า
+    loadTodayTab();
+    setTimeout(() => {
+      loadAttTab();
+      loadCalendar();
+      loadQuotaTab();
+      loadOfficeIPStatus();
+    }, 0);
   } catch(err) {
     setLoad("เกิดข้อผิดพลาด: " + err.message);
   }
