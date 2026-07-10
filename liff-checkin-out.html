@@ -8,6 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
+<!-- v78: restore getDistance helper for On Site GPS -->
 <!-- v77: unified On Site/Forgot Check Out through attendanceCheckout -->
 <!-- v63: On Site checkout GPS radius + separate Check In/Out location support -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -650,6 +651,17 @@ function onOnsiteOutPhoto(input) {
 function checkOnsiteOutReady() {
   const btn = document.getElementById("btn-onsite-out-submit");
   if (btn) btn.disabled = !(onsiteCheckoutPhoto && onsiteCheckoutGPS);
+}
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // รัศมีโลก หน่วยเมตร
+  const p1 = Number(lat1) * Math.PI / 180;
+  const p2 = Number(lat2) * Math.PI / 180;
+  const dp = (Number(lat2) - Number(lat1)) * Math.PI / 180;
+  const dl = (Number(lng2) - Number(lng1)) * Math.PI / 180;
+  const a = Math.sin(dp / 2) ** 2 +
+            Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function getOnsiteDistanceFromCheckin() {
