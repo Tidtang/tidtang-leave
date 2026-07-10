@@ -8,6 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
+<!-- v77: unified On Site/Forgot Check Out through attendanceCheckout -->
 <!-- v63: On Site checkout GPS radius + separate Check In/Out location support -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -442,7 +443,7 @@ async function submitEmergency(mode) {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body: JSON.stringify({
-            action: mode === "checkin" ? "emergencyCheckin" : (mode === "onsite-forgot-out" ? "onSiteEmergencyCheckout" : "emergencyCheckout"),
+            action: mode === "checkin" ? "emergencyCheckin" : (mode === "onsite-forgot-out" ? "attendanceCheckout" : "emergencyCheckout"),
             userId,
             time: timeStr,
             timeOut: timeStr,
@@ -450,7 +451,8 @@ async function submitEmergency(mode) {
             lat: emergencyGPS?.lat || null,
             lng: emergencyGPS?.lng || null,
             photo: photoBase64,
-            distFromCheckin: mode === "onsite-forgot-out" ? calculateOnsiteDistance() : null,
+            checkoutMethod: mode === "onsite-forgot-out" ? "On Site" : undefined,
+            forgotOnsite: mode === "onsite-forgot-out",
             method: mode === "onsite-forgot-out" ? "On Site Forgot Check Out" : "Emergency"
           })
         });
