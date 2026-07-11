@@ -115,7 +115,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 </div>
 
 <script>
-console.info("TIDTANG Check In/Out v79 loaded");
+console.info("TIDTANG Check In/Out v80 loaded");
 const LIFF_ID    = "2010134572-hkPA2Wuf";
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
 const WIFI_PWD_KEY = "tidtang_wifi_pwd";
@@ -139,10 +139,18 @@ function calculateDistanceMeters(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// aliases ชั่วคราว รองรับ code/cache เก่าที่อาจยังเรียกชื่อเดิม
+// v80: named wrappers รองรับทุก flow/inline handler และ cache รุ่นเก่า
+function getDistance(lat1, lng1, lat2, lng2) {
+  return calculateDistanceMeters(lat1, lng1, lat2, lng2);
+}
+
+function calculateOnsiteDistance(lat1, lng1, lat2, lng2) {
+  return calculateDistanceMeters(lat1, lng1, lat2, lng2);
+}
+
 window.calculateDistanceMeters = calculateDistanceMeters;
-window.getDistance = calculateDistanceMeters;
-window.calculateOnsiteDistance = calculateDistanceMeters;
+window.getDistance = getDistance;
+window.calculateOnsiteDistance = calculateOnsiteDistance;
 
 function bangkokNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
