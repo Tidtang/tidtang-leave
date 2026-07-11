@@ -8,7 +8,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
-<!-- v78: restore getDistance helper for On Site GPS -->
+<!-- v79: stable On Site distance helper declared before all flows -->
 <!-- v77: unified On Site/Forgot Check Out through attendanceCheckout -->
 <!-- v63: On Site checkout GPS radius + separate Check In/Out location support -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -115,12 +115,34 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 </div>
 
 <script>
+console.info("TIDTANG Check In/Out v79 loaded");
 const LIFF_ID    = "2010134572-hkPA2Wuf";
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
 const WIFI_PWD_KEY = "tidtang_wifi_pwd";
 const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 
 let userId = null, emp = null, activeCheckin = null;
+
+// v79: ฟังก์ชันคำนวณระยะทางกลาง — ประกาศก่อนทุก flow เพื่อป้องกัน ReferenceError
+function calculateDistanceMeters(lat1, lng1, lat2, lng2) {
+  const values = [lat1, lng1, lat2, lng2].map(Number);
+  if (values.some(v => !Number.isFinite(v))) return null;
+
+  const [aLat, aLng, bLat, bLng] = values;
+  const R = 6371000;
+  const p1 = aLat * Math.PI / 180;
+  const p2 = bLat * Math.PI / 180;
+  const dp = (bLat - aLat) * Math.PI / 180;
+  const dl = (bLng - aLng) * Math.PI / 180;
+  const a = Math.sin(dp / 2) ** 2 +
+            Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// aliases ชั่วคราว รองรับ code/cache เก่าที่อาจยังเรียกชื่อเดิม
+window.calculateDistanceMeters = calculateDistanceMeters;
+window.getDistance = calculateDistanceMeters;
+window.calculateOnsiteDistance = calculateDistanceMeters;
 
 function bangkokNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
@@ -621,9 +643,11 @@ function startCheckOutOnSite() {
       const el = document.getElementById("gps-out-status");
       if (el) {
         if (activeCheckin && activeCheckin.lat && activeCheckin.lng) {
-          const dist = getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
+          const dist = calculateDistanceMeters(activeCheckin.lat, activeCheckin.lng, onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
           el.className = "alert alert-ok";
-          el.textContent = `GPS พร้อมแล้วค่ะ · ระยะจากจุด Check In ${Math.round(dist)}m`;
+          el.textContent = Number.isFinite(dist)
+            ? `GPS พร้อมแล้วค่ะ · ระยะจากจุด Check In ${Math.round(dist)}m`
+            : "GPS พร้อมแล้วค่ะ";
         } else {
           el.className = "alert alert-ok";
           el.textContent = `GPS พร้อมแล้วค่ะ`;
@@ -653,20 +677,9 @@ function checkOnsiteOutReady() {
   if (btn) btn.disabled = !(onsiteCheckoutPhoto && onsiteCheckoutGPS);
 }
 
-function getDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371000; // รัศมีโลก หน่วยเมตร
-  const p1 = Number(lat1) * Math.PI / 180;
-  const p2 = Number(lat2) * Math.PI / 180;
-  const dp = (Number(lat2) - Number(lat1)) * Math.PI / 180;
-  const dl = (Number(lng2) - Number(lng1)) * Math.PI / 180;
-  const a = Math.sin(dp / 2) ** 2 +
-            Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 function getOnsiteDistanceFromCheckin() {
   if (!activeCheckin || !activeCheckin.lat || !activeCheckin.lng || !onsiteCheckoutGPS) return null;
-  return getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), Number(onsiteCheckoutGPS.lat), Number(onsiteCheckoutGPS.lng));
+  return calculateDistanceMeters(activeCheckin.lat, activeCheckin.lng, onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
 }
 
 function readOnsitePhotoBase64() {
