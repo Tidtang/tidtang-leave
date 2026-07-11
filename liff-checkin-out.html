@@ -8,8 +8,6 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>TIDTANG — Check In / Out</title>
-<!-- v79: stable On Site distance helper declared before all flows -->
-<!-- v77: unified On Site/Forgot Check Out through attendanceCheckout -->
 <!-- v63: On Site checkout GPS radius + separate Check In/Out location support -->
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -115,42 +113,12 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 </div>
 
 <script>
-console.info("TIDTANG Check In/Out v80 loaded");
 const LIFF_ID    = "2010134572-hkPA2Wuf";
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
 const WIFI_PWD_KEY = "tidtang_wifi_pwd";
 const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 
 let userId = null, emp = null, activeCheckin = null;
-
-// v79: ฟังก์ชันคำนวณระยะทางกลาง — ประกาศก่อนทุก flow เพื่อป้องกัน ReferenceError
-function calculateDistanceMeters(lat1, lng1, lat2, lng2) {
-  const values = [lat1, lng1, lat2, lng2].map(Number);
-  if (values.some(v => !Number.isFinite(v))) return null;
-
-  const [aLat, aLng, bLat, bLng] = values;
-  const R = 6371000;
-  const p1 = aLat * Math.PI / 180;
-  const p2 = bLat * Math.PI / 180;
-  const dp = (bLat - aLat) * Math.PI / 180;
-  const dl = (bLng - aLng) * Math.PI / 180;
-  const a = Math.sin(dp / 2) ** 2 +
-            Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// v80: named wrappers รองรับทุก flow/inline handler และ cache รุ่นเก่า
-function getDistance(lat1, lng1, lat2, lng2) {
-  return calculateDistanceMeters(lat1, lng1, lat2, lng2);
-}
-
-function calculateOnsiteDistance(lat1, lng1, lat2, lng2) {
-  return calculateDistanceMeters(lat1, lng1, lat2, lng2);
-}
-
-window.calculateDistanceMeters = calculateDistanceMeters;
-window.getDistance = getDistance;
-window.calculateOnsiteDistance = calculateOnsiteDistance;
 
 function bangkokNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
@@ -215,8 +183,7 @@ function renderMain() {
       </div>
       <div class="sec-label">Check Out</div>
       ${isOnSite
-        ? `<button class="btn btn-checkout" onclick="startCheckOutOnSite()">Check Out On Site</button>
-           <button class="btn btn-emergency" style="margin-top:8px" onclick="showOnsiteForgotOut()">ลืม Check Out On Site</button>`
+        ? `<button class="btn btn-checkout" onclick="startCheckOutOnSite()">Check Out On Site</button>`
         : `<button class="btn btn-checkout" onclick="startCheckOut()">Check Out ตอนนี้</button>
            <button class="btn btn-emergency" style="margin-top:8px" onclick="showEmergencyOut()">Emergency Check Out</button>
            <button class="btn btn-retry" style="margin-top:8px" onclick="forgotCheckOut()">ลืม Check Out</button>`
@@ -313,10 +280,6 @@ function showEmergencyOut() {
   renderEmergencyScreen("checkout");
 }
 
-function showOnsiteForgotOut() {
-  renderEmergencyScreen("onsite-forgot-out");
-}
-
 let selectedReason = "";
 let emergencyPhoto = null;
 let emergencyGPS   = null;
@@ -326,25 +289,19 @@ function renderEmergencyScreen(mode) {
   emergencyPhoto = null;
   emergencyGPS   = null;
 
-  const isOnsiteForgot = mode === "onsite-forgot-out";
-  const title = mode === "checkin" ? "Emergency Check In" : (isOnsiteForgot ? "ลืม Check Out On Site" : "Emergency Check Out");
-  const sub = isOnsiteForgot
-    ? "กรณีลืม Check Out On Site กรุณาแนบรูปถ่ายและ GPS เพื่อให้ HR/Admin ตรวจสอบค่ะ"
-    : "ระบบไม่สามารถตรวจสอบเครือข่ายได้ กรุณาให้ข้อมูลเพิ่มเติมค่ะ";
-  const reasons = isOnsiteForgot
-    ? ["ลืม Check Out On Site", "ระบบมีปัญหา", "ไม่สามารถ Check Out On Site ได้", "อื่นๆ"]
-    : ["WiFi มีปัญหา","อินเทอร์เน็ตขัดข้อง","ระบบไม่สามารถตรวจสอบเครือข่ายได้","อื่นๆ"];
+  const title = mode === "checkin" ? "Emergency Check In" : "Emergency Check Out";
   const body  = document.getElementById("body");
 
   body.innerHTML = `
     <div class="emergency-card">
       <div class="emergency-title">${title}</div>
-      <div class="emergency-sub">${sub}</div>
+      <div class="emergency-sub">ระบบไม่สามารถตรวจสอบเครือข่ายได้ กรุณาให้ข้อมูลเพิ่มเติมค่ะ</div>
     </div>
 
     <div class="sec-label">เหตุผล</div>
     <div class="reason-grid">
-      ${reasons.map(r => `<button class="reason-btn" onclick="selectReason(this,'${r}')">${r}</button>`).join("")}
+      ${["WiFi มีปัญหา","อินเทอร์เน็ตขัดข้อง","ระบบไม่สามารถตรวจสอบเครือข่ายได้","อื่นๆ"]
+        .map(r => `<button class="reason-btn" onclick="selectReason(this,'${r}')">${r}</button>`).join("")}
     </div>
 
     <div class="sec-label">ถ่ายรูปปัจจุบัน</div>
@@ -356,7 +313,7 @@ function renderEmergencyScreen(mode) {
 
     <div id="alert-box"></div>
     <button class="btn btn-emergency" onclick="submitEmergency('${mode}')" id="btn-emergency-submit" disabled>
-      ${mode === "onsite-forgot-out" ? "ส่งคำขอ ลืม Check Out On Site" : `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`}
+      ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}
     </button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
 
@@ -394,7 +351,7 @@ function getGPS() {
 
 function checkEmergencyReady() {
   const btn = document.getElementById("btn-emergency-submit");
-  if (btn) btn.disabled = !(selectedReason && emergencyPhoto && emergencyGPS);
+  if (btn) btn.disabled = !(selectedReason && emergencyPhoto);
 }
 
 // ── Watermark timestamp + GPS ลงบนรูปจริง ──────────────────────
@@ -474,17 +431,14 @@ async function submitEmergency(mode) {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=UTF-8" },
           body: JSON.stringify({
-            action: mode === "checkin" ? "emergencyCheckin" : (mode === "onsite-forgot-out" ? "attendanceCheckout" : "emergencyCheckout"),
+            action: mode === "checkin" ? "emergencyCheckin" : "emergencyCheckout",
             userId,
             time: timeStr,
-            timeOut: timeStr,
             reason: selectedReason,
             lat: emergencyGPS?.lat || null,
             lng: emergencyGPS?.lng || null,
             photo: photoBase64,
-            checkoutMethod: mode === "onsite-forgot-out" ? "On Site" : undefined,
-            forgotOnsite: mode === "onsite-forgot-out",
-            method: mode === "onsite-forgot-out" ? "On Site Forgot Check Out" : "Emergency"
+            method: "Emergency"
           })
         });
         const data = await res.json();
@@ -492,11 +446,10 @@ async function submitEmergency(mode) {
         if (data.success) {
           if (mode === "checkin") {
             activeCheckin = { timeIn: timeStr, mode: "office", method: "Emergency" };
-            showEmergencySuccess(mode);
           } else {
             activeCheckin = null;
-            showSuccess(mode === "onsite-forgot-out" ? "onsite-emergency" : "emergency", timeStr);
           }
+          showEmergencySuccess(mode);
         } else if (data.outOfRange) {
           const body = document.getElementById("body");
           body.innerHTML = `
@@ -504,17 +457,17 @@ async function submitEmergency(mode) {
             <button class="btn btn-retry" onclick="renderMain()">กลับหน้าหลัก</button>`;
         } else {
           showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
-          if (btn) { btn.disabled = false; btn.textContent = mode === "onsite-forgot-out" ? "ส่งคำขอ ลืม Check Out On Site" : `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
+          if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
         }
       } catch(err) {
         showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
-        if (btn) { btn.disabled = false; btn.textContent = mode === "onsite-forgot-out" ? "ส่งคำขอ ลืม Check Out On Site" : `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
+        if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
       }
     };
     reader.readAsDataURL(watermarkedBlob);
   } catch(err) {
     showAlertInBody("err", "เกิดข้อผิดพลาดในการประมวลผลรูป: " + err.message);
-    if (btn) { btn.disabled = false; btn.textContent = mode === "onsite-forgot-out" ? "ส่งคำขอ ลืม Check Out On Site" : `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
+    if (btn) { btn.disabled = false; btn.textContent = `ส่ง Emergency ${mode === "checkin" ? "Check In" : "Check Out"}`; }
   }
 }
 
@@ -651,11 +604,14 @@ function startCheckOutOnSite() {
       const el = document.getElementById("gps-out-status");
       if (el) {
         if (activeCheckin && activeCheckin.lat && activeCheckin.lng) {
-          const dist = calculateDistanceMeters(activeCheckin.lat, activeCheckin.lng, onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
-          el.className = "alert alert-ok";
-          el.textContent = Number.isFinite(dist)
-            ? `GPS พร้อมแล้วค่ะ · ระยะจากจุด Check In ${Math.round(dist)}m`
-            : "GPS พร้อมแล้วค่ะ";
+          const dist = getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
+          if (dist > 200) {
+            el.className = "alert alert-warn";
+            el.textContent = `คุณอยู่นอกรัศมีจากจุด Check In ${Math.round(dist)}m — ระบบจะให้เลือก Auto Check Out 1 ชม. หรือ Emergency Check Out ค่ะ`;
+          } else {
+            el.className = "alert alert-ok";
+            el.textContent = `GPS พร้อมแล้วค่ะ · อยู่ในรัศมี ${Math.round(dist)}m`;
+          }
         } else {
           el.className = "alert alert-ok";
           el.textContent = `GPS พร้อมแล้วค่ะ`;
@@ -687,7 +643,7 @@ function checkOnsiteOutReady() {
 
 function getOnsiteDistanceFromCheckin() {
   if (!activeCheckin || !activeCheckin.lat || !activeCheckin.lng || !onsiteCheckoutGPS) return null;
-  return calculateDistanceMeters(activeCheckin.lat, activeCheckin.lng, onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
+  return getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), Number(onsiteCheckoutGPS.lat), Number(onsiteCheckoutGPS.lng));
 }
 
 function readOnsitePhotoBase64() {
@@ -700,17 +656,42 @@ function readOnsitePhotoBase64() {
   });
 }
 
-async function submitCheckOutOnSite() {
+function showOutOfRadiusOptions(dist) {
+  const body = document.getElementById("body");
+  body.innerHTML = `
+    <div class="emergency-card" style="border-color:var(--amber)">
+      <div class="emergency-title" style="color:var(--amber)">อยู่นอกรัศมี Check In</div>
+      <div class="emergency-sub">
+        คุณอยู่ห่างจากจุด Check In ประมาณ ${Math.round(dist)} เมตร<br>
+        กรุณาเลือกวิธีบันทึก Check Out ค่ะ
+      </div>
+    </div>
+
+    <button class="btn btn-checkout" style="margin-top:12px" onclick="submitCheckOutOnSite(true)">
+      ยอมรับ Auto Check Out 1 ชม.
+    </button>
+    <button class="btn btn-emergency" style="margin-top:8px" onclick="submitEmergencyCheckOutOnSite(${Math.round(dist)})">
+      ขอ Emergency Check Out เพื่อตรวจสอบเวลา
+    </button>
+    <button class="btn btn-retry" style="margin-top:8px" onclick="startCheckOutOnSite()">กลับไปถ่ายรูปใหม่</button>`;
+}
+
+async function submitCheckOutOnSite(acceptAutoOut = false) {
   if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
 
   const dist = getOnsiteDistanceFromCheckin();
+  if (dist !== null && dist > 200 && !acceptAutoOut) {
+    showOutOfRadiusOptions(dist);
+    return;
+  }
+
   const now     = bangkokNow();
   const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
   const hour    = now.getHours();
 
   try {
     const photoBase64 = await readOnsitePhotoBase64();
-    showLoading("กำลัง Check Out On Site...");
+    showLoading(acceptAutoOut ? "กำลังบันทึก Auto Check Out..." : "กำลัง Check Out On Site...");
 
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -722,8 +703,8 @@ async function submitCheckOutOnSite() {
         lat: onsiteCheckoutGPS.lat,
         lng: onsiteCheckoutGPS.lng,
         photo: photoBase64,
-        checkoutMethod: "On Site",
-        distFromCheckin: dist !== null ? Math.round(dist) : null
+        checkoutMethod: acceptAutoOut ? "auto-onsite" : "On Site",
+        acceptAutoOut: acceptAutoOut
       })
     });
     const data = await res.json();
@@ -733,7 +714,10 @@ async function submitCheckOutOnSite() {
 
     if (data.success) {
       activeCheckin = null;
-      showSuccess("onsite-checkout", data.timeOut || timeOut, hour);
+      if (data.autoOut || acceptAutoOut) showSuccess("onsite-autoout", data.timeOut || timeOut, hour);
+      else showSuccess("onsite-checkout", data.timeOut || timeOut, hour);
+    } else if (data.outOfRadius) {
+      showOutOfRadiusOptions(data.dist || dist || 0);
     } else {
       renderMain();
       showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
@@ -744,6 +728,62 @@ async function submitCheckOutOnSite() {
     renderMain();
     showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
   }
+}
+
+async function submitEmergencyCheckOutOnSite(distFromCheckin) {
+  if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
+  const reason = prompt("กรุณาระบุเหตุผลสำหรับ Emergency Check Out เช่น เดินทางกลับจากไซต์ / เสร็จงานนอกพื้นที่ / GPS เพี้ยน");
+  if (!reason || reason.trim().length < 3) return;
+
+  const now     = bangkokNow();
+  const timeOut = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
+
+  try {
+    const photoBase64 = await readOnsitePhotoBase64();
+    showLoading("กำลังส่ง Emergency Check Out...");
+
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({
+        action: "onSiteEmergencyCheckout",
+        userId,
+        timeOut,
+        lat: onsiteCheckoutGPS.lat,
+        lng: onsiteCheckoutGPS.lng,
+        photo: photoBase64,
+        reason: reason.trim(),
+        distFromCheckin: Math.round(distFromCheckin || 0)
+      })
+    });
+    const data = await res.json();
+
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+
+    if (data.success) {
+      activeCheckin = null;
+      showSuccess("onsite-emergency", timeOut, now.getHours());
+    } else {
+      renderMain();
+      showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
+    }
+  } catch(err) {
+    hide("loading");
+    document.getElementById("app").style.display = "block";
+    renderMain();
+    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+  }
+}
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const p1 = lat1 * Math.PI / 180;
+  const p2 = lat2 * Math.PI / 180;
+  const dp = (lat2 - lat1) * Math.PI / 180;
+  const dl = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dp/2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 // ── CHECK OUT FLOW (Office) ───────────────────────────────────────────
@@ -829,6 +869,14 @@ function showSuccess(type, time, hour) {
 
 ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
 รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
+  }
+
+  if (type === "onsite-autoout") {
+    title = "บันทึก Auto Check Out แล้วค่ะ";
+    msg = `${time} น.
+
+คุณอยู่นอกรัศมีจากจุด Check In เกิน 200 เมตร
+ระบบจึงบันทึกเวลาทำงาน On Site เป็น 1 ชั่วโมงตามเงื่อนไขค่ะ`;
   }
 
   if (type === "onsite-emergency") {
