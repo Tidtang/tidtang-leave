@@ -103,9 +103,9 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
 
     <!-- อีเมลบริษัท -->
     <div class="field">
-      <label class="field-label">อีเมลบริษัท</label>
-      <div class="field-sub">@tidtangstudio.com เท่านั้น</div>
-      <input class="inp" id="inp-email" type="email" placeholder="name@tidtangstudio.com" autocomplete="off"
+      <label class="field-label">อีเมล</label>
+      <div class="field-sub">ใช้อีเมลบริษัทหรืออีเมลส่วนตัวได้</div>
+      <input class="inp" id="inp-email" type="email" placeholder="name@example.com" autocomplete="off"
         oninput="validateEmail()">
     </div>
 
@@ -229,7 +229,7 @@ function validateEmail() {
   const email = document.getElementById("inp-email").value.trim();
   const linePublicId = document.getElementById("inp-line-public").value.trim();
   const inp   = document.getElementById("inp-email");
-  const valid = email.endsWith("@tidtangstudio.com") && email.length > 20;
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   inp.className = valid || email === "" ? "inp" : "inp err";
   checkReady();
 }
@@ -247,7 +247,7 @@ function checkReady() {
   const nick  = document.getElementById("inp-nick").value.trim();
   const name  = document.getElementById("inp-name").value.trim();
   const email = document.getElementById("inp-email").value.trim();
-  const emailOk = email.endsWith("@tidtangstudio.com");
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const linePublicId = document.getElementById("inp-line-public").value.trim();
   const lineOk = !/^U[a-fA-F0-9]{20,}$/i.test(linePublicId);
   const ready = nick.length >= 2 && name.length >= 3 && emailOk && lineOk;
@@ -260,8 +260,8 @@ async function doRegister() {
   const email = document.getElementById("inp-email").value.trim();
   const linePublicId = document.getElementById("inp-line-public").value.trim();
 
-  if (!email.endsWith("@tidtangstudio.com")) {
-    showAlert("err", "กรุณาใช้อีเมลบริษัท @tidtangstudio.com ค่ะ");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showAlert("err", "กรุณากรอกอีเมลให้ถูกต้องค่ะ");
     return;
   }
   if (/^U[a-fA-F0-9]{20,}$/i.test(linePublicId)) {
