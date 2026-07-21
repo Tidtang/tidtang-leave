@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<!-- TIDTANG_V62_CHECKOUT_MESSAGE_FIXED_2026-07-01 -->
+<!-- TIDTANG_V81_FORGOT_CHECKOUT_EVIDENCE_2026-07-22 -->
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -896,53 +896,154 @@ function showSuccess(type, time, hour) {
 }
 
 // ── ติดต่อ Admin/HR ──────────────────────────────────────────────
+let forgotCheckoutPhoto = null;
+
 async function forgotCheckOut() {
+  forgotCheckoutPhoto = null;
   const body = document.getElementById("body");
+  const today = bangkokNow().toLocaleDateString("th-TH", { day:"2-digit", month:"2-digit", year:"numeric" });
+  const currentTime = bangkokNow().toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit", hour12:false });
+  const modeLabel = activeCheckin?.mode === "onsite" || activeCheckin?.mode === "On Site" ? "On Site" : "Office";
   body.innerHTML = `
-    <div class="emergency-card" style="border-color:var(--warm-tan)">
-      <div class="emergency-title" style="color:var(--warm-tan)">ลืม Check Out</div>
-      <div class="emergency-sub">ระบบจะบันทึกว่าคุณไม่ได้ Check Out ค่ะ<br>จะปรากฏเป็น "No In-Out" ใน Sheet สำหรับ Admin/HR ตรวจสอบ</div>
+    <div class="emergency-card" style="border-color:var(--cream)">
+      <div class="emergency-title" style="color:var(--cream)">ลืม Check Out</div>
+      <div class="emergency-sub">กรุณาระบุเวลาเลิกงาน เหตุผล และแนบรูปหลักฐานค่ะ<br>คำขอจะถูกส่งให้ HR/Admin ตรวจสอบก่อนบันทึกเวลา</div>
     </div>
+
+    <div class="status-card" style="text-align:left;margin-bottom:2px">
+      <div style="display:grid;grid-template-columns:100px 1fr;gap:7px;font-size:12px;line-height:1.6">
+        <span style="color:var(--muted)">ชื่อพนักงาน</span><span>${emp?.nick || "—"}</span>
+        <span style="color:var(--muted)">วันที่ทำงาน</span><span>${today}</span>
+        <span style="color:var(--muted)">Check In</span><span>${activeCheckin?.timeIn || "—"} น.</span>
+        <span style="color:var(--muted)">ประเภท</span><span>${modeLabel}</span>
+      </div>
+    </div>
+
     <div id="alert-box"></div>
-    <button class="btn btn-checkout" id="btn-forgot-submit" style="margin-top:12px"
-      onclick="submitForgotCheckOut()">ยืนยัน — ฉันลืม Check Out จริงๆ</button>
+
+    <label style="font-size:12px;color:var(--muted)">เวลาที่ควร Check Out *</label>
+    <input class="inp" id="forgot-timeout" type="time" value="${currentTime}" oninput="checkForgotReady()">
+
+    <label style="font-size:12px;color:var(--muted);margin-top:4px">เหตุผล *</label>
+    <select class="inp" id="forgot-reason" onchange="toggleForgotOther();checkForgotReady()">
+      <option value="">เลือกเหตุผล</option>
+      <option value="ลืมกด Check Out">ลืมกด Check Out</option>
+      <option value="โทรศัพท์แบตหมด">โทรศัพท์แบตหมด</option>
+      <option value="อินเทอร์เน็ตมีปัญหา">อินเทอร์เน็ตมีปัญหา</option>
+      <option value="ระบบขัดข้อง">ระบบขัดข้อง</option>
+      <option value="อื่น ๆ">อื่น ๆ</option>
+    </select>
+
+    <textarea class="inp" id="forgot-detail" rows="3"
+      placeholder="รายละเอียดเพิ่มเติม"
+      style="display:none;resize:none;line-height:1.6;font-size:14px"
+      oninput="checkForgotReady()"></textarea>
+
+    <label style="font-size:12px;color:var(--muted);margin-top:4px">รูปหลักฐานประกอบ *</label>
+    <div class="emergency-sub" style="margin-top:-8px">เช่น ภาพเวลาส่งงาน ภาพแชท หรือหลักฐานที่ช่วยยืนยันเวลาเลิกงาน</div>
+    <input class="inp" id="forgot-photo" type="file" accept="image/*" onchange="handleForgotPhoto(event)" style="font-size:13px">
+    <div id="forgot-photo-name" style="font-size:11px;color:var(--green);display:none"></div>
+
+    <button class="btn btn-checkout" id="btn-forgot-submit" style="margin-top:8px"
+      onclick="submitForgotCheckOut()" disabled>ส่งคำขอให้ HR/Admin ตรวจสอบ</button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
+}
+
+function toggleForgotOther() {
+  const isOther = document.getElementById("forgot-reason")?.value === "อื่น ๆ";
+  const detail = document.getElementById("forgot-detail");
+  if (detail) detail.style.display = isOther ? "block" : "none";
+}
+
+function handleForgotPhoto(event) {
+  forgotCheckoutPhoto = event.target.files?.[0] || null;
+  const label = document.getElementById("forgot-photo-name");
+  if (label) {
+    label.style.display = forgotCheckoutPhoto ? "block" : "none";
+    label.textContent = forgotCheckoutPhoto ? `แนบแล้ว: ${forgotCheckoutPhoto.name}` : "";
+  }
+  checkForgotReady();
+}
+
+function checkForgotReady() {
+  const timeOut = document.getElementById("forgot-timeout")?.value || "";
+  const reason = document.getElementById("forgot-reason")?.value || "";
+  const detail = document.getElementById("forgot-detail")?.value.trim() || "";
+  const needsDetail = reason === "อื่น ๆ";
+  const btn = document.getElementById("btn-forgot-submit");
+  if (btn) btn.disabled = !(timeOut && reason && (!needsDetail || detail) && forgotCheckoutPhoto);
+}
+
+function forgotPhotoToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onerror = reject;
+    img.onload = () => {
+      const maxSide = 1600;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.82).split(",")[1]);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 async function submitForgotCheckOut() {
   const btn = document.getElementById("btn-forgot-submit");
+  const requestedTimeOut = document.getElementById("forgot-timeout")?.value || "";
+  const reason = document.getElementById("forgot-reason")?.value || "";
+  const detail = document.getElementById("forgot-detail")?.value.trim() || "";
+
+  if (!requestedTimeOut || !reason || (reason === "อื่น ๆ" && !detail) || !forgotCheckoutPhoto) {
+    showAlertInBody("err", "กรุณากรอกข้อมูลและแนบรูปหลักฐานให้ครบค่ะ");
+    return;
+  }
+
   btn.disabled = true;
-  btn.textContent = "กำลังบันทึก...";
+  btn.textContent = "กำลังประมวลผลรูป...";
 
   try {
+    const photoBase64 = await forgotPhotoToBase64(forgotCheckoutPhoto);
+    btn.textContent = "กำลังส่งคำขอ...";
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify({
         action: "forgotCheckOut",
         userId,
-        timeNow: bangkokNow().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+        requestedTimeOut,
+        reason,
+        detail,
+        photo: photoBase64,
+        timeNow: bangkokNow().toLocaleTimeString("th-TH", { hour:"2-digit", minute:"2-digit" })
       })
     });
     const data = await res.json();
 
     if (data.success) {
+      activeCheckin = null;
       const body = document.getElementById("body");
       body.innerHTML = `
         <div class="emergency-card" style="border-color:var(--green)">
-          <div class="emergency-title" style="color:var(--green)">บันทึกแล้วค่ะ</div>
-          <div class="emergency-sub">ระบบบันทึก No In-Out แล้ว<br>Admin/HR จะเห็นรายการนี้ในหน้า Verify ค่ะ</div>
+          <div class="emergency-title" style="color:var(--green)">ส่งคำขอแล้วค่ะ</div>
+          <div class="emergency-sub">เวลา Check Out ที่แจ้ง: ${requestedTimeOut} น.<br>ระบบส่งเหตุผลและรูปหลักฐานให้ HR/Admin ตรวจสอบแล้วค่ะ</div>
         </div>
         <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
     } else {
       showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
       btn.disabled = false;
-      btn.textContent = "ยืนยัน — ฉันลืม Check Out จริงๆ";
+      btn.textContent = "ส่งคำขอให้ HR/Admin ตรวจสอบ";
     }
   } catch(err) {
     showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
     btn.disabled = false;
-    btn.textContent = "ยืนยัน — ฉันลืม Check Out จริงๆ";
+    btn.textContent = "ส่งคำขอให้ HR/Admin ตรวจสอบ";
   }
 }
 
