@@ -175,6 +175,7 @@ html,body{
   position:fixed;inset:0;background:var(--off-white);
   display:none;flex-direction:column;align-items:center;justify-content:center;
   padding:40px;text-align:center;
+  z-index:200;
 }
 .success-screen.show{display:flex;}
 .success-icon{font-size:56px;margin-bottom:20px;}
@@ -948,9 +949,17 @@ function setBar(id, left, total) {
 
 function showSuccess(msg, type) {
   const icons = {
-    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'On Site':''
+    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'On Site':'', 'Swap Day Off':''
   };
   const auto = type === 'ลาป่วย';
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.style.display = 'none';
+    submitBtn.textContent = 'ส่งคำขอ →';
+  }
+  const app = document.getElementById('app');
+  if (app) app.style.display = 'none';
   document.getElementById('success-icon').textContent = icons[type] || '';
   document.getElementById('success-title').textContent = auto ? 'บันทึกแล้วค่ะ' : 'ส่งคำขอแล้วค่ะ';
   document.getElementById('success-screen').classList.add('show');
