@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>TIDTANG — Dashboard</title>
+<title>TIDTANG — Dashboard v86</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -163,6 +163,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
     <div class="tab" onclick="switchTab(1)">วันลา</div>
     <div class="tab" onclick="switchTab(2)">โควต้า</div>
     <div class="tab" onclick="switchTab(3)">Check In/Out</div>
+    <div class="tab" onclick="switchTab(4)">Swap Day Off</div>
   </div>
 
   <!-- Tab 0: วันนี้ -->
@@ -212,6 +213,15 @@ body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);mi
       </thead>
       <tbody id="att-body"></tbody>
     </table>
+  </div>
+  <div class="content" id="tab-4">
+    <div class="month-sel" id="month-sel-swap"></div>
+    <div class="sec-label">Swap Day Off Summary</div>
+    <div class="stat-grid" id="swap-stats">
+      <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">กำลังโหลด</div></div>
+    </div>
+    <div class="sec-label">รายการสลับวันหยุด</div>
+    <div class="person-list" id="swap-list"></div>
   </div>
 </div>
 
@@ -318,6 +328,7 @@ async function init() {
       loadAttTab();
       loadCalendar();
       loadQuotaTab();
+      loadSwapTab();
       loadOfficeIPStatus();
     }, 0);
   } catch(err) {
@@ -662,6 +673,8 @@ function renderMonthSel() {
     html += `<button class="month-btn ${m===curMonth?'active':''}" onclick="selMonth(${m})">${MONTHS_TH[m]}</button>`;
   }
   el.innerHTML = html;
+  const sw = document.getElementById("month-sel-swap");
+  if (sw) sw.innerHTML = html.replaceAll('selMonth(', 'selSwapMonth(');
 }
 
 function selMonth(m) {
@@ -736,6 +749,52 @@ function openAttDetail(nick, date) {
   if (!recs.length) html += `<div class="empty">ไม่มีข้อมูลค่ะ</div>`;
   document.getElementById("modal-body").innerHTML = html;
   document.getElementById("emp-modal").style.display = "flex";
+}
+
+
+// ── Tab 4: Swap Day Off ──────────────────────────────────────────
+function selSwapMonth(m) {
+  curMonth = m;
+  document.querySelectorAll("#month-sel-swap .month-btn").forEach((b,i) => b.classList.toggle("active", i+1===m));
+  document.querySelectorAll("#month-sel-att .month-btn").forEach((b,i) => b.classList.toggle("active", i+1===m));
+  loadSwapTab();
+}
+
+async function loadSwapTab() {
+  const stats = document.getElementById("swap-stats");
+  const list  = document.getElementById("swap-list");
+  if (!stats || !list) return;
+  stats.innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:span 2">กำลังโหลด...</div>`;
+  list.innerHTML = "";
+  try {
+    const res = await fetch(`${WEBAPP_URL}?action=getSwapDayOffSummary&userId=${encodeURIComponent(userId)}&month=${curMonth}&year=${curYear}`);
+    const data = await res.json();
+    if (!data.success) { stats.innerHTML = `<div class="err-box" style="grid-column:span 2">${data.msg || 'โหลดไม่สำเร็จ'}</div>`; return; }
+    const s = data.summary || {};
+    stats.innerHTML = `
+      <div class="stat-card amber"><div class="stat-num">${s.pending || 0}</div><div class="stat-label">รออนุมัติ</div></div>
+      <div class="stat-card green"><div class="stat-num">${s.approved || 0}</div><div class="stat-label">อนุมัติแล้ว</div></div>
+      <div class="stat-card blue"><div class="stat-num">${s.used || 0}</div><div class="stat-label">ใช้แล้ว</div></div>
+      <div class="stat-card red"><div class="stat-num">${s.rejected || 0}</div><div class="stat-label">ไม่อนุมัติ</div></div>`;
+    let html = "";
+    (data.items || []).forEach(x => {
+      const st = x.status === 'Pending Senior Approval' ? 'รออนุมัติ' : x.status === 'Approved' ? 'อนุมัติแล้ว' : x.status === 'Used' ? 'ใช้แล้ว' : x.status === 'Rejected' ? 'ไม่อนุมัติ' : x.status;
+      const badgeColor = x.status === 'Rejected' ? 'var(--red)' : x.status === 'Pending Senior Approval' ? 'var(--amber)' : 'var(--green)';
+      html += `<div class="person-row">
+        <div class="person-left">
+          <div class="person-av" style="background:rgba(15,118,110,.18);color:var(--teal)">${(x.empNick||'?').substring(0,2)}</div>
+          <div>
+            <div class="person-name">${x.empNick}</div>
+            <div class="person-sub">ทำงาน ${x.workDate} → หยุด ${x.swapDate} · Senior ${x.seniorName || '—'}</div>
+          </div>
+        </div>
+        <span class="badge" style="background:rgba(200,184,162,.12);color:${badgeColor};border:1px solid rgba(200,184,162,.2)">${st}</span>
+      </div>`;
+    });
+    list.innerHTML = html || `<div class="empty">ไม่มีรายการ Swap Day Off เดือนนี้ค่ะ</div>`;
+  } catch(err) {
+    stats.innerHTML = `<div class="err-box" style="grid-column:span 2">${err.message}</div>`;
+  }
 }
 
 // ── Search/Filter ────────────────────────────────────────────────

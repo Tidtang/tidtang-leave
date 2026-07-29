@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TIDTANG LEAVE — แจ้งวันลา</title>
+<title>TIDTANG LEAVE — v86</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -430,6 +430,7 @@ let userId = null;
 let dayMode = 'full';    // 'full' | 'half'
 let halfPart = null;     // 'morning' | 'afternoon'
 let isEmergencyLeave = false; // v65: โหมดลาด่วนฉุกเฉินจาก ?type=ลาฉุกเฉินพิเศษ
+let isSwapDayOff = false; // v86: โหมดขอสลับวันหยุด
 const HALF_TYPES = ['ลาป่วย','ลากิจ']; // ประเภทที่รองรับครึ่งวัน
 
 //  Init 
@@ -459,6 +460,8 @@ async function init() {
       const typeParam = urlParams.get("type");
       if (typeParam === "ลาฉุกเฉินพิเศษ") {
         setTimeout(() => initEmergencyLeave(), 200);
+      } else if (typeParam === "swapDayOff" || typeParam === "Swap Day Off") {
+        setTimeout(() => initSwapDayOff(), 200);
       } else if (typeParam) {
         const btn = document.querySelector(`.lt-btn[data-type="${typeParam}"]`);
         if (btn) {
@@ -683,11 +686,69 @@ function initEmergencyLeave() {
   calcDays();
 }
 
+
+// v86: โหมดขอสลับวันหยุด — ใช้ input วันที่เดิม แต่เปลี่ยนความหมาย
+function initSwapDayOff() {
+  isSwapDayOff = true;
+  isEmergencyLeave = false;
+  selectedType = 'Swap Day Off';
+  dayMode = 'full';
+  halfPart = null;
+
+  document.getElementById('header-title').textContent = 'ขอสลับวันหยุด';
+  document.getElementById('header-sub').textContent = 'เลือกวันที่มาทำงานในวันหยุด และวันที่ต้องการหยุดชดเชยค่ะ';
+
+  const typeSection = document.getElementById('lt-grid');
+  if (typeSection) typeSection.closest('div').style.display = 'none';
+  document.getElementById('quota-section').style.display = 'none';
+  document.getElementById('halfday-section').style.display = 'none';
+  document.getElementById('emergency-notice').classList.remove('show');
+  document.getElementById('vacation-notice').classList.remove('show');
+
+  const userQuota = document.querySelector('.user-quota');
+  if (userQuota) userQuota.style.display = 'none';
+
+  const bar = document.getElementById('selected-type-bar');
+  const lbl = document.getElementById('selected-type-label');
+  if (bar && lbl) {
+    lbl.textContent = 'สลับวันหยุด · ไม่ตัดโควต้า';
+    bar.style.display = 'flex';
+  }
+
+  document.getElementById('date-section').style.display = 'block';
+  const dateSecLabel = document.querySelector('#date-section .section-label');
+  if (dateSecLabel) dateSecLabel.textContent = 'วันที่ต้องการสลับ';
+  const dateLabels = document.querySelectorAll('#date-section .date-label');
+  if (dateLabels[0]) dateLabels[0].textContent = 'วันที่มาทำงานในวันหยุด';
+  if (dateLabels[1]) dateLabels[1].textContent = 'วันที่ต้องการหยุดชดเชย';
+
+  document.getElementById('reason-section').style.display = 'block';
+  const reasonLabel = document.querySelector('#reason-section .section-label');
+  if (reasonLabel) reasonLabel.innerHTML = 'เหตุผล / รายละเอียด <span style="font-weight:400;text-transform:none;letter-spacing:0">(ไม่บังคับ)</span>';
+  document.getElementById('reason').placeholder = 'เช่น มาทำงานวันหยุดเพื่อปิดงาน / ออกไซต์ / ส่งงานลูกค้า...';
+
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.textContent = 'ส่งคำขอสลับวันหยุด →';
+  submitBtn.style.display = 'block';
+  document.getElementById('alert-box').style.display = 'none';
+  calcDays();
+}
+
 //  Calc Days 
 function calcDays() {
   const s = document.getElementById('date-start').value;
   const e = document.getElementById('date-end').value;
   if (!s || !selectedType) return;
+
+  if (isSwapDayOff) {
+    const e2 = document.getElementById('date-end').value;
+    const pill = document.getElementById('summary-pill');
+    pill.style.display = 'flex';
+    document.getElementById('sum-left').textContent = 'Swap Day Off ·';
+    document.getElementById('sum-right').textContent = e2 ? '1 วัน · ไม่ตัดโควต้า' : 'เลือกวันที่หยุดชดเชย';
+    document.getElementById('submit-btn').disabled = !(s && e2);
+    return;
+  }
 
   const start = new Date(s);
   const end   = new Date(e || s);
@@ -746,6 +807,11 @@ function checkAdvance(start, days) {
 async function submitLeave() {
   if (!selectedType || !userId) return;
 
+  if (isSwapDayOff) {
+    await submitSwapDayOff();
+    return;
+  }
+
   // เช็ค half-day: ต้องเลือกช่วงเวลา
   if (dayMode === 'half' && !halfPart) {
     showAlertBox('กรุณาเลือกช่วงเวลา — ครึ่งวันเช้า หรือ ครึ่งวันบ่ายค่ะ', 'err');
@@ -802,6 +868,49 @@ async function submitLeave() {
     showAlertBox('ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่ค่ะ', 'err');
     btn.disabled = false;
     btn.textContent = 'ส่งคำขอลา →';
+  }
+}
+
+
+async function submitSwapDayOff() {
+  const workDate = document.getElementById('date-start').value;
+  const swapDate = document.getElementById('date-end').value;
+  if (!workDate || !swapDate) {
+    showAlertBox('กรุณาระบุวันที่มาทำงานในวันหยุด และวันที่ต้องการหยุดชดเชยค่ะ', 'err');
+    return;
+  }
+  if (workDate === swapDate) {
+    showAlertBox('วันที่มาทำงานและวันที่หยุดชดเชยต้องไม่ใช่วันเดียวกันค่ะ', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง...';
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'submitSwapDayOff',
+        userId,
+        workDate,
+        swapDate,
+        reason: document.getElementById('reason').value
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showSuccess(data.msg || 'ส่งคำขอสลับวันหยุดแล้วค่ะ', 'Swap Day Off');
+    } else {
+      showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
+      btn.disabled = false;
+      btn.textContent = 'ส่งคำขอสลับวันหยุด →';
+    }
+  } catch (err) {
+    showAlertBox('ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่ค่ะ', 'err');
+    btn.disabled = false;
+    btn.textContent = 'ส่งคำขอสลับวันหยุด →';
   }
 }
 

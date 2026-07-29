@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Tidtang Calendar</title>
+<title>Tidtang Calendar v86</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -157,6 +157,7 @@ body{font-family:'Anuphan',sans-serif;background:#e9e7e4;min-height:100vh}
     <div class="leg"><div class="leg-dot" style="background:#2148a1"></div>ลาพักร้อน</div>
     <div class="leg"><div class="leg-dot" style="background:#c29100"></div>ลากิจ</div>
     <div class="leg"><div class="leg-dot" style="background:#eb7130"></div>ลาฉุกเฉิน</div>
+    <div class="leg"><div class="leg-dot" style="background:#0f766e"></div>Swap Day Off</div>
   </div>
 
   <div class="cal">
@@ -190,6 +191,7 @@ const MONTHS_FULL = ["","มกราคม","กุมภาพันธ์","�
 const COLORS = {
   "ลาป่วย":"#8d2621","ลาพักร้อน":"#2148a1","ลากิจ":"#c29100",
   "ลาฉุกเฉินพิเศษ":"#eb7130","ลาเกินโควต้า":"#eb7130","Leave Without Pay":"#999","On Site":"#555",
+  "Swap Day Off":"#0f766e",
 };
 
 let userId=null, calYear, calMonth, dayMap={};
@@ -222,18 +224,18 @@ async function loadMonth(){
   try{
     const res=await fetch(`${WEBAPP_URL}?action=getCalendarData&userId=${encodeURIComponent(userId)}&from=${from}&to=${to}`);
     const data=await res.json();
-    buildDayMap(data.leaves||[], data.holidays||[]);
+    buildDayMap(data.leaves||[], data.holidays||[], data.swaps||[]);
     renderGrid();
   }catch(err){
     document.getElementById("cal-grid").innerHTML=`<div style="grid-column:span 7;text-align:center;padding:32px;font-size:12px;color:#e03535">${err.message}</div>`;
   }
 }
 
-function buildDayMap(leaves, holidays){
+function buildDayMap(leaves, holidays, swaps){
   dayMap={};
   const pad=n=>String(n).padStart(2,"0");
   holidays.forEach(h=>{
-    if(!dayMap[h.date]) dayMap[h.date]={leaves:[],holiday:null};
+    if(!dayMap[h.date]) dayMap[h.date]={leaves:[],swaps:[],holiday:null};
     dayMap[h.date].holiday=h.name;
   });
   leaves.forEach(lv=>{
@@ -243,11 +245,21 @@ function buildDayMap(leaves, holidays){
       const mo=cur.getMonth()+1;
       if(mo===calMonth){
         const key=`${cur.getFullYear()}-${pad(mo)}-${pad(cur.getDate())}`;
-        if(!dayMap[key]) dayMap[key]={leaves:[],holiday:dayMap[key]?.holiday||null};
+        if(!dayMap[key]) dayMap[key]={leaves:[],swaps:[],holiday:dayMap[key]?.holiday||null};
+        if(!dayMap[key].swaps) dayMap[key].swaps=[];
         dayMap[key].leaves.push(lv);
       }
       cur.setDate(cur.getDate()+1);
     }
+  });
+  (swaps || []).forEach(sw=>{
+    const key=sw.dateISO;
+    if(!key) return;
+    const d=new Date(key+"T00:00:00");
+    if(d.getMonth()+1!==calMonth) return;
+    if(!dayMap[key]) dayMap[key]={leaves:[],swaps:[],holiday:null};
+    if(!dayMap[key].swaps) dayMap[key].swaps=[];
+    dayMap[key].swaps.push(sw);
   });
 }
 
@@ -264,14 +276,15 @@ function renderGrid(){
   for(let d=1;d<=total;d++){
     const dow=new Date(calYear,calMonth-1,d).getDay();
     const key=`${calYear}-${pad(calMonth)}-${pad(d)}`;
-    const info=dayMap[key]||{leaves:[],holiday:null};
+    const info=dayMap[key]||{leaves:[],swaps:[],holiday:null};
     const isToday=key===todayKey;
     const isWeekend=dow===0||dow===6;
     const isHoliday=!!info.holiday;
 
     const cls=["day",isWeekend?"weekend":"",isHoliday?"holiday":"",isToday?"today":""].filter(Boolean).join(" ");
-    const dots=info.leaves.slice(0,6).map(lv=>`<div class="dot" style="background:${COLORS[lv.type]||'#888'}"></div>`).join("");
-    const more=info.leaves.length>6?`<div class="dot" style="background:#ccc"></div>`:"";
+    const allDots=[...(info.leaves||[]),...(info.swaps||[])];
+    const dots=allDots.slice(0,6).map(lv=>`<div class="dot" style="background:${COLORS[lv.type]||'#888'}"></div>`).join("");
+    const more=allDots.length>6?`<div class="dot" style="background:#ccc"></div>`:"";
     const holLbl=isHoliday?`<div class="hol-lbl">${info.holiday}</div>`:"";
     const enc=encodeURIComponent(JSON.stringify({key,info}));
 
@@ -286,20 +299,30 @@ function renderGrid(){
 
 function showDay(enc){
   const {key,info}=JSON.parse(decodeURIComponent(enc));
-  if(!info.holiday&&!info.leaves.length) return;
+  if(!info.holiday&&!(info.leaves||[]).length&&!(info.swaps||[]).length) return;
   const [y,m,d]=key.split("-");
   document.getElementById("panel-date").textContent=`${parseInt(d)} ${MONTHS_FULL[parseInt(m)]} ${parseInt(y)+543}`;
   let html="";
   if(info.holiday){
     html+=`<div class="panel-holiday"><div class="panel-holiday-dot"></div><div class="panel-holiday-name">${info.holiday}</div></div>`;
   }
-  info.leaves.forEach(lv=>{
+  (info.leaves||[]).forEach(lv=>{
     const c=COLORS[lv.type]||"#888";
     html+=`<div class="panel-leave">
       <div class="panel-leave-dot" style="background:${c}"></div>
       <div>
         <div class="panel-leave-name">${lv.nick}</div>
         <div class="panel-leave-sub">${lv.type} · ${lv.days} วัน</div>
+      </div>
+    </div>`;
+  });
+  (info.swaps||[]).forEach(sw=>{
+    const c=COLORS[sw.type]||"#0f766e";
+    html+=`<div class="panel-leave">
+      <div class="panel-leave-dot" style="background:${c}"></div>
+      <div>
+        <div class="panel-leave-name">${sw.nick}</div>
+        <div class="panel-leave-sub">Swap Day Off · ทำงานแทน ${sw.workDateISO || '—'}</div>
       </div>
     </div>`;
   });
