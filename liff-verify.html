@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>TIDTANG — Verify</title>
+<title>TIDTANG — Verify v85</title>
 <!-- v81: Forgot Check Out reason + requested time + photo evidence -->
 <!-- v70: show On Site photo evidence link -->
 <!-- v69: removed Contact Admin/HR tab and items -->
@@ -210,9 +210,9 @@ function cardEmg(p) {
 }
 
 function cardNoOut(p) {
-  const requestedTime = p.time || "";
+  const actualTime = p.time || "";
   const evidence = p.photoLink
-    ? `<div class="photo-wrap"><a class="photo-link" href="${p.photoLink}" target="_blank">ดูรูปหลักฐานประกอบ</a></div>`
+    ? `<div class="photo-wrap"><a class="photo-link" href="${p.photoLink}" target="_blank">ดูหลักฐานจากอัลบั้ม</a></div>`
     : "";
   return `<div class="card type-noout" id="card-${p.id}">
     <div class="card-header"><span class="type-badge b-noout">FORGOT CHECK OUT</span></div>
@@ -221,8 +221,9 @@ function cardNoOut(p) {
     <div class="card-body">
       <div class="row"><span class="lbl">วันที่</span><span class="val">${p.date||"—"}</span></div>
       <div class="row"><span class="lbl">Check In</span><span class="val">${p.timeIn||"—"} น.</span></div>
-      <div class="row"><span class="lbl">แจ้ง Check Out</span><span class="val">${requestedTime||"—"}${requestedTime ? " น." : ""}</span></div>
-      <div class="row"><span class="lbl">เหตุผล</span><span class="reason-txt">${p.reason||"No Out (Auto)"}</span></div>
+      <div class="row"><span class="lbl">กลับจริง</span><span class="val">${actualTime||"—"}${actualTime ? " น." : ""}</span></div>
+      <div class="row"><span class="lbl">ส่งคำขอ</span><span class="val">${p.submittedTime||"—"}${p.submittedTime ? " น." : ""}</span></div>
+      <div class="row"><span class="lbl">ผู้ตรวจสอบ</span><span class="reason-txt">${p.reviewer||"HR/Admin"}</span></div>
     </div>
     ${evidence}
     <div class="ref">REF: ${p.id}</div>
@@ -232,8 +233,8 @@ function cardNoOut(p) {
         oninput="document.getElementById('btn-r-${p.id}').disabled=this.value.trim().length<3"></textarea>
       <button class="btn-send" id="btn-r-${p.id}" disabled onclick="sendReply('${p.id}','${p.empLineId}')">แจ้งพนักงาน</button>
       <div class="btn-row">
-        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','noout','${requestedTime}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">อนุมัติเวลา Check Out</button>
-        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','noout','${requestedTime}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ไม่อนุมัติ / คง No Out</button>
+        <button class="btn btn-ok" onclick="doAction('${p.id}','${p.empLineId}','noout','${actualTime}','${p.timeIn||""}','approve','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ยืนยันเวลา Check Out</button>
+        <button class="btn btn-no" onclick="doAction('${p.id}','${p.empLineId}','noout','${actualTime}','${p.timeIn||""}','decline','${p.empNick}','${p.row6||""}','${p.sheetRow||""}')">ไม่ยืนยัน / คง No Out</button>
       </div>
     </div>
   </div>`;

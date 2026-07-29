@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TIDTANG LEAVE — v86</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root {
+  --off-white: #EBE7E4;
+  --warm-tan:  #B0A79D;
+  --graphite:  #424242;
+  --deep:      #191919;
+  --white:     #FFFFFF;
+  --line:      #06C755;
+  --border:    rgba(66,66,66,0.14);
+  --border-mid:rgba(66,66,66,0.22);
+  --teal:      #0f766e;
+  --teal-l:    #f0fdfa;
+  --red:       #dc2626;
+  --red-l:     #fef2f2;
+  --amber:     #d97706;
+  --amber-l:   #fffbeb;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  font-family:'Anuphan',sans-serif;
+  background:var(--off-white);
+  min-height:100vh;
+  color:var(--deep);
+  -webkit-tap-highlight-color:transparent;
+}
+
+/*  Loading  */
+.loading-screen{
+  position:fixed;inset:0;background:var(--deep);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;transition:opacity .4s;
+}
+.loading-screen.hide{opacity:0;pointer-events:none;}
+.loading-logo{
+  font-size:13px;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--warm-tan);margin-bottom:24px;
+}
+.loading-bar{width:120px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;}
+.loading-fill{height:100%;background:var(--warm-tan);border-radius:1px;animation:fill 1.5s ease forwards;}
+@keyframes fill{from{width:0}to{width:100%}}
+
+/*  App  */
+.app{display:flex;flex-direction:column;min-height:100vh;}
+
+/*  Header  */
+.header{
+  background:var(--deep);padding:env(safe-area-inset-top) 20px 16px;
+  padding-top:calc(env(safe-area-inset-top) + 16px);
+}
+.header-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:4px;}
+.header-title{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.01em;}
+.header-sub{font-size:11px;color:rgba(176,167,157,0.6);margin-top:2px;letter-spacing:.03em;}
+
+/*  User chip  */
+.user-chip{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.07);border-radius:2px;
+  padding:10px 14px;margin:12px 20px 0;
+}
+.user-av{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--warm-tan);display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--deep);flex-shrink:0;
+}
+.user-name{font-size:13px;font-weight:700;color:var(--white);}
+.user-role{font-size:10px;color:rgba(176,167,157,0.7);letter-spacing:.04em;}
+.user-quota{margin-left:auto;text-align:right;}
+.quota-num{font-size:18px;font-weight:800;color:var(--white);line-height:1;}
+.quota-label{font-size:9px;color:rgba(176,167,157,0.6);letter-spacing:.04em;}
+
+/*  Body  */
+.body{flex:1;padding:20px;display:flex;flex-direction:column;gap:14px;}
+
+/*  Section  */
+.section-label{
+  font-size:9px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--warm-tan);margin-bottom:8px;
+}
+
+/*  Leave type grid  */
+.lt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.lt-btn{
+  padding:14px 8px;border-radius:2px;border:1.5px solid var(--border-mid);
+  background:var(--white);display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;font-family:'Anuphan',sans-serif;transition:all .15s;
+  -webkit-appearance:none;
+}
+.lt-btn:active{transform:scale(.97);}
+.lt-icon{font-size:22px;}
+.lt-name{font-size:12px;font-weight:700;color:var(--graphite);letter-spacing:.02em;}
+.lt-desc{font-size:10px;color:var(--warm-tan);text-align:center;line-height:1.4;}
+.lt-btn.sel{border-color:var(--deep);background:var(--deep);}
+.lt-btn.sel .lt-name{color:var(--white);}
+.lt-btn.sel .lt-desc{color:var(--warm-tan);}
+.lt-btn.disabled{opacity:.4;pointer-events:none;filter:grayscale(1);}
+.lt-btn.full-width{grid-column:span 2;}
+
+/*  Quota bars  */
+.quota-wrap{background:var(--white);border-radius:2px;padding:12px 14px;border:1px solid var(--border);}
+.q-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+.q-key{color:var(--warm-tan);font-weight:500;}
+.q-val{font-weight:700;color:var(--graphite);}
+.q-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.q-bar{height:3px;border-radius:2px;transition:width .4s;}
+.q-bar.good{background:var(--graphite);}
+.q-bar.warn{background:var(--amber);}
+.q-bar.low{background:var(--red);}
+
+/*  Date inputs  */
+.date-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.date-field{}
+.date-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warm-tan);margin-bottom:5px;display:block;}
+.f-input{
+  width:100%;padding:11px 12px;background:var(--white);
+  border:1.5px solid var(--border-mid);border-radius:2px;
+  font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;
+  -webkit-appearance:none;outline:none;
+  transition:border-color .15s;
+}
+.f-input:focus{border-color:var(--deep);}
+.f-select{
+  width:100%;padding:11px 12px;background:var(--white);
+  border:1.5px solid var(--border-mid);border-radius:2px;
+  font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;
+  -webkit-appearance:none;outline:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23B0A79D'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:32px;
+}
+.f-textarea{
+  width:100%;padding:11px 12px;background:var(--white);
+  border:1.5px solid var(--border-mid);border-radius:2px;
+  font-size:13px;color:var(--deep);font-family:'Anuphan',sans-serif;
+  resize:none;min-height:72px;outline:none;
+  transition:border-color .15s;
+}
+.f-textarea:focus{border-color:var(--deep);}
+
+/*  Summary pill  */
+.summary-pill{
+  background:var(--deep);border-radius:2px;padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sum-left{font-size:12px;color:var(--warm-tan);}
+.sum-right{font-size:14px;font-weight:800;color:var(--white);}
+
+/*  Alert  */
+.alert{border-radius:2px;padding:10px 14px;font-size:12px;line-height:1.6;font-weight:500;}
+.alert-warn{background:var(--amber-l);border-left:3px solid var(--amber);color:#92400e;}
+.alert-err{background:var(--red-l);border-left:3px solid var(--red);color:#7f1d1d;}
+.alert-ok{background:var(--teal-l);border-left:3px solid var(--teal);color:var(--teal);}
+
+/*  Submit  */
+.submit-btn{
+  width:100%;padding:15px;border:none;border-radius:2px;
+  font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  font-family:'Anuphan',sans-serif;cursor:pointer;
+  background:var(--deep);color:var(--off-white);
+  transition:all .15s;-webkit-appearance:none;
+}
+.submit-btn:active{transform:scale(.98);background:var(--graphite);}
+.submit-btn:disabled{opacity:.5;pointer-events:none;}
+.submit-btn.loading::after{content:" ..."}
+
+/*  Success screen  */
+.success-screen{
+  position:fixed;inset:0;background:var(--off-white);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px;text-align:center;
+}
+.success-screen.show{display:flex;}
+.success-icon{font-size:56px;margin-bottom:20px;}
+.success-title{font-size:22px;font-weight:800;color:var(--deep);margin-bottom:8px;}
+.success-sub{font-size:13px;color:var(--warm-tan);line-height:1.7;}
+.success-close{
+  margin-top:32px;padding:14px 32px;border:none;border-radius:2px;
+  background:var(--deep);color:var(--off-white);
+  font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  font-family:'Anuphan',sans-serif;cursor:pointer;
+}
+
+/*  Vacation notice  */
+.vacation-notice{
+  background:var(--graphite);border-radius:2px;padding:12px 14px;
+  font-size:12px;color:var(--off-white);line-height:1.7;
+  display:none;
+}
+.vacation-notice.show{display:block;}
+.emergency-notice{
+  background:var(--red-l);border-left:3px solid var(--red);border-radius:2px;
+  padding:12px 14px;font-size:12px;color:#7f1d1d;line-height:1.7;display:none;
+}
+.emergency-notice.show{display:block;}
+
+/*  Half day  */
+.half-day-wrap{background:var(--white);border:1.5px solid var(--border-mid);border-radius:2px;overflow:hidden;}
+.half-day-header{padding:10px 14px;background:var(--deep);display:flex;align-items:center;gap:8px;}
+.half-day-header span{font-size:11px;font-weight:700;color:var(--warm-tan);letter-spacing:.06em;text-transform:uppercase;}
+.half-toggle-wrap{display:flex;border-bottom:1px solid var(--border);}
+.half-toggle{
+  flex:1;padding:11px 8px;border:none;background:transparent;
+  font-size:12px;font-weight:600;color:var(--warm-tan);
+  font-family:'Anuphan',sans-serif;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s;
+}
+.half-toggle.sel{color:var(--deep);border-bottom-color:var(--deep);background:rgba(25,25,25,0.04);}
+.half-options{display:flex;flex-direction:column;}
+.half-opt{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border:none;background:transparent;font-family:'Anuphan',sans-serif;
+  cursor:pointer;text-align:left;border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.half-opt:last-child{border-bottom:none;}
+.half-opt:active{background:var(--off-white);}
+.half-opt.sel{background:var(--deep);}
+.half-opt.sel .half-opt-name{color:var(--white);}
+.half-opt.sel .half-opt-time{color:var(--warm-tan);}
+.half-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border-mid);flex-shrink:0;transition:all .15s;}
+.half-opt.sel .half-radio{border-color:var(--warm-tan);background:var(--warm-tan);}
+.half-opt-name{font-size:13px;font-weight:700;color:var(--graphite);}
+.half-opt-time{font-size:11px;color:var(--warm-tan);margin-top:1px;font-family:'IBM Plex Mono',monospace;}
+
+/*  Bottom padding  */
+.bottom-pad{height:env(safe-area-inset-bottom);min-height:20px;}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading">
+  <div class="loading-logo">TIDTANG STUDIO</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<!-- Success -->
+<div class="success-screen" id="success-screen">
+  <div class="success-icon" id="success-icon"></div>
+  <div class="success-title" id="success-title">ส่งคำขอแล้วค่ะ</div>
+  <button class="success-close" onclick="closeLiff()">ปิดหน้านี้</button>
+</div>
+
+<!-- App -->
+<div class="app" id="app" style="display:none">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-label">TIDTANG STUDIO · Leave System</div>
+    <div class="header-title" id="header-title">แจ้งวันลา</div>
+    <div class="header-sub" id="header-sub">กรอกข้อมูลให้ครบแล้วกดส่งค่ะ</div>
+  </div>
+
+  <!-- User chip -->
+  <div class="user-chip" id="user-chip" style="display:none">
+    <div class="user-av" id="user-av">—</div>
+    <div>
+      <div class="user-name" id="user-name">กำลังโหลด...</div>
+      <div class="user-role" id="user-role">—</div>
+    </div>
+    <div class="user-quota">
+      <div class="quota-num" id="quota-sick">—</div>
+      <div class="quota-label">ลาป่วย</div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- Leave type -->
+    <div>
+      <div class="section-label">ประเภทการลา</div>
+      <div class="lt-grid" id="lt-grid">
+        <button class="lt-btn" data-type="ลาป่วย" onclick="selType(this)">
+          <span class="lt-icon"></span>
+          <span class="lt-name">ลาป่วย</span>
+          <span class="lt-desc">ไม่ต้องรออนุมัติ</span>
+        </button>
+        <button class="lt-btn" data-type="ลาพักร้อน" onclick="selType(this)" id="btn-vacation">
+          <span class="lt-icon"></span>
+          <span class="lt-name">ลาพักร้อน</span>
+          <span class="lt-desc">ล่วงหน้า 30 วัน</span>
+        </button>
+        <button class="lt-btn" data-type="ลากิจ" onclick="selType(this)">
+          <span class="lt-icon"></span>
+          <span class="lt-name">ลากิจ</span>
+          <span class="lt-desc">ล่วงหน้า 7 วัน</span>
+        </button>
+        <button class="lt-btn full-width" data-type="On Site" onclick="openOnSite()" id="btn-onsite">
+          <span class="lt-icon"></span>
+          <span class="lt-name">On Site</span>
+          <span class="lt-desc">ออกนอกสถานที่ — GPS Check in</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vacation notice -->
+    <div class="vacation-notice" id="vacation-notice">
+       ลาพักร้อนได้หลังทำงานครบ 1 ปีค่ะ<br>
+      <span id="vacation-start-msg"></span>
+    </div>
+
+    <!-- Emergency notice -->
+    <div class="emergency-notice" id="emergency-notice">
+      ลาด่วนฉุกเฉินสำหรับเหตุจำเป็นเร่งด่วนที่ไม่สามารถแจ้งล่วงหน้าได้<br>
+      กรุณาเลือกประเภท ระบุวันที่ และเหตุผลให้ครบ เพื่อส่งให้ Senior / Head พิจารณาค่ะ
+    </div>
+
+    <!-- v66: Emergency Leave Type -->
+    <div id="emergency-type-section" style="display:none">
+      <div class="section-label">ประเภทคำขอฉุกเฉิน</div>
+      <div class="lt-grid">
+        <button class="lt-btn sel" id="btn-emg-leave" data-emg-type="ลาฉุกเฉินพิเศษ" onclick="selEmergencyLeaveType('ลาฉุกเฉินพิเศษ')">
+          <span class="lt-icon"></span>
+          <span class="lt-name">ลาฉุกเฉิน</span>
+          <span class="lt-desc">Emergency Leave · EMG</span>
+        </button>
+        <button class="lt-btn" id="btn-lwp-leave" data-emg-type="Leave Without Pay" onclick="selEmergencyLeaveType('Leave Without Pay')">
+          <span class="lt-icon"></span>
+          <span class="lt-name">ลาไม่รับเงินเดือน</span>
+          <span class="lt-desc">Leave Without Pay · LWP</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quota -->
+    <div id="quota-section" style="display:none">
+      <div class="section-label">โควต้าคงเหลือ</div>
+      <div class="quota-wrap">
+        <div class="q-row"><span class="q-key"> ลาป่วย</span><span class="q-val" id="q-sick-val">—</span></div>
+        <div class="q-bar-bg"><div class="q-bar good" id="q-sick-bar" style="width:0%"></div></div>
+        <div class="q-row"><span class="q-key"> ลาพักร้อน</span><span class="q-val" id="q-vacation-val">—</span></div>
+        <div class="q-bar-bg"><div class="q-bar good" id="q-vacation-bar" style="width:0%"></div></div>
+        <div class="q-row"><span class="q-key"> ลากิจ</span><span class="q-val" id="q-personal-val">—</span></div>
+        <div class="q-bar-bg"><div class="q-bar good" id="q-personal-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Selected type header — แสดงเมื่อ type ถูกเลือกแล้ว -->
+    <div id="selected-type-bar" style="display:none;align-items:center;justify-content:space-between;background:var(--deep);color:var(--off);padding:10px 14px;border-radius:2px;margin-bottom:4px;">
+      <span id="selected-type-label" style="font-size:13px;font-weight:700;letter-spacing:.04em;"></span>
+      <button onclick="resetType()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:var(--off);font-size:10px;padding:4px 10px;border-radius:2px;cursor:pointer;font-family:'Anuphan',sans-serif;">เปลี่ยน</button>
+    </div>
+
+    <!-- Date -->
+    <div id="date-section" style="display:none">
+      <div class="section-label">วันที่ลา</div>
+      <div class="date-wrap">
+        <div class="date-field">
+          <label class="date-label">เริ่ม</label>
+          <input class="f-input" type="date" id="date-start" onchange="calcDays()">
+        </div>
+        <div class="date-field">
+          <label class="date-label">สิ้นสุด</label>
+          <input class="f-input" type="date" id="date-end" onchange="calcDays()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Half Day (ลาป่วย/ลากิจ only) -->
+    <div id="halfday-section" style="display:none">
+      <div class="section-label">จำนวนวันลา</div>
+      <div class="half-day-wrap">
+        <div class="half-toggle-wrap">
+          <button class="half-toggle sel" id="tog-full" onclick="setDayMode('full')">ทั้งวัน</button>
+          <button class="half-toggle" id="tog-half" onclick="setDayMode('half')">ครึ่งวัน · 0.5 วัน</button>
+        </div>
+        <div class="half-options" id="half-options" style="display:none">
+          <button class="half-opt" id="half-morning" onclick="selHalf('morning')">
+            <div class="half-radio"></div>
+            <div>
+              <div class="half-opt-name"> ครึ่งวันเช้า</div>
+              <div class="half-opt-time">10:00 – 15:00 น.</div>
+            </div>
+          </button>
+          <button class="half-opt" id="half-afternoon" onclick="selHalf('afternoon')">
+            <div class="half-radio"></div>
+            <div>
+              <div class="half-opt-name"> ครึ่งวันบ่าย</div>
+              <div class="half-opt-time">15:00 – 19:00 น.</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-pill" id="summary-pill" style="display:none">
+      <span class="sum-left" id="sum-left">รวม</span>
+      <span class="sum-right" id="sum-right">— วัน</span>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert" id="alert-box" style="display:none"></div>
+
+    <!-- Reason -->
+    <div id="reason-section" style="display:none">
+      <div class="section-label">เหตุผล <span style="font-weight:400;text-transform:none;letter-spacing:0">(ไม่บังคับ)</span></div>
+      <textarea class="f-textarea" id="reason" placeholder="ระบุเหตุผล..."></textarea>
+    </div>
+
+    <!-- Submit -->
+    <button class="submit-btn" id="submit-btn" onclick="submitLeave()" style="display:none">
+      ส่งคำขอลา →
+    </button>
+
+    <div class="bottom-pad"></div>
+  </div>
+</div>
+
+<script>
+function bangkokNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
+//  State 
+const LIFF_ID = "2010134572-IRYeubTe"; // ← ใส่ LIFF ID จาก LINE Developers
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";  // ← ใส่ Apps Script Webhook URL
+
+let empData = null;
+let quotaData = null;
+let selectedType = null;
+let userId = null;
+let dayMode = 'full';    // 'full' | 'half'
+let halfPart = null;     // 'morning' | 'afternoon'
+let isEmergencyLeave = false; // v65: โหมดลาด่วนฉุกเฉินจาก ?type=ลาฉุกเฉินพิเศษ
+let isSwapDayOff = false; // v86: โหมดขอสลับวันหยุด
+const HALF_TYPES = ['ลาป่วย','ลากิจ']; // ประเภทที่รองรับครึ่งวัน
+
+//  Init 
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    // ดึงข้อมูลพนักงานจาก Apps Script
+    const res = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${userId}`);
+    const data = await res.json();
+
+    if (data.success && data.emp) {
+      empData = data.emp;
+      quotaData = data.quota;
+      renderEmployee();
+
+      //  Auto-select type จาก URL parameter ?type=ลาป่วย / ลาด่วนฉุกเฉิน
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeParam = urlParams.get("type");
+      if (typeParam === "ลาฉุกเฉินพิเศษ") {
+        setTimeout(() => initEmergencyLeave(), 200);
+      } else if (typeParam === "swapDayOff" || typeParam === "Swap Day Off") {
+        setTimeout(() => initSwapDayOff(), 200);
+      } else if (typeParam) {
+        const btn = document.querySelector(`.lt-btn[data-type="${typeParam}"]`);
+        if (btn) {
+          setTimeout(() => {
+            // ซ่อน type selector ทันที — ไม่ต้องให้ user เลือกเอง
+            const typeSection = document.getElementById("lt-grid");
+            if (typeSection) typeSection.closest("div").style.display = "none";
+            // เลือก type และแสดงฟอร์มทันที
+            selType(btn);
+          }, 200);
+        }
+      }
+    } else {
+      showUnregistered();
+    }
+
+  } catch (err) {
+    console.error(err);
+    showError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้งค่ะ");
+  } finally {
+    hideLoading();
+  }
+}
+
+//  Render Employee 
+function renderEmployee() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-chip').style.display = 'flex';
+
+  const e = empData;
+  document.getElementById('user-av').textContent = e.nick.substring(0,2);
+  document.getElementById('user-name').textContent = `${e.nick} · ${e.name}`;
+  document.getElementById('user-role').textContent = `${e.role} · ${e.dept}`;
+
+  if (quotaData) {
+    document.getElementById('quota-sick').textContent = quotaData.sickLeft;
+    document.getElementById('q-sick-val').textContent = `${quotaData.sickLeft}/${quotaData.sickTotal} วัน`;
+    document.getElementById('q-vacation-val').textContent = `${quotaData.vacationLeft}/${quotaData.vacationTotal} วัน`;
+    document.getElementById('q-personal-val').textContent = `${quotaData.personalLeft}/${quotaData.personalTotal} วัน`;
+
+    setBar('q-sick-bar', quotaData.sickLeft, quotaData.sickTotal);
+    setBar('q-vacation-bar', quotaData.vacationLeft, quotaData.vacationTotal);
+    setBar('q-personal-bar', quotaData.personalLeft, quotaData.personalTotal);
+
+    document.getElementById('quota-section').style.display = 'block';
+  }
+
+  // เช็คสิทธิ์พักร้อน
+  const hasOneYear = checkOneYear(e.startDate);
+  if (!hasOneYear) {
+    document.getElementById('btn-vacation').classList.add('disabled');
+    document.getElementById('vacation-notice').classList.add('show');
+    const startDate = new Date(e.startDate);
+    const eligible = new Date(startDate);
+    eligible.setFullYear(eligible.getFullYear() + 1);
+    document.getElementById('vacation-start-msg').textContent =
+      `จะได้สิทธิ์วันที่ ${formatDateThai(eligible)} ค่ะ`;
+  }
+
+  // แสดงวันที่ default
+  const today = bangkokNow();
+  const todayStr = today.toISOString().split('T')[0];
+  document.getElementById('date-start').value = todayStr;
+  document.getElementById('date-end').value = todayStr;
+}
+
+//  Reset type (ปุ่ม "เปลี่ยน") 
+function resetType() {
+  // แสดง type selector กลับมา
+  const typeSection = document.getElementById("lt-grid");
+  if (typeSection) typeSection.closest("div").style.display = "block";
+  // ซ่อน selected bar และฟอร์ม
+  document.getElementById('selected-type-bar').style.display = 'none';
+  document.getElementById('date-section').style.display = 'none';
+  document.getElementById('reason-section').style.display = 'none';
+  document.getElementById('halfday-section').style.display = 'none';
+  // reset selection
+  document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
+  selectedType = null;
+}
+
+//  Select Leave Type 
+function selType(btn) {
+  document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedType = btn.dataset.type;
+
+  // reset half-day state
+  dayMode = 'full';
+  halfPart = null;
+  document.getElementById('tog-full').classList.add('sel');
+  document.getElementById('tog-half').classList.remove('sel');
+  document.getElementById('half-options').style.display = 'none';
+  document.querySelectorAll('.half-opt').forEach(o => o.classList.remove('sel'));
+
+  // แสดง half-day section เฉพาะลาป่วย/ลากิจ
+  const halfdayEl = document.getElementById('halfday-section');
+  halfdayEl.style.display = HALF_TYPES.includes(selectedType) ? 'block' : 'none';
+
+  // แสดง date section (ซ่อนวันสิ้นสุดถ้าเป็น half-day)
+  document.getElementById('date-section').style.display = 'block';
+  document.getElementById('reason-section').style.display = 'block';
+
+  // แสดง selected type bar
+  const bar = document.getElementById('selected-type-bar');
+  const lbl = document.getElementById('selected-type-label');
+  if (bar && lbl) {
+    lbl.textContent = selectedType;
+    bar.style.display = 'flex';
+  }
+  document.getElementById('submit-btn').style.display = 'block';
+  document.getElementById('alert-box').style.display = 'none';
+
+  calcDays();
+}
+
+//  Half Day Mode 
+function setDayMode(mode) {
+  dayMode = mode;
+  halfPart = null;
+
+  document.getElementById('tog-full').classList.toggle('sel', mode === 'full');
+  document.getElementById('tog-half').classList.toggle('sel', mode === 'half');
+  document.getElementById('half-options').style.display = mode === 'half' ? 'flex' : 'none';
+  document.querySelectorAll('.half-opt').forEach(o => o.classList.remove('sel'));
+
+  // ครึ่งวัน → ล็อควันเดียว (วันสิ้นสุด = วันเริ่ม)
+  if (mode === 'half') {
+    const start = document.getElementById('date-start').value;
+    document.getElementById('date-end').value = start;
+    document.getElementById('date-end').disabled = true;
+  } else {
+    document.getElementById('date-end').disabled = false;
+  }
+
+  calcDays();
+}
+
+function selHalf(part) {
+  halfPart = part;
+  document.getElementById('half-morning').classList.toggle('sel', part === 'morning');
+  document.getElementById('half-afternoon').classList.toggle('sel', part === 'afternoon');
+  calcDays();
+}
+
+function openOnSite() {
+  // เปิด LIFF On Site GPS
+  liff.openWindow({
+    url: "https://liff.line.me/2010134572-8x55QxIM",
+    external: false
+  });
+}
+
+// v66: เลือกประเภทในเมนูฉุกเฉิน — EMG หรือ LWP
+function selEmergencyLeaveType(type) {
+  selectedType = type;
+  document.querySelectorAll('[data-emg-type]').forEach(btn => btn.classList.remove('sel'));
+  const activeBtn = document.querySelector(`[data-emg-type="${type}"]`);
+  if (activeBtn) activeBtn.classList.add('sel');
+
+  const lbl = document.getElementById('selected-type-label');
+  const reasonLabel = document.querySelector('#reason-section .section-label');
+  const reasonInput = document.getElementById('reason');
+  const submitBtn = document.getElementById('submit-btn');
+
+  if (type === 'Leave Without Pay') {
+    if (lbl) lbl.textContent = 'ลาไม่รับเงินเดือน · LWP';
+    if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาแบบไม่รับเงินเดือน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
+    if (reasonInput) reasonInput.placeholder = 'ระบุเหตุผล/รายละเอียดการลาแบบไม่รับเงินเดือน...';
+    if (submitBtn) submitBtn.textContent = 'ส่งคำขอ LWP →';
+  } else {
+    if (lbl) lbl.textContent = 'ลาฉุกเฉิน · EMG';
+    if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาด่วนฉุกเฉิน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
+    if (reasonInput) reasonInput.placeholder = 'ระบุเหตุผล/รายละเอียดเหตุฉุกเฉิน...';
+    if (submitBtn) submitBtn.textContent = 'ส่งคำขอลาฉุกเฉิน →';
+  }
+  calcDays();
+}
+
+// v65: โหมดลาด่วนฉุกเฉิน — ใช้หน้าเดิม แต่ซ่อน quota/type selector ให้เป็นฟอร์มเฉพาะ
+function initEmergencyLeave() {
+  isEmergencyLeave = true;
+  selectedType = "ลาฉุกเฉินพิเศษ";
+  dayMode = "full";
+  halfPart = null;
+
+  document.getElementById('header-title').textContent = 'ลาด่วนฉุกเฉิน';
+  document.getElementById('header-sub').textContent = 'เลือกประเภท ระบุวันที่และเหตุผล เพื่อส่งคำขออนุมัติค่ะ';
+
+  const typeSection = document.getElementById("lt-grid");
+  if (typeSection) typeSection.closest("div").style.display = "none";
+  document.getElementById('quota-section').style.display = 'none';
+  document.getElementById('vacation-notice').classList.remove('show');
+  document.getElementById('emergency-notice').classList.add('show');
+  const emgTypeSection = document.getElementById('emergency-type-section');
+  if (emgTypeSection) emgTypeSection.style.display = 'block';
+  document.getElementById('halfday-section').style.display = 'none';
+
+  const userQuota = document.querySelector('.user-quota');
+  if (userQuota) userQuota.style.display = 'none';
+
+  const bar = document.getElementById('selected-type-bar');
+  const lbl = document.getElementById('selected-type-label');
+  if (bar && lbl) {
+    lbl.textContent = 'ลาฉุกเฉิน · EMG';
+    // ซ่อนแถบสรุปสีดำในโหมดฉุกเฉิน แต่ยังคงปุ่มเลือก EMG / LWP ไว้
+    bar.style.display = 'none';
+    const changeBtn = bar.querySelector('button');
+    if (changeBtn) changeBtn.style.display = 'none';
+  }
+
+  document.getElementById('date-section').style.display = 'block';
+  document.getElementById('reason-section').style.display = 'block';
+  const reasonLabel = document.querySelector('#reason-section .section-label');
+  if (reasonLabel) reasonLabel.innerHTML = 'เหตุผลการลาด่วนฉุกเฉิน <span style="font-weight:400;text-transform:none;letter-spacing:0">(บังคับ)</span>';
+  document.getElementById('reason').placeholder = 'ระบุเหตุผล/รายละเอียดเหตุฉุกเฉิน...';
+  document.getElementById('submit-btn').textContent = 'ส่งคำขอลาฉุกเฉิน →';
+  document.getElementById('submit-btn').style.display = 'block';
+  document.getElementById('alert-box').style.display = 'none';
+  selEmergencyLeaveType('ลาฉุกเฉินพิเศษ');
+
+  calcDays();
+}
+
+
+// v86: โหมดขอสลับวันหยุด — ใช้ input วันที่เดิม แต่เปลี่ยนความหมาย
+function initSwapDayOff() {
+  isSwapDayOff = true;
+  isEmergencyLeave = false;
+  selectedType = 'Swap Day Off';
+  dayMode = 'full';
+  halfPart = null;
+
+  document.getElementById('header-title').textContent = 'ขอสลับวันหยุด';
+  document.getElementById('header-sub').textContent = 'เลือกวันที่มาทำงานในวันหยุด และวันที่ต้องการหยุดชดเชยค่ะ';
+
+  const typeSection = document.getElementById('lt-grid');
+  if (typeSection) typeSection.closest('div').style.display = 'none';
+  document.getElementById('quota-section').style.display = 'none';
+  document.getElementById('halfday-section').style.display = 'none';
+  document.getElementById('emergency-notice').classList.remove('show');
+  document.getElementById('vacation-notice').classList.remove('show');
+
+  const userQuota = document.querySelector('.user-quota');
+  if (userQuota) userQuota.style.display = 'none';
+
+  const bar = document.getElementById('selected-type-bar');
+  const lbl = document.getElementById('selected-type-label');
+  if (bar && lbl) {
+    lbl.textContent = 'สลับวันหยุด · ไม่ตัดโควต้า';
+    bar.style.display = 'flex';
+  }
+
+  document.getElementById('date-section').style.display = 'block';
+  const dateSecLabel = document.querySelector('#date-section .section-label');
+  if (dateSecLabel) dateSecLabel.textContent = 'วันที่ต้องการสลับ';
+  const dateLabels = document.querySelectorAll('#date-section .date-label');
+  if (dateLabels[0]) dateLabels[0].textContent = 'วันที่มาทำงานในวันหยุด';
+  if (dateLabels[1]) dateLabels[1].textContent = 'วันที่ต้องการหยุดชดเชย';
+
+  document.getElementById('reason-section').style.display = 'block';
+  const reasonLabel = document.querySelector('#reason-section .section-label');
+  if (reasonLabel) reasonLabel.innerHTML = 'เหตุผล / รายละเอียด <span style="font-weight:400;text-transform:none;letter-spacing:0">(ไม่บังคับ)</span>';
+  document.getElementById('reason').placeholder = 'เช่น มาทำงานวันหยุดเพื่อปิดงาน / ออกไซต์ / ส่งงานลูกค้า...';
+
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.textContent = 'ส่งคำขอสลับวันหยุด →';
+  submitBtn.style.display = 'block';
+  document.getElementById('alert-box').style.display = 'none';
+  calcDays();
+}
+
+//  Calc Days 
+function calcDays() {
+  const s = document.getElementById('date-start').value;
+  const e = document.getElementById('date-end').value;
+  if (!s || !selectedType) return;
+
+  if (isSwapDayOff) {
+    const e2 = document.getElementById('date-end').value;
+    const pill = document.getElementById('summary-pill');
+    pill.style.display = 'flex';
+    document.getElementById('sum-left').textContent = 'Swap Day Off ·';
+    document.getElementById('sum-right').textContent = e2 ? '1 วัน · ไม่ตัดโควต้า' : 'เลือกวันที่หยุดชดเชย';
+    document.getElementById('submit-btn').disabled = !(s && e2);
+    return;
+  }
+
+  const start = new Date(s);
+  const end   = new Date(e || s);
+  if (end < start) {
+    document.getElementById('date-end').value = s;
+    return;
+  }
+
+  let days;
+  let summaryText;
+
+  if (dayMode === 'half') {
+    days = 0.5;
+    const partName = halfPart === 'morning'
+      ? 'ครึ่งวันเช้า (10:00–15:00)'
+      : halfPart === 'afternoon'
+        ? 'ครึ่งวันบ่าย (15:00–19:00)'
+        : 'เลือกช่วงเวลา...';
+    summaryText = partName;
+  } else {
+    days = countWorkdays(start, end);
+    summaryText = `${days} วัน`;
+  }
+
+  const pill = document.getElementById('summary-pill');
+  pill.style.display = 'flex';
+  document.getElementById('sum-left').textContent = `${selectedType} ·`;
+  document.getElementById('sum-right').textContent = summaryText;
+
+  checkAdvance(start, days);
+}
+
+function checkAdvance(start, days) {
+  const alert = document.getElementById('alert-box');
+  const advance = { 'ลากิจ': 7, 'ลาพักร้อน': 30, 'Leave Without Pay': 30 };
+  const req = isEmergencyLeave ? 0 : advance[selectedType];
+
+  if (req) {
+    const today = bangkokNow();
+    today.setHours(0,0,0,0);
+    const diffDays = Math.round((start - today) / 86400000);
+    if (diffDays < req) {
+      alert.className = 'alert alert-err';
+      alert.textContent = `Minimum advance notice required · ${req} working days`;
+      alert.style.display = 'block';
+      document.getElementById('submit-btn').disabled = true;
+      return;
+    }
+  }
+
+  alert.style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+}
+
+//  Submit 
+async function submitLeave() {
+  if (!selectedType || !userId) return;
+
+  if (isSwapDayOff) {
+    await submitSwapDayOff();
+    return;
+  }
+
+  // เช็ค half-day: ต้องเลือกช่วงเวลา
+  if (dayMode === 'half' && !halfPart) {
+    showAlertBox('กรุณาเลือกช่วงเวลา — ครึ่งวันเช้า หรือ ครึ่งวันบ่ายค่ะ', 'err');
+    return;
+  }
+
+  // v66: EMG/LWP ในเมนูฉุกเฉินต้องมีเหตุผล
+  if (isEmergencyLeave && !document.getElementById('reason').value.trim()) {
+    showAlertBox(selectedType === 'Leave Without Pay' ? 'กรุณาระบุเหตุผลการลาแบบไม่รับเงินเดือนค่ะ' : 'กรุณาระบุเหตุผลการลาด่วนฉุกเฉินค่ะ', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง...';
+
+  const timeMap = {
+    morning:   { from: '10:00', to: '15:00' },
+    afternoon: { from: '15:00', to: '19:00' },
+  };
+
+  const payload = {
+    action:    'submitLeave',
+    userId,
+    leaveType: selectedType,
+    startDate: document.getElementById('date-start').value,
+    endDate:   dayMode === 'half'
+               ? document.getElementById('date-start').value
+               : document.getElementById('date-end').value,
+    reason:    document.getElementById('reason').value,
+    dayMode,
+    halfPart:  dayMode === 'half' ? halfPart : null,
+    timeFrom:  dayMode === 'half' ? timeMap[halfPart].from : null,
+    timeTo:    dayMode === 'half' ? timeMap[halfPart].to   : null,
+    days:      dayMode === 'half' ? 0.5 : null,
+    emergencyMode: isEmergencyLeave,
+  };
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showSuccess(data.msg, selectedType);
+    } else {
+      showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
+      btn.disabled = false;
+      btn.textContent = 'ส่งคำขอลา →';
+    }
+  } catch (err) {
+    showAlertBox('ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่ค่ะ', 'err');
+    btn.disabled = false;
+    btn.textContent = 'ส่งคำขอลา →';
+  }
+}
+
+
+async function submitSwapDayOff() {
+  const workDate = document.getElementById('date-start').value;
+  const swapDate = document.getElementById('date-end').value;
+  if (!workDate || !swapDate) {
+    showAlertBox('กรุณาระบุวันที่มาทำงานในวันหยุด และวันที่ต้องการหยุดชดเชยค่ะ', 'err');
+    return;
+  }
+  if (workDate === swapDate) {
+    showAlertBox('วันที่มาทำงานและวันที่หยุดชดเชยต้องไม่ใช่วันเดียวกันค่ะ', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่ง...';
+
+  try {
+    const res = await fetch(WEBAPP_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'submitSwapDayOff',
+        userId,
+        workDate,
+        swapDate,
+        reason: document.getElementById('reason').value
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showSuccess(data.msg || 'ส่งคำขอสลับวันหยุดแล้วค่ะ', 'Swap Day Off');
+    } else {
+      showAlertBox(data.msg || 'เกิดข้อผิดพลาดค่ะ', 'err');
+      btn.disabled = false;
+      btn.textContent = 'ส่งคำขอสลับวันหยุด →';
+    }
+  } catch (err) {
+    showAlertBox('ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่ค่ะ', 'err');
+    btn.disabled = false;
+    btn.textContent = 'ส่งคำขอสลับวันหยุด →';
+  }
+}
+
+//  Helpers 
+function countWorkdays(start, end) {
+  let count = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const d = cur.getDay();
+    if (d !== 0 && d !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function checkOneYear(startDate) {
+  if (!startDate) return true;
+  const s = new Date(startDate);
+  const now = bangkokNow();
+  return (now - s) >= 365.25 * 24 * 60 * 60 * 1000;
+}
+
+function formatDateThai(date) {
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+                  'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear() + 543}`;
+}
+
+function setBar(id, left, total) {
+  const pct = total > 0 ? Math.round((left/total)*100) : 0;
+  const el = document.getElementById(id);
+  el.style.width = pct + '%';
+  el.className = `q-bar ${pct > 50 ? 'good' : pct > 20 ? 'warn' : 'low'}`;
+}
+
+function showSuccess(msg, type) {
+  const icons = {
+    'ลาป่วย':'', 'ลาพักร้อน':'', 'ลากิจ':'', 'On Site':''
+  };
+  const auto = type === 'ลาป่วย';
+  document.getElementById('success-icon').textContent = icons[type] || '';
+  document.getElementById('success-title').textContent = auto ? 'บันทึกแล้วค่ะ' : 'ส่งคำขอแล้วค่ะ';
+  document.getElementById('success-screen').classList.add('show');
+}
+
+function showUnregistered() {
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('header-title').textContent = 'ยังไม่ได้ลงทะเบียน';
+  document.getElementById('header-sub').textContent = 'กรุณาติดต่อ HR (Ploy) เพื่อลงทะเบียนค่ะ';
+}
+
+function showAlertBox(msg, type) {
+  const el = document.getElementById('alert-box');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function showError(msg) {
+  document.getElementById('app').style.display = 'flex';
+  showAlertBox(msg, 'err');
+}
+
+function hideLoading() {
+  setTimeout(() => {
+    document.getElementById('loading').classList.add('hide');
+  }, 1200);
+}
+
+function closeLiff() {
+  liff.closeWindow();
+}
+
+//  Start 
+window.addEventListener("DOMContentLoaded", function() { function waitForLiff(cb) { if (typeof liff !== "undefined") { cb(); } else { setTimeout(function(){ waitForLiff(cb); }, 100); } } waitForLiff(init); });
+</script>
+</body>
+</html>

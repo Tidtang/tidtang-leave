@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TIDTANG — Dashboard v86</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root {
+  --deep:#191919;--dark:#242424;--mid:#2e2e2e;--border:#383838;
+  --off:#EBE7E4;--cream:#C8B8A2;--muted:#666;
+  --green:#4caf50;--red:#e03535;--amber:#e8a020;--blue:#3b82f6;
+  --purple:#a855f7;--teal:#5eead4;--r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:var(--deep);color:var(--off);min-height:100vh}
+
+.loading{position:fixed;inset:0;background:var(--deep);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100}
+.spin{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--cream);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-size:12px;color:var(--muted);letter-spacing:.1em}
+
+.header{background:var(--dark);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:10}
+.header-tag{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream);margin-bottom:2px}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:18px;font-weight:800;letter-spacing:-.5px}
+.header-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+
+.tabs{display:flex;background:var(--dark);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:12px 14px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em}
+.tab.active{color:var(--cream);border-bottom-color:var(--cream)}
+
+.content{padding:16px;display:none}
+.content.active{display:block}
+
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;margin-top:4px}
+
+/* Stat */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--dark);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-num{font-size:28px;font-weight:800;letter-spacing:-1px}
+.stat-label{font-size:11px;color:var(--muted);margin-top:2px}
+.stat-card.green .stat-num{color:var(--green)}
+.stat-card.amber .stat-num{color:var(--amber)}
+.stat-card.red .stat-num{color:var(--red)}
+.stat-card.blue .stat-num{color:var(--blue)}
+
+/* Person row */
+.person-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.person-row{background:var(--dark);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.person-left{display:flex;align-items:center;gap:10px}
+.person-av{width:34px;height:34px;border-radius:50%;background:var(--mid);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--cream);flex-shrink:0}
+.person-name{font-size:14px;font-weight:600}
+.person-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:'IBM Plex Mono',monospace}
+.badge-in{background:rgba(76,175,80,.15);color:var(--green);border:1px solid rgba(76,175,80,.3)}
+.badge-out{background:rgba(200,184,162,.15);color:var(--cream);border:1px solid rgba(200,184,162,.3)}
+.badge-leave{background:rgba(232,160,32,.15);color:var(--amber);border:1px solid rgba(232,160,32,.3)}
+.badge-emg{background:rgba(224,53,53,.15);color:var(--red);border:1px solid rgba(224,53,53,.3)}
+
+/* Calendar */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:15px;font-weight:700}
+.cal-btn{padding:6px 12px;background:var(--mid);border:1px solid var(--border);border-radius:6px;color:var(--off);font-size:13px;cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:16px}
+.cal-day-hdr{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);padding:4px 0}
+.cal-day{background:var(--dark);border:1px solid var(--border);border-radius:6px;min-height:52px;padding:4px;position:relative;cursor:pointer}
+.cal-day.today{border-color:var(--cream)}
+.cal-day.empty{background:transparent;border-color:transparent;cursor:default}
+.cal-day.has-leave{border-color:rgba(232,160,32,.4)}
+.cal-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:2px}
+.cal-date.today-num{color:var(--cream);font-weight:700}
+.cal-names{display:flex;flex-direction:column;gap:1px}
+.cal-name-chip{font-size:8px;padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+/* Quota list */
+.quota-item{background:var(--dark);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.quota-name{font-size:14px;font-weight:600}
+.quota-dept{font-size:11px;color:var(--muted)}
+.quota-pills{display:flex;gap:4px}
+.quota-pill{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px}
+.qp-sick{background:rgba(232,160,32,.15);color:var(--amber)}
+.qp-vac{background:rgba(59,130,246,.15);color:var(--blue)}
+.qp-per{background:rgba(76,175,80,.15);color:var(--green)}
+
+/* Attendance table */
+.month-sel{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:4px}
+.month-sel::-webkit-scrollbar{display:none}
+.month-btn{flex-shrink:0;padding:6px 12px;background:var(--mid);border:1px solid var(--border);border-radius:6px;color:var(--off);font-size:12px;cursor:pointer;white-space:nowrap}
+.month-btn.active{background:var(--cream);color:var(--deep);font-weight:700;border-color:var(--cream)}
+
+.att-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.att-table th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 6px;text-align:left;border-bottom:1px solid var(--border)}
+.att-table td{padding:9px 6px;border-bottom:1px solid var(--border)}
+.att-table tr:last-child td{border-bottom:none}
+.att-table tr{cursor:pointer}
+.att-mono{font-family:'IBM Plex Mono',monospace;font-size:11px}
+.att-emg{color:var(--amber)}
+.att-noout{color:var(--red)}
+
+/* Search */
+.search-box{width:100%;background:var(--mid);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;margin-bottom:12px}
+.search-box:focus{outline:none;border-color:var(--cream)}
+.search-box::placeholder{color:var(--muted)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;display:flex;align-items:flex-end}
+.modal-sheet{background:var(--dark);border-radius:16px 16px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:20px}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-name{font-size:20px;font-weight:800;margin-bottom:2px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.modal-sec{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:16px 0 10px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--cream)}
+.quota-detail-bar{margin:8px 0}
+.qdb-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qdb-label{font-size:11px;color:var(--muted);width:52px;flex-shrink:0}
+.qdb-track{flex:1;height:6px;background:var(--mid);border-radius:3px;overflow:hidden}
+.qdb-fill{height:100%;border-radius:3px}
+.qdb-val{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);width:36px;text-align:right;flex-shrink:0}
+.btn-modal-close{width:100%;padding:14px;background:var(--mid);border:1px solid var(--border);border-radius:var(--r);color:var(--off);font-family:'Anuphan',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px}
+.link-photo{color:var(--cream);font-size:11px;text-decoration:underline;font-family:'IBM Plex Mono',monospace}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.err-box{background:rgba(224,53,53,.1);border:1px solid var(--red);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:#fca5a5}
+.btn-refresh{padding:8px 14px;background:var(--mid);border:1px solid var(--border);border-radius:8px;color:var(--off);font-family:'Anuphan',sans-serif;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <div class="load-txt" id="load-txt">กำลังโหลด...</div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-tag">TIDTANG STUDIO · HR DASHBOARD</div>
+    <div class="header-row">
+      <div class="header-title">Dashboard</div>
+      <button class="btn-refresh" onclick="loadAll()">รีเฟรช</button>
+    </div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+
+  <div id="office-ip-card" style="display:none;margin:14px 16px 0;background:var(--dark);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">Office WiFi IP</div>
+        <div id="office-ip-display" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--cream)">—</div>
+        <div id="office-ip-updated" style="font-size:10px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button onclick="saveOfficeIP()" id="btn-save-ip" style="flex-shrink:0;padding:9px 14px;background:var(--cream);color:var(--deep);border:none;border-radius:8px;font-family:'Anuphan',sans-serif;font-size:12px;font-weight:700;cursor:pointer">บันทึก IP วันนี้</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">วันนี้</div>
+
+    <div class="tab" onclick="switchTab(1)">วันลา</div>
+    <div class="tab" onclick="switchTab(2)">โควต้า</div>
+    <div class="tab" onclick="switchTab(3)">Check In/Out</div>
+    <div class="tab" onclick="switchTab(4)">Swap Day Off</div>
+  </div>
+
+  <!-- Tab 0: วันนี้ -->
+  <div class="content active" id="tab-0">
+    <div class="stat-grid" id="today-stats"></div>
+    <div class="sec-label">มาทำงานวันนี้</div>
+    <div id="today-checkin-list"></div>
+    <div class="sec-label" style="margin-top:4px">ลาวันนี้</div>
+    <div id="today-leave-list"></div>
+  </div>
+
+  <!-- Tab 1: วันลา (ปฏิทิน) -->
+  <div class="content" id="tab-1">
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="calPrev()">&#8592;</button>
+      <div class="cal-title" id="cal-title"></div>
+      <button class="cal-btn" onclick="calNext()">&#8594;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="sec-label">รายละเอียดการลา</div>
+    <input class="search-box" id="leave-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterLeaveList()">
+    <div id="leave-detail-list"></div>
+  </div>
+
+  <!-- Tab 2: โควต้า -->
+  <div class="content" id="tab-2">
+    <input class="search-box" id="quota-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterQuotaList()">
+    <div class="sec-label">กดชื่อเพื่อดูรายละเอียด</div>
+    <div id="quota-list"></div>
+  </div>
+
+  <!-- Tab 3: Check In/Out -->
+  <div class="content" id="tab-3">
+    <div class="month-sel" id="month-sel-att"></div>
+    <input class="search-box" id="att-search" placeholder="ค้นหาชื่อพนักงาน..." oninput="filterAttTable()">
+    <div class="sec-label">บันทึกเวลาเข้า-ออก</div>
+    <table class="att-table">
+      <thead>
+        <tr>
+          <th>ชื่อ</th>
+          <th>วันที่</th>
+          <th>เข้า</th>
+          <th>ออก</th>
+          <th>ชม.</th>
+          <th>สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="att-body"></tbody>
+    </table>
+  </div>
+  <div class="content" id="tab-4">
+    <div class="month-sel" id="month-sel-swap"></div>
+    <div class="sec-label">Swap Day Off Summary</div>
+    <div class="stat-grid" id="swap-stats">
+      <div class="stat-card"><div class="stat-num">—</div><div class="stat-label">กำลังโหลด</div></div>
+    </div>
+    <div class="sec-label">รายการสลับวันหยุด</div>
+    <div class="person-list" id="swap-list"></div>
+  </div>
+</div>
+
+<!-- Modal รายละเอียด -->
+<div class="modal-overlay" id="emp-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" id="modal-name"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div id="modal-body"></div>
+    <button class="btn-modal-close" onclick="closeModal()">ปิด</button>
+  </div>
+</div>
+
+<script>
+const LIFF_ID    = "2010134572-zWuWoUGs";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
+const MONTHS_TH  = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const LEAVE_COLORS = {
+  "ลาป่วย":"#e8a020","ลาพักร้อน":"#3b82f6","ลากิจ":"#4caf50",
+  "On Site":"#ef4444","ลาเกินโควต้า":"#ec4899","Leave Without Pay":"#6b7280"
+};
+
+let userId = null;
+function bangkokNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
+}
+
+let curMonth = bangkokNow().getMonth() + 1;
+let curYear  = bangkokNow().getFullYear();
+let calMonth = bangkokNow().getMonth() + 1;
+let calYear  = bangkokNow().getFullYear();
+
+let allQuotaData = [];
+let allLeaveData = {};
+let allAttData   = [];
+let allCheckinData = [];
+
+// ── Format helpers ──────────────────────────────────────────────
+function fmtDateTime(raw) {
+  if (!raw) return "—";
+  // แก้ 1899-12-30T... → แสดงแค่เวลา
+  if (typeof raw === "string" && raw.includes("1899")) {
+    const t = raw.split("T")[1];
+    return t ? t.substring(0,5) : "—";
+  }
+  if (raw instanceof Date || (typeof raw === "string" && raw.includes("T"))) {
+    const d = new Date(raw);
+    if (isNaN(d)) return String(raw);
+    const ymd = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    const bkk = bangkokNow();
+    const hm  = `${String(bkk.getHours()).padStart(2,"0")}:${String(bkk.getMinutes()).padStart(2,"0")}`;
+    return `${ymd} (${hm})`;
+  }
+  // ถ้าเป็น string เวลาธรรมดา เช่น "09:30"
+  return String(raw);
+}
+
+function fmtTime(raw) {
+  if (!raw) return "—";
+  if (typeof raw === "string" && raw.includes("1899")) {
+    const t = raw.split("T")[1];
+    return t ? t.substring(0,5) : "—";
+  }
+  if (typeof raw === "string" && raw.match(/^\d{2}:\d{2}/)) return raw.substring(0,5);
+  return String(raw);
+}
+
+function todayISO() {
+  // ใช้ offset ของไทย GMT+7 เพื่อป้องกัน date ผิดตอนดึก
+  const d = bangkokNow();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+async function init() {
+  try {
+    setLoad("เชื่อมต่อ Line...");
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+
+    setLoad("ตรวจสอบสิทธิ์...");
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    const res  = await fetch(`${WEBAPP_URL}?action=getEmployee&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+
+    if (!data.success || !data.emp) { setLoad("ไม่พบข้อมูลในระบบค่ะ"); return; }
+    if (!["Full Access","HR","Admin"].includes(data.emp.role)) { setLoad("ไม่มีสิทธิ์เข้าถึง Dashboard ค่ะ"); return; }
+
+    const now = bangkokNow();
+    document.getElementById("header-date").textContent =
+      `${now.getDate()} ${MONTHS_TH[now.getMonth()+1]} ${now.getFullYear()+543} · ${data.emp.nick}`;
+
+    // v73 FAST: แสดงหน้า Dashboard ก่อน แล้วค่อยโหลดข้อมูลแต่ละ tab แบบ background
+    hide("loading"); showEl("app");
+    document.getElementById("office-ip-card").style.display = "block";
+    renderMonthSel();
+
+    // โหลด tab แรกทันที / tab อื่นโหลดตามหลัง ไม่บล็อกการเปิดหน้า
+    loadTodayTab();
+    setTimeout(() => {
+      loadAttTab();
+      loadCalendar();
+      loadQuotaTab();
+      loadSwapTab();
+      loadOfficeIPStatus();
+    }, 0);
+  } catch(err) {
+    setLoad("เกิดข้อผิดพลาด: " + err.message);
+  }
+}
+
+// ── Office IP Management ──────────────────────────────────────────
+async function getMyPublicIP() {
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip || null;
+  } catch(e) { return null; }
+}
+
+async function loadOfficeIPStatus() {
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getOfficeIP`);
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("office-ip-display").textContent = data.ip || "ยังไม่ได้บันทึก";
+      document.getElementById("office-ip-updated").textContent =
+        data.ip ? `อัปเดตล่าสุด: ${data.updatedAt} · โดย ${data.updatedBy}` : "";
+    }
+  } catch(e) {}
+}
+
+async function saveOfficeIP() {
+  const btn = document.getElementById("btn-save-ip");
+  btn.disabled = true; btn.textContent = "กำลังตรวจสอบ...";
+
+  try {
+    const myIp = await getMyPublicIP();
+    if (!myIp) {
+      btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
+      alert("ไม่สามารถตรวจสอบ IP ได้ค่ะ ลองใหม่อีกครั้ง");
+      return;
+    }
+
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify({ action: "setOfficeIP", userId, ip: myIp })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      await loadOfficeIPStatus();
+      btn.textContent = "บันทึกแล้วค่ะ";
+      setTimeout(() => { btn.textContent = "บันทึก IP วันนี้"; btn.disabled = false; }, 2000);
+    } else {
+      alert(data.msg || "เกิดข้อผิดพลาดค่ะ");
+      btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
+    }
+  } catch(err) {
+    alert("เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    btn.disabled = false; btn.textContent = "บันทึก IP วันนี้";
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadTodayTab(), loadCalendar(), loadQuotaTab(), loadAttTab()]);
+}
+
+// ── Tab 0: วันนี้ ─────────────────────────────────────────────────
+async function loadTodayTab() {
+  document.getElementById("today-stats").innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:span 2">กำลังโหลด...</div>`;
+
+  try {
+    const today = todayISO();
+    const [leaveRes, attRes] = await Promise.all([
+      fetch(`${WEBAPP_URL}?action=getReport&userId=${encodeURIComponent(userId)}&from=${today}&to=${today}`),
+      fetch(`${WEBAPP_URL}?action=getTodayAttendance&userId=${encodeURIComponent(userId)}`)
+    ]);
+    const leaveData = await leaveRes.json();
+    const attData   = await attRes.json();
+
+    const checkins  = attData.success  ? (attData.checkedIn || []) : [];
+    const onLeave   = leaveData.success ? Object.keys(leaveData.byPerson || {}) : [];
+    allCheckinData  = checkins;
+
+    // stats
+    const inCount  = checkins.filter(p => !p.timeOut || p.timeOut === "").length;
+    const outCount = checkins.filter(p => p.timeOut && p.timeOut !== "").length;
+    document.getElementById("today-stats").innerHTML = `
+      <div class="stat-card green"><div class="stat-num">${inCount}</div><div class="stat-label">กำลังทำงาน</div></div>
+      <div class="stat-card blue"><div class="stat-num">${outCount}</div><div class="stat-label">Check Out แล้ว</div></div>
+      <div class="stat-card amber"><div class="stat-num">${onLeave.length}</div><div class="stat-label">ลาวันนี้</div></div>
+      <div class="stat-card red"><div class="stat-num">${checkins.filter(p=>p.mode==="Emergency"||String(p.hours||"").includes("Emergency")).length}</div><div class="stat-label">Emergency</div></div>`;
+
+    // checkin list
+    let ciHtml = "";
+    checkins.forEach(p => {
+      const timeIn  = fmtTime(p.timeIn);
+      const timeOut = fmtTime(p.timeOut);
+      const hasOut  = p.timeOut && p.timeOut !== "" && p.timeOut !== "No Out" && p.timeOut !== "No In-Out";
+      const isNoOut = p.mode === "No-Out" || String(p.timeOut || "").includes("No Out") || String(p.timeOut || "").includes("No In-Out");
+      const isEmg   = String(p.mode || "").includes("Emergency") || String(p.hours || "").includes("Emergency");
+      ciHtml += `
+        <div class="person-row" onclick="openAttDetail('${p.nick}')">
+          <div class="person-left">
+            <div class="person-av" style="${isEmg ? 'background:rgba(232,160,32,.2);color:var(--amber)' : isNoOut ? 'background:rgba(239,68,68,.15);color:#ef4444' : ''}">${(p.nick||"?").substring(0,2)}</div>
+            <div>
+              <div class="person-name">${p.nick}${isEmg ? ' <span style="color:var(--amber);font-size:10px">EMG</span>' : isNoOut ? ' <span style="color:#ef4444;font-size:10px">NO OUT</span>' : ''}</div>
+              <div class="person-sub">IN ${timeIn}${hasOut ? ` · OUT ${timeOut}` : isNoOut ? ' · ลืม Check Out' : ''} · ${p.mode || "Office"}</div>
+            </div>
+          </div>
+          <span class="badge ${hasOut ? 'badge-out' : isNoOut ? '' : 'badge-in'}" style="${isNoOut ? 'background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)' : ''}">${hasOut ? `OUT ${timeOut}` : isNoOut ? 'NO OUT' : 'IN'}</span>
+        </div>`;
+    });
+    document.getElementById("today-checkin-list").innerHTML = ciHtml || `<div class="empty" style="padding:16px 0">ยังไม่มีพนักงาน Check In ค่ะ</div>`;
+
+    // leave list
+    let lvHtml = "";
+    onLeave.forEach(nick => {
+      const p   = leaveData.byPerson[nick];
+      const req = p?.requests?.[0] || {};
+      const color = LEAVE_COLORS[req.type] || "#888";
+      lvHtml += `
+        <div class="person-row">
+          <div class="person-left">
+            <div class="person-av" style="background:${color}22;color:${color}">${nick.substring(0,2)}</div>
+            <div>
+              <div class="person-name">${nick}</div>
+              <div class="person-sub">${req.type || "ลา"} · ${req.days || ""} วัน</div>
+            </div>
+          </div>
+          <span class="badge badge-leave">${req.type || "ลา"}</span>
+        </div>`;
+    });
+    document.getElementById("today-leave-list").innerHTML = lvHtml || `<div class="empty" style="padding:16px 0">ไม่มีพนักงานลาวันนี้ค่ะ</div>`;
+
+  } catch(err) {
+    document.getElementById("today-stats").innerHTML = `<div class="err-box" style="grid-column:span 2">${err.message}</div>`;
+  }
+}
+
+// ── Tab 1: ปฏิทินวันลา ─────────────────────────────────────────
+async function loadCalendar() {
+  renderCalHeader();
+  document.getElementById("cal-grid").innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:span 7;padding:16px 0">กำลังโหลด...</div>`;
+
+  try {
+    const from = `${calYear}-${String(calMonth).padStart(2,"0")}-01`;
+    const lastDay = new Date(calYear, calMonth, 0).getDate();
+    const to   = `${calYear}-${String(calMonth).padStart(2,"0")}-${lastDay}`;
+
+    const res  = await fetch(`${WEBAPP_URL}?action=getReport&userId=${encodeURIComponent(userId)}&from=${from}&to=${to}`);
+    const data = await res.json();
+
+    if (!data.success) { document.getElementById("cal-grid").innerHTML = `<div class="err-box" style="grid-column:span 7">${data.msg}</div>`; return; }
+    allLeaveData = data.byPerson || {};
+
+    // สร้าง dayMap แล้ว render ปฏิทิน
+    const dayMap = buildDayMap(allLeaveData);
+    renderCalGrid(dayMap);
+
+    // รายละเอียด
+    let html = "";
+    Object.entries(data.byPerson || {}).forEach(([nick, p]) => {
+      p.requests.forEach(req => {
+        const color = LEAVE_COLORS[req.type] || "#888";
+        html += `<div class="person-row" onclick="openEmpQuota('${nick}')">
+          <div class="person-left">
+            <div class="person-av" style="background:${color}22;color:${color}">${nick.substring(0,2)}</div>
+            <div>
+              <div class="person-name">${nick}</div>
+              <div class="person-sub">${req.dateRange} · ${req.days} วัน · ${req.status}</div>
+            </div>
+          </div>
+          <span class="badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${req.type}</span>
+        </div>`;
+      });
+    });
+    document.getElementById("leave-detail-list").innerHTML = html || `<div class="empty">ไม่มีการลาเดือนนี้ค่ะ</div>`;
+
+  } catch(err) {
+    document.getElementById("cal-grid").innerHTML = `<div class="err-box" style="grid-column:span 7">${err.message}</div>`;
+  }
+}
+
+function renderCalHeader() {
+  document.getElementById("cal-title").textContent = `${MONTHS_TH[calMonth]} ${calYear + 543}`;
+}
+
+function renderCalGrid(dayMap) {
+  const today = bangkokNow();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const firstDay = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const days = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+
+  let html = days.map(d => `<div class="cal-day-hdr">${d}</div>`).join("");
+
+  // empty cells before first day
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const entries = dayMap[key] || [];
+    const isToday = key === todayKey;
+    const hasLeave = entries.length > 0;
+
+    let chips = entries.slice(0,3).map(e => {
+      const color = LEAVE_COLORS[e.type] || "#888";
+      return `<div class="cal-name-chip" style="background:${color}33;color:${color}">${e.nick}</div>`;
+    }).join("");
+    if (entries.length > 3) chips += `<div class="cal-name-chip" style="color:var(--muted)">+${entries.length-3}</div>`;
+
+    html += `<div class="cal-day ${isToday ? 'today' : ''} ${hasLeave ? 'has-leave' : ''}" onclick="showDayDetail('${key}',${JSON.stringify(entries).replace(/"/g,'&quot;')})">
+      <div class="cal-date ${isToday ? 'today-num' : ''}">${d}</div>
+      <div class="cal-names">${chips}</div>
+    </div>`;
+  }
+
+  document.getElementById("cal-grid").innerHTML = html;
+}
+
+function parseDateRange(range, year) {
+  // รองรับ "1 Jun 2026", "1–5 Jun 2026", "30 May – 2 Jun 2026"
+  const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  const results = [];
+  try {
+    const m = range.match(/(\d+)(?:–(\d+))?\s+(\w+)\s+(\d+)/);
+    if (m) {
+      const startD = parseInt(m[1]);
+      const endD   = m[2] ? parseInt(m[2]) : startD;
+      const mon    = months[m[3]] || calMonth;
+      const yr     = parseInt(m[4]);
+      for (let d = startD; d <= endD; d++) {
+        results.push(`${yr}-${String(mon).padStart(2,"0")}-${String(d).padStart(2,"0")}`);
+      }
+    }
+  } catch(e) {}
+  return results;
+}
+
+function showDayDetail(key, entries) {
+  if (!entries || !entries.length) return;
+  const body = document.getElementById("modal-body");
+  const dateEl = document.getElementById("modal-name");
+  const subEl  = document.getElementById("modal-sub");
+  dateEl.textContent = key;
+  subEl.textContent  = `${entries.length} คนลาวันนี้`;
+  let html = `<div class="modal-sec">รายชื่อพนักงานที่ลา</div>`;
+  entries.forEach(e => {
+    const color = LEAVE_COLORS[e.type] || "#888";
+    html += `<div class="detail-row"><span>${e.nick}</span><span class="detail-val" style="color:${color}">${e.type}</span></div>`;
+  });
+  body.innerHTML = html;
+  document.getElementById("emp-modal").style.display = "flex";
+}
+
+function calPrev() { calMonth--; if (calMonth < 1) { calMonth = 12; calYear--; } loadCalendar(); }
+function calNext() { calMonth++; if (calMonth > 12) { calMonth = 1; calYear++; } loadCalendar(); }
+
+// ── Tab 2: โควต้า ─────────────────────────────────────────────────
+async function loadQuotaTab() {
+  const el = document.getElementById("quota-list");
+  el.innerHTML = `<div style="color:var(--muted);font-size:12px">กำลังโหลด...</div>`;
+
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getAllQuota&userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (!data.success) { el.innerHTML = `<div class="err-box">${data.msg}</div>`; return; }
+
+    allQuotaData = data.quotas || [];
+    renderQuotaList(allQuotaData);
+  } catch(err) {
+    el.innerHTML = `<div class="err-box">${err.message}</div>`;
+  }
+}
+
+function renderQuotaList(quotas) {
+  let html = "";
+  quotas.forEach(q => {
+    html += `<div class="quota-item" onclick="openEmpQuota('${q.nick}')">
+      <div>
+        <div class="quota-name">${q.nick}</div>
+        <div class="quota-dept">${q.dept || ""}</div>
+      </div>
+      <div class="quota-pills">
+        <span class="quota-pill qp-sick">ป่วย ${q.sickLeft}/${q.sickTotal}</span>
+        <span class="quota-pill qp-vac">พักร้อน ${q.vacationLeft}/${q.vacationTotal}</span>
+        <span class="quota-pill qp-per">กิจ ${q.personalLeft}/${q.personalTotal}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById("quota-list").innerHTML = html || `<div class="empty">ไม่มีข้อมูลค่ะ</div>`;
+}
+
+function openEmpQuota(nick) {
+  const q = allQuotaData.find(x => x.nick === nick);
+  document.getElementById("modal-name").textContent = nick;
+  document.getElementById("modal-sub").textContent  = q ? q.dept || "" : "";
+
+  let html = "";
+  if (q) {
+    html += `<div class="modal-sec">โควต้าวันลาคงเหลือ</div>
+    <div class="quota-detail-bar">
+      <div class="qdb-row">
+        <span class="qdb-label">ลาป่วย</span>
+        <div class="qdb-track"><div class="qdb-fill" style="width:${q.sickTotal>0?Math.round(q.sickLeft/q.sickTotal*100):0}%;background:var(--amber)"></div></div>
+        <span class="qdb-val">${q.sickLeft}/${q.sickTotal}</span>
+      </div>
+      <div class="qdb-row">
+        <span class="qdb-label">ลาพักร้อน</span>
+        <div class="qdb-track"><div class="qdb-fill" style="width:${q.vacationTotal>0?Math.round(q.vacationLeft/q.vacationTotal*100):0}%;background:var(--blue)"></div></div>
+        <span class="qdb-val">${q.vacationLeft}/${q.vacationTotal}</span>
+      </div>
+      <div class="qdb-row">
+        <span class="qdb-label">ลากิจ</span>
+        <div class="qdb-track"><div class="qdb-fill" style="width:${q.personalTotal>0?Math.round(q.personalLeft/q.personalTotal*100):0}%;background:var(--green)"></div></div>
+        <span class="qdb-val">${q.personalLeft}/${q.personalTotal}</span>
+      </div>
+    </div>`;
+  }
+
+  // ประวัติลาเดือนนี้
+  const leaveReqs = allLeaveData[nick]?.requests || [];
+  if (leaveReqs.length) {
+    html += `<div class="modal-sec">การลาเดือนนี้</div>`;
+    leaveReqs.forEach(r => {
+      const color = LEAVE_COLORS[r.type] || "#888";
+      html += `<div class="detail-row">
+        <span style="color:${color}">${r.type}</span>
+        <span class="detail-val">${r.dateRange} · ${r.days} วัน</span>
+      </div>`;
+    });
+  }
+
+  document.getElementById("modal-body").innerHTML = html || `<div class="empty">ไม่มีข้อมูลค่ะ</div>`;
+  document.getElementById("emp-modal").style.display = "flex";
+}
+
+// ── Tab 3: Check In/Out ───────────────────────────────────────────
+function renderMonthSel() {
+  const el = document.getElementById("month-sel-att");
+  let html = "";
+  for (let m = 1; m <= 12; m++) {
+    html += `<button class="month-btn ${m===curMonth?'active':''}" onclick="selMonth(${m})">${MONTHS_TH[m]}</button>`;
+  }
+  el.innerHTML = html;
+  const sw = document.getElementById("month-sel-swap");
+  if (sw) sw.innerHTML = html.replaceAll('selMonth(', 'selSwapMonth(');
+}
+
+function selMonth(m) {
+  curMonth = m;
+  document.querySelectorAll("#month-sel-att .month-btn").forEach((b,i) => b.classList.toggle("active", i+1===m));
+  loadAttTab();
+}
+
+async function loadAttTab() {
+  const tbody = document.getElementById("att-body");
+  tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);font-size:12px;padding:16px">กำลังโหลด...</td></tr>`;
+
+  try {
+    const res  = await fetch(`${WEBAPP_URL}?action=getAttendanceReport&userId=${encodeURIComponent(userId)}&month=${curMonth}&year=${curYear}`);
+    const data = await res.json();
+    if (!data.success) { tbody.innerHTML = `<tr><td colspan="6"><div class="err-box">${data.msg}</div></td></tr>`; return; }
+
+    allAttData = data.records || [];
+    renderAttTable(allAttData);
+  } catch(err) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="err-box">${err.message}</div></td></tr>`;
+  }
+}
+
+function renderAttTable(records) {
+  let html = "";
+  records.forEach(r => {
+    const timeIn  = fmtTime(r.timeIn);
+    const timeOut = fmtTime(r.timeOut);
+    const isEmg   = String(r.mode||"").includes("Emergency") || String(r.hours||"").includes("Emergency") || String(r.timeOut||"").includes("Emergency") || String(r.timeIn||"").includes("Emergency");
+    const isNoOut = !r.timeOut || r.timeOut === "No Out" || r.timeOut === "No In-Out";
+    const hours   = r.hours ? `${r.hours}h` : "—";
+
+    html += `<tr onclick="openAttDetail('${r.nick}','${r.date}')" style="cursor:pointer">
+      <td><strong>${r.nick}</strong></td>
+      <td class="att-mono">${r.date}</td>
+      <td class="att-mono ${isEmg?'att-emg':''}">${timeIn}</td>
+      <td class="att-mono ${isNoOut?'att-noout':''}">${isNoOut ? 'No Out' : timeOut}</td>
+      <td class="att-mono">${hours}</td>
+      <td><span style="font-size:10px;color:${isEmg?'var(--amber)':isNoOut?'var(--red)':'var(--muted)'}">${isEmg?'EMG':isNoOut?'ไม่มี Out':r.mode||'Office'}</span></td>
+    </tr>`;
+  });
+  document.getElementById("att-body").innerHTML = html || `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">ไม่มีข้อมูลค่ะ</td></tr>`;
+}
+
+function openAttDetail(nick, date) {
+  // หา record ทั้งหมดของคนนี้
+  const recs = allAttData.filter(r => r.nick === nick);
+  document.getElementById("modal-name").textContent = nick;
+  document.getElementById("modal-sub").textContent  = date ? `ข้อมูล Check In/Out` : `Check In/Out ทั้งหมด`;
+
+  let html = `<div class="modal-sec">บันทึกเวลาเข้า-ออก</div>`;
+  recs.forEach(r => {
+    const timeIn  = fmtTime(r.timeIn);
+    const timeOut = fmtTime(r.timeOut);
+    const isEmg   = String(r.mode||"").includes("Emergency")||String(r.hours||"").includes("Emergency");
+    const isNoOut = !r.timeOut || r.timeOut === "No Out";
+    const hours   = r.hours ? `${r.hours} ชม.` : "—";
+
+    html += `<div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span class="att-mono" style="font-size:11px">${r.date}</span>
+        <span style="font-size:10px;color:${isEmg?'var(--amber)':isNoOut?'var(--red)':'var(--muted)'}">${isEmg?'EMERGENCY':isNoOut?'NO OUT':r.mode||'Office'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <span style="font-size:12px">IN ${timeIn} → OUT ${isNoOut?'—':timeOut}</span>
+        <span class="detail-val">${hours}</span>
+      </div>
+    </div>`;
+  });
+
+  if (!recs.length) html += `<div class="empty">ไม่มีข้อมูลค่ะ</div>`;
+  document.getElementById("modal-body").innerHTML = html;
+  document.getElementById("emp-modal").style.display = "flex";
+}
+
+
+// ── Tab 4: Swap Day Off ──────────────────────────────────────────
+function selSwapMonth(m) {
+  curMonth = m;
+  document.querySelectorAll("#month-sel-swap .month-btn").forEach((b,i) => b.classList.toggle("active", i+1===m));
+  document.querySelectorAll("#month-sel-att .month-btn").forEach((b,i) => b.classList.toggle("active", i+1===m));
+  loadSwapTab();
+}
+
+async function loadSwapTab() {
+  const stats = document.getElementById("swap-stats");
+  const list  = document.getElementById("swap-list");
+  if (!stats || !list) return;
+  stats.innerHTML = `<div style="color:var(--muted);font-size:12px;grid-column:span 2">กำลังโหลด...</div>`;
+  list.innerHTML = "";
+  try {
+    const res = await fetch(`${WEBAPP_URL}?action=getSwapDayOffSummary&userId=${encodeURIComponent(userId)}&month=${curMonth}&year=${curYear}`);
+    const data = await res.json();
+    if (!data.success) { stats.innerHTML = `<div class="err-box" style="grid-column:span 2">${data.msg || 'โหลดไม่สำเร็จ'}</div>`; return; }
+    const s = data.summary || {};
+    stats.innerHTML = `
+      <div class="stat-card amber"><div class="stat-num">${s.pending || 0}</div><div class="stat-label">รออนุมัติ</div></div>
+      <div class="stat-card green"><div class="stat-num">${s.approved || 0}</div><div class="stat-label">อนุมัติแล้ว</div></div>
+      <div class="stat-card blue"><div class="stat-num">${s.used || 0}</div><div class="stat-label">ใช้แล้ว</div></div>
+      <div class="stat-card red"><div class="stat-num">${s.rejected || 0}</div><div class="stat-label">ไม่อนุมัติ</div></div>`;
+    let html = "";
+    (data.items || []).forEach(x => {
+      const st = x.status === 'Pending Senior Approval' ? 'รออนุมัติ' : x.status === 'Approved' ? 'อนุมัติแล้ว' : x.status === 'Used' ? 'ใช้แล้ว' : x.status === 'Rejected' ? 'ไม่อนุมัติ' : x.status;
+      const badgeColor = x.status === 'Rejected' ? 'var(--red)' : x.status === 'Pending Senior Approval' ? 'var(--amber)' : 'var(--green)';
+      html += `<div class="person-row">
+        <div class="person-left">
+          <div class="person-av" style="background:rgba(15,118,110,.18);color:var(--teal)">${(x.empNick||'?').substring(0,2)}</div>
+          <div>
+            <div class="person-name">${x.empNick}</div>
+            <div class="person-sub">ทำงาน ${x.workDate} → หยุด ${x.swapDate} · Senior ${x.seniorName || '—'}</div>
+          </div>
+        </div>
+        <span class="badge" style="background:rgba(200,184,162,.12);color:${badgeColor};border:1px solid rgba(200,184,162,.2)">${st}</span>
+      </div>`;
+    });
+    list.innerHTML = html || `<div class="empty">ไม่มีรายการ Swap Day Off เดือนนี้ค่ะ</div>`;
+  } catch(err) {
+    stats.innerHTML = `<div class="err-box" style="grid-column:span 2">${err.message}</div>`;
+  }
+}
+
+// ── Search/Filter ────────────────────────────────────────────────
+function filterLeaveList() {
+  const q = (document.getElementById("leave-search")?.value || "").toLowerCase().trim();
+
+  // filter list ด้านล่าง
+  document.querySelectorAll("#leave-detail-list .person-row").forEach(el => {
+    const name = el.querySelector(".person-name")?.textContent.toLowerCase() || "";
+    el.style.display = (!q || name.includes(q)) ? "" : "none";
+  });
+
+  // filter ปฏิทิน — re-render โดย filter เฉพาะพนักงานที่ค้นหา
+  if (!q) {
+    // ไม่มีคำค้น → แสดงทุกคน
+    const dayMap = buildDayMap(allLeaveData);
+    renderCalGrid(dayMap);
+  } else {
+    // มีคำค้น → filter เฉพาะคนที่ชื่อตรง
+    const filtered = {};
+    Object.entries(allLeaveData).forEach(([nick, p]) => {
+      if (nick.toLowerCase().includes(q)) filtered[nick] = p;
+    });
+    const dayMap = buildDayMap(filtered);
+    renderCalGrid(dayMap);
+  }
+}
+
+function buildDayMap(byPerson) {
+  const dayMap = {};
+  Object.entries(byPerson || {}).forEach(([nick, p]) => {
+    p.requests.forEach(req => {
+      if ((req.status || "") === "ไม่อนุมัติ") return;
+      const days = parseDateRange(req.dateRange || "", calYear);
+      days.forEach(d => {
+        if (!dayMap[d]) dayMap[d] = [];
+        dayMap[d].push({ nick, type: req.type });
+      });
+    });
+  });
+  return dayMap;
+}
+
+function filterQuotaList() {
+  const q = (document.getElementById("quota-search")?.value || "").toLowerCase();
+  const filtered = allQuotaData.filter(x => !q || x.nick.toLowerCase().includes(q) || (x.dept||"").toLowerCase().includes(q));
+  renderQuotaList(filtered);
+}
+
+function filterAttTable() {
+  const q = (document.getElementById("att-search")?.value || "").toLowerCase();
+  const filtered = allAttData.filter(r => !q || r.nick.toLowerCase().includes(q));
+  renderAttTable(filtered);
+}
+
+// ── Modal ────────────────────────────────────────────────────────
+function closeModal(e) {
+  if (!e || e.target === document.getElementById("emp-modal")) {
+    document.getElementById("emp-modal").style.display = "none";
+  }
+}
+
+// ── Tab switch ───────────────────────────────────────────────────
+function switchTab(idx) {
+  document.querySelectorAll(".tab").forEach((t,i) => t.classList.toggle("active", i===idx));
+  document.querySelectorAll(".content").forEach((c,i) => c.classList.toggle("active", i===idx));
+}
+
+function setLoad(txt) { document.getElementById("load-txt").textContent = txt; }
+function hide(id)     { const el=document.getElementById(id); if(el) el.style.display="none"; }
+function showEl(id)   { const el=document.getElementById(id); if(el) el.style.display="block"; }
+
+window.addEventListener("DOMContentLoaded", () => {
+  function waitLiff(cb) { if (typeof liff !== "undefined") cb(); else setTimeout(() => waitLiff(cb), 100); }
+  waitLiff(init);
+});
+</script>
+</body>
+</html>

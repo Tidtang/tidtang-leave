@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Tidtang Calendar v86</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Anuphan',sans-serif;background:#e9e7e4;min-height:100vh}
+
+.loading{position:fixed;inset:0;background:#e9e7e4;display:flex;align-items:center;justify-content:center;z-index:100}
+.spin{width:20px;height:20px;border:1.5px solid #ccc;border-top-color:#555;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.hdr{padding:24px 20px 8px}
+.hdr-tag{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:#aaa;margin-bottom:4px}
+.hdr-title{font-size:24px;font-weight:800;letter-spacing:-.5px;color:#191919}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.nav{display:flex;align-items:baseline;justify-content:space-between;padding:12px 20px 16px}
+.nav-month{font-size:16px;font-weight:700;color:#191919;letter-spacing:-.3px}
+.nav-year{font-size:12px;color:#aaa;font-family:'IBM Plex Mono',monospace;margin-left:6px}
+.nav-arrows{display:flex;gap:8px}
+.nav-btn{
+  width:32px;height:32px;border-radius:50%;
+  background:none;border:1px solid #d0ccc8;
+  color:#555;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s;
+}
+.nav-btn:active{background:#d0ccc8}
+
+/* ── LEGEND ──────────────────────────────────────────────── */
+.legend{
+  display:flex;flex-wrap:wrap;gap:6px 14px;
+  padding:0 20px 16px;
+}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:#888}
+.leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── GRID ────────────────────────────────────────────────── */
+.cal{padding:0 12px}
+.cal-days-hdr{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  margin-bottom:4px;
+}
+.cal-hdr{
+  text-align:center;
+  font-family:'IBM Plex Mono',monospace;font-size:9px;
+  letter-spacing:.06em;color:#bbb;padding:4px 0;
+}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+
+.day{
+  aspect-ratio:1;border-radius:8px;
+  background:#fff;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:5px 2px 4px;
+  cursor:pointer;
+  transition:opacity .1s;
+  position:relative;
+  overflow:hidden;
+}
+.day:active{opacity:.7}
+.day.empty{background:transparent;cursor:default}
+.day.weekend{background:#d7d3ce}
+.day.holiday{background:#afa89e}
+.day.today .dn{
+  background:#191919;color:#fff;
+  border-radius:50%;width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;margin-bottom:2px;
+}
+.dn{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:#444;
+  line-height:1;margin-bottom:3px;
+}
+.day.weekend .dn{color:#888}
+.day.holiday .dn{color:#fff}
+
+/* dots */
+.dots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;width:100%}
+.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* holiday label */
+.hol-lbl{
+  font-size:6px;color:#fff;text-align:center;
+  line-height:1.2;padding:0 2px;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:100%;
+}
+
+/* ── PANEL ───────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.25);z-index:40;display:none}
+.overlay.show{display:block}
+.panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-radius:20px 20px 0 0;
+  padding:20px;max-height:60vh;overflow-y:auto;
+  z-index:50;transform:translateY(100%);transition:transform .22s ease;
+}
+.panel.open{transform:translateY(0)}
+.panel-drag{width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px}
+.panel-date{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#aaa;margin-bottom:12px;letter-spacing:.05em}
+.panel-holiday{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:#f5f3f0;
+  border-radius:10px;margin-bottom:8px;
+}
+.panel-holiday-dot{width:8px;height:8px;border-radius:50%;background:#afa89e;flex-shrink:0}
+.panel-holiday-name{font-size:13px;color:#444}
+.panel-leave{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:10px;margin-bottom:6px;
+  background:#fafaf9;
+}
+.panel-leave-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.panel-leave-name{font-size:13px;font-weight:600;color:#191919;margin-bottom:1px}
+.panel-leave-sub{font-size:11px;color:#aaa}
+.panel-empty{font-size:13px;color:#bbb;text-align:center;padding:16px 0}
+.panel-close{
+  width:100%;margin-top:12px;padding:12px;
+  background:none;border:1px solid #e8e8e8;border-radius:10px;
+  font-family:'Anuphan',sans-serif;font-size:13px;color:#aaa;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="spin"></div></div>
+
+<div id="app" style="display:none">
+  <div class="hdr">
+    <div class="hdr-tag">TIDTANG STUDIO</div>
+    <div class="hdr-title">Tidtang Calendar</div>
+  </div>
+
+  <div class="nav">
+    <div>
+      <span class="nav-month" id="nav-month"></span>
+      <span class="nav-year" id="nav-year"></span>
+    </div>
+    <div class="nav-arrows">
+      <button class="nav-btn" onclick="navMonth(-1)">←</button>
+      <button class="nav-btn" onclick="navMonth(1)">→</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#afa89e"></div>วันหยุด</div>
+    <div class="leg"><div class="leg-dot" style="background:#8d2621"></div>ลาป่วย</div>
+    <div class="leg"><div class="leg-dot" style="background:#2148a1"></div>ลาพักร้อน</div>
+    <div class="leg"><div class="leg-dot" style="background:#c29100"></div>ลากิจ</div>
+    <div class="leg"><div class="leg-dot" style="background:#eb7130"></div>ลาฉุกเฉิน</div>
+    <div class="leg"><div class="leg-dot" style="background:#0f766e"></div>Swap Day Off</div>
+  </div>
+
+  <div class="cal">
+    <div class="cal-days-hdr">
+      <div class="cal-hdr">อา</div>
+      <div class="cal-hdr">จ</div>
+      <div class="cal-hdr">อ</div>
+      <div class="cal-hdr">พ</div>
+      <div class="cal-hdr">พฤ</div>
+      <div class="cal-hdr">ศ</div>
+      <div class="cal-hdr">ส</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="panel-drag"></div>
+  <div class="panel-date" id="panel-date"></div>
+  <div id="panel-body"></div>
+  <button class="panel-close" onclick="closePanel()">ปิด</button>
+</div>
+
+<script>
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwx-5qK1LrU7RjkaleQVYQ5GVCCe9Ab3_uoC7zE9gtj_0dKoXf86PyiHOhFmBVeN3Zm4g/exec";
+const LIFF_ID    = "2010134572-wCYr1N6t";
+
+const MONTHS_TH = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const MONTHS_FULL = ["","มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const COLORS = {
+  "ลาป่วย":"#8d2621","ลาพักร้อน":"#2148a1","ลากิจ":"#c29100",
+  "ลาฉุกเฉินพิเศษ":"#eb7130","ลาเกินโควต้า":"#eb7130","Leave Without Pay":"#999","On Site":"#555",
+  "Swap Day Off":"#0f766e",
+};
+
+let userId=null, calYear, calMonth, dayMap={};
+
+function bangkokNow(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Bangkok"}))}
+
+async function init(){
+  try{
+    await liff.init({liffId:LIFF_ID});
+    if(!liff.isLoggedIn()){liff.login();return}
+    const p=await liff.getProfile();
+    userId=p.userId;
+    const now=bangkokNow();
+    calYear=now.getFullYear(); calMonth=now.getMonth()+1;
+    await loadMonth();
+    document.getElementById("loading").style.display="none";
+    document.getElementById("app").style.display="";
+  }catch(err){
+    document.getElementById("loading").innerHTML=`<div style="font-size:12px;color:#aaa;text-align:center;padding:32px">${err.message}</div>`;
+  }
+}
+
+async function loadMonth(){
+  updateNav();
+  document.getElementById("cal-grid").innerHTML=`<div style="grid-column:span 7;text-align:center;padding:32px;font-size:12px;color:#bbb">กำลังโหลด...</div>`;
+  const pad=n=>String(n).padStart(2,"0");
+  const last=new Date(calYear,calMonth,0).getDate();
+  const from=`${calYear}-${pad(calMonth)}-01`;
+  const to=`${calYear}-${pad(calMonth)}-${last}`;
+  try{
+    const res=await fetch(`${WEBAPP_URL}?action=getCalendarData&userId=${encodeURIComponent(userId)}&from=${from}&to=${to}`);
+    const data=await res.json();
+    buildDayMap(data.leaves||[], data.holidays||[], data.swaps||[]);
+    renderGrid();
+  }catch(err){
+    document.getElementById("cal-grid").innerHTML=`<div style="grid-column:span 7;text-align:center;padding:32px;font-size:12px;color:#e03535">${err.message}</div>`;
+  }
+}
+
+function buildDayMap(leaves, holidays, swaps){
+  dayMap={};
+  const pad=n=>String(n).padStart(2,"0");
+  holidays.forEach(h=>{
+    if(!dayMap[h.date]) dayMap[h.date]={leaves:[],swaps:[],holiday:null};
+    dayMap[h.date].holiday=h.name;
+  });
+  leaves.forEach(lv=>{
+    let cur=new Date(lv.startISO+"T00:00:00");
+    const end=new Date(lv.endISO+"T00:00:00");
+    while(cur<=end){
+      const mo=cur.getMonth()+1;
+      if(mo===calMonth){
+        const key=`${cur.getFullYear()}-${pad(mo)}-${pad(cur.getDate())}`;
+        if(!dayMap[key]) dayMap[key]={leaves:[],swaps:[],holiday:dayMap[key]?.holiday||null};
+        if(!dayMap[key].swaps) dayMap[key].swaps=[];
+        dayMap[key].leaves.push(lv);
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+  (swaps || []).forEach(sw=>{
+    const key=sw.dateISO;
+    if(!key) return;
+    const d=new Date(key+"T00:00:00");
+    if(d.getMonth()+1!==calMonth) return;
+    if(!dayMap[key]) dayMap[key]={leaves:[],swaps:[],holiday:null};
+    if(!dayMap[key].swaps) dayMap[key].swaps=[];
+    dayMap[key].swaps.push(sw);
+  });
+}
+
+function renderGrid(){
+  const pad=n=>String(n).padStart(2,"0");
+  const now=bangkokNow();
+  const todayKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const firstDay=new Date(calYear,calMonth-1,1).getDay();
+  const total=new Date(calYear,calMonth,0).getDate();
+
+  let html="";
+  for(let i=0;i<firstDay;i++) html+=`<div class="day empty"></div>`;
+
+  for(let d=1;d<=total;d++){
+    const dow=new Date(calYear,calMonth-1,d).getDay();
+    const key=`${calYear}-${pad(calMonth)}-${pad(d)}`;
+    const info=dayMap[key]||{leaves:[],swaps:[],holiday:null};
+    const isToday=key===todayKey;
+    const isWeekend=dow===0||dow===6;
+    const isHoliday=!!info.holiday;
+
+    const cls=["day",isWeekend?"weekend":"",isHoliday?"holiday":"",isToday?"today":""].filter(Boolean).join(" ");
+    const allDots=[...(info.leaves||[]),...(info.swaps||[])];
+    const dots=allDots.slice(0,6).map(lv=>`<div class="dot" style="background:${COLORS[lv.type]||'#888'}"></div>`).join("");
+    const more=allDots.length>6?`<div class="dot" style="background:#ccc"></div>`:"";
+    const holLbl=isHoliday?`<div class="hol-lbl">${info.holiday}</div>`:"";
+    const enc=encodeURIComponent(JSON.stringify({key,info}));
+
+    html+=`<div class="${cls}" onclick="showDay('${enc}')">
+      <div class="dn">${d}</div>
+      ${holLbl}
+      <div class="dots">${dots}${more}</div>
+    </div>`;
+  }
+  document.getElementById("cal-grid").innerHTML=html;
+}
+
+function showDay(enc){
+  const {key,info}=JSON.parse(decodeURIComponent(enc));
+  if(!info.holiday&&!(info.leaves||[]).length&&!(info.swaps||[]).length) return;
+  const [y,m,d]=key.split("-");
+  document.getElementById("panel-date").textContent=`${parseInt(d)} ${MONTHS_FULL[parseInt(m)]} ${parseInt(y)+543}`;
+  let html="";
+  if(info.holiday){
+    html+=`<div class="panel-holiday"><div class="panel-holiday-dot"></div><div class="panel-holiday-name">${info.holiday}</div></div>`;
+  }
+  (info.leaves||[]).forEach(lv=>{
+    const c=COLORS[lv.type]||"#888";
+    html+=`<div class="panel-leave">
+      <div class="panel-leave-dot" style="background:${c}"></div>
+      <div>
+        <div class="panel-leave-name">${lv.nick}</div>
+        <div class="panel-leave-sub">${lv.type} · ${lv.days} วัน</div>
+      </div>
+    </div>`;
+  });
+  (info.swaps||[]).forEach(sw=>{
+    const c=COLORS[sw.type]||"#0f766e";
+    html+=`<div class="panel-leave">
+      <div class="panel-leave-dot" style="background:${c}"></div>
+      <div>
+        <div class="panel-leave-name">${sw.nick}</div>
+        <div class="panel-leave-sub">Swap Day Off · ทำงานแทน ${sw.workDateISO || '—'}</div>
+      </div>
+    </div>`;
+  });
+  if(!html) html=`<div class="panel-empty">ไม่มีข้อมูลค่ะ</div>`;
+  document.getElementById("panel-body").innerHTML=html;
+  document.getElementById("panel").classList.add("open");
+  document.getElementById("overlay").classList.add("show");
+}
+
+function closePanel(){
+  document.getElementById("panel").classList.remove("open");
+  document.getElementById("overlay").classList.remove("show");
+}
+
+async function navMonth(dir){
+  calMonth+=dir;
+  if(calMonth>12){calMonth=1;calYear++}
+  if(calMonth<1){calMonth=12;calYear--}
+  await loadMonth();
+}
+
+function updateNav(){
+  document.getElementById("nav-month").textContent=MONTHS_FULL[calMonth];
+  document.getElementById("nav-year").textContent=calYear+543;
+}
+
+init();
+</script>
+</body>
+</html>
