@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TIDTANG — อนุมัติการลา</title>
+<title>TIDTANG — Approve v86</title>
 <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
@@ -325,7 +325,7 @@ let currentInfoReqId = null;
 let currentInfoEmpId = null;
 
 // บทบาทที่กดอนุมัติได้
-const CAN_APPROVE_ROLES  = ["Full Access", "Senior", "HR"];
+const CAN_APPROVE_ROLES  = ["Full Access", "Head", "Senior", "HR"];
 // บทบาทที่ดูได้อย่างเดียว
 const VIEW_ONLY_ROLES    = ["Admin"];
 
@@ -336,6 +336,7 @@ const TYPE_CONFIG = {
   "WFH":              { cls: "type-wfh",      label: "WFH" },
   "ลาเกินโควต้า":    { cls: "type-over",     label: "ลาเกินโควต้า" },
   "Leave Without Pay":{ cls: "type-lwp",      label: "Leave Without Pay" },
+  "Swap Day Off":    { cls: "type-wfh",      label: "Swap Day Off" },
 };
 
 //  Init 
@@ -411,6 +412,13 @@ async function loadRequests() {
 
     requests = data1.requests || [];
 
+    // v86: รวมคำขอสลับวันหยุดที่รอ Senior อนุมัติ
+    try {
+      const swp1 = await fetch(`${WEBAPP_URL}?action=getSwapPendingRequests&userId=${encodeURIComponent(userId)}&filter=pending`);
+      const swpData1 = await swp1.json();
+      if (swpData1.success) requests = [...requests, ...(swpData1.requests || [])];
+    } catch(e) { console.warn('swap pending load failed', e); }
+
     // FIX B: แสดง main-content ด้วย display:flex
     hide("loading");
     showFlex("header");
@@ -422,8 +430,13 @@ async function loadRequests() {
     const data2 = await res2.json();
     if (data2.success) {
       requests = [...requests, ...(data2.requests || [])];
-      updateCount();
     }
+    try {
+      const swp2 = await fetch(`${WEBAPP_URL}?action=getSwapPendingRequests&userId=${encodeURIComponent(userId)}&filter=done`);
+      const swpData2 = await swp2.json();
+      if (swpData2.success) requests = [...requests, ...(swpData2.requests || [])];
+    } catch(e) { console.warn('swap done load failed', e); }
+    updateCount();
 
   } catch (err) {
     console.error("loadRequests error:", err);
@@ -529,7 +542,7 @@ function buildCard(req, idx) {
     <div class="req-actions">
       <button class="btn-action btn-approve" onclick="approve(${idx})">อนุมัติ</button>
       <button class="btn-action btn-reject"  onclick="reject(${idx})">ปฏิเสธ</button>
-      <button class="btn-action btn-info"    onclick="requestInfo(${idx})"></button>
+      ${req.category === 'swap' ? '' : `<button class="btn-action btn-info" onclick="requestInfo(${idx})"></button>`}
     </div>`
     : isPending && isViewOnly ? `
     <div class="done-badge" style="background:rgba(200,184,162,.08);color:var(--muted);font-size:12px">
@@ -565,6 +578,14 @@ function buildCard(req, idx) {
         <div><div class="req-info-label">ผู้อนุมัติ</div><div class="req-info-value">${(req.approvers||[]).join(", ") || "—"}</div></div>
       </div>
 
+      ${req.category === 'swap' ? `
+      <div class="req-reason">
+        <div class="req-reason-label">รายละเอียดสลับวันหยุด</div>
+        มาทำงานวันหยุด: ${req.workDate || '—'}<br>
+        หยุดชดเชย: ${req.swapDate || '—'}<br>
+        ไม่ตัดโควต้าวันลา
+      </div>` : ""}
+
       ${req.reason ? `
       <div class="req-reason">
         <div class="req-reason-label">เหตุผล</div>
@@ -588,13 +609,15 @@ function buildCard(req, idx) {
 //  Actions 
 async function approve(idx) {
   const req = requests[idx];
-  if (!confirm(`อนุมัติการลาของ ${req.empNick}?\n${req.leaveType} · ${req.dateRange}`)) return;
-  await submitDecision(idx, "approveLeave", "");
+  const label = req.category === 'swap' ? 'อนุมัติคำขอสลับวันหยุด' : 'อนุมัติการลา';
+  if (!confirm(`${label}ของ ${req.empNick}?
+${req.leaveType} · ${req.dateRange}`)) return;
+  await submitDecision(idx, req.category === 'swap' ? "approveSwapDayOff" : "approveLeave", "");
 }
 
 async function reject(idx) {
   const reason = prompt(`เหตุผลในการปฏิเสธ (${requests[idx].empNick}):`) || "";
-  await submitDecision(idx, "rejectLeave", reason);
+  await submitDecision(idx, requests[idx].category === 'swap' ? "rejectSwapDayOff" : "rejectLeave", reason);
 }
 
 function requestInfo(idx) {
@@ -657,7 +680,7 @@ async function submitDecision(idx, action, reason) {
     const data = await res.json();
 
     if (data.success) {
-      req.status     = action === "approveLeave" ? "อนุมัติ" : "ไม่อนุมัติ";
+      req.status     = (action === "approveLeave" || action === "approveSwapDayOff") ? "อนุมัติ" : "ไม่อนุมัติ";
       req.approvedBy = approver.nick;
       renderRequests();
     } else {
