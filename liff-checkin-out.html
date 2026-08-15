@@ -355,7 +355,7 @@ function checkEmergencyReady() {
 }
 
 // ── Watermark timestamp + GPS ลงบนรูปจริง ──────────────────────
-function watermarkPhoto(file, gps) {
+function watermarkPhoto(file, gps, label = "Emergency") {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const reader = new FileReader();
@@ -394,7 +394,7 @@ function watermarkPhoto(file, gps) {
       ctx.shadowOffsetY = 1;
 
       let y = canvas.height - boxH + padding;
-      ctx.fillText(`TIDTANG STUDIO · Emergency`, padding, y);
+      ctx.fillText(`TIDTANG STUDIO · ${label}`, padding, y);
       y += lineH;
       ctx.fillText(`${dateStr}  ${timeStr}`, padding, y);
       y += lineH;
@@ -475,24 +475,56 @@ async function submitEmergency(mode) {
 let onsiteGPS = null;
 let onsiteProjectName = "";
 
+
+let onsiteCheckinPhoto = null;
+
 function startCheckInOnSite() {
-  const body = document.getElementById("body");
   onsiteGPS = null;
+  onsiteCheckinPhoto = null;
+  const body = document.getElementById("body");
 
   body.innerHTML = `
     <div class="sec-label">Check In On Site</div>
     <div class="pwd-card">
       <div class="pwd-title">ชื่อโปรเจกต์ / สถานที่</div>
       <input class="inp" id="onsite-project" type="text" placeholder="เช่น บ้านคุณสมชาย, Site A" style="margin-bottom:10px">
-      <div id="gps-status" class="alert alert-warn" style="display:none">กำลังดึง GPS...</div>
+
+      <div class="pwd-title" style="margin-top:8px">รูปถ่ายยืนยันพร้อม Timestamp</div>
+      <input type="file" id="onsite-in-photo" accept="image/*" capture="environment"
+        style="display:none" onchange="onOnsiteInPhoto(this)">
+      <button class="btn btn-retry" type="button"
+        onclick="document.getElementById('onsite-in-photo').click()">
+        ถ่ายรูป On Site
+      </button>
+      <div id="onsite-in-preview" style="margin-top:8px;font-size:12px;color:var(--muted)">
+        ระบบจะประทับวัน เวลา และ GPS ลงบนรูปให้อัตโนมัติค่ะ
+      </div>
+
+      <div id="gps-status" class="alert alert-warn" style="display:none;margin-top:10px">กำลังดึง GPS...</div>
     </div>
     <div id="alert-box"></div>
-    <button class="btn btn-checkin" id="btn-onsite-submit" onclick="submitCheckInOnSite()" disabled>Check In On Site</button>
+    <button class="btn btn-checkin" id="btn-onsite-submit" onclick="submitCheckInOnSite()" disabled>
+      Check In On Site
+    </button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
 
-  // ดึง GPS ทันที
   getOnsiteGPS();
 }
+
+function onOnsiteInPhoto(input) {
+  if (input.files && input.files[0]) {
+    onsiteCheckinPhoto = input.files[0];
+    const el = document.getElementById("onsite-in-preview");
+    if (el) el.textContent = `ถ่ายรูปแล้ว: ${input.files[0].name} · ระบบจะประทับ Timestamp + GPS ตอนส่ง`;
+    checkOnsiteInReady();
+  }
+}
+
+function checkOnsiteInReady() {
+  const btn = document.getElementById("btn-onsite-submit");
+  if (btn) btn.disabled = !(onsiteCheckinPhoto && onsiteGPS);
+}
+
 
 function getOnsiteGPS() {
   const statusEl = document.getElementById("gps-status");
@@ -505,29 +537,39 @@ function getOnsiteGPS() {
         statusEl.className = "alert alert-ok";
         statusEl.textContent = `GPS พร้อมแล้วค่ะ (${onsiteGPS.lat.toFixed(5)}, ${onsiteGPS.lng.toFixed(5)})`;
       }
-      const btn = document.getElementById("btn-onsite-submit");
-      if (btn) btn.disabled = false;
+      checkOnsiteInReady();
     },
     err => {
       if (statusEl) {
         statusEl.className = "alert alert-err";
         statusEl.textContent = "ดึง GPS ไม่ได้ค่ะ กรุณาเปิด Location แล้วลองใหม่";
       }
+      checkOnsiteInReady();
     },
-    { enableHighAccuracy: true, timeout: 15000 }
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 }
 
+async 
 async function submitCheckInOnSite() {
   const project = document.getElementById("onsite-project").value.trim();
   if (!project) { showAlert("err", "กรุณากรอกชื่อโปรเจกต์ค่ะ"); return; }
   if (!onsiteGPS) { showAlert("err", "ยังไม่ได้รับ GPS ค่ะ"); return; }
+  if (!onsiteCheckinPhoto) { showAlert("err", "กรุณาถ่ายรูป On Site ก่อน Check In ค่ะ"); return; }
 
   const now    = bangkokNow();
   const timeIn = now.toLocaleTimeString("th-TH", {hour:"2-digit",minute:"2-digit"});
 
-  showLoading("กำลัง Check In On Site...");
+  showLoading("กำลังประทับ Timestamp และ Check In On Site...");
   try {
+    const watermarkedBlob = await watermarkPhoto(onsiteCheckinPhoto, onsiteGPS, "On Site Check In");
+    const photoBase64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("อ่านรูปไม่ได้ค่ะ"));
+      reader.readAsDataURL(watermarkedBlob);
+    });
+
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=UTF-8" },
@@ -537,7 +579,8 @@ async function submitCheckInOnSite() {
         lat: onsiteGPS.lat,
         lng: onsiteGPS.lng,
         projectName: project,
-        timeIn
+        timeIn,
+        photo: photoBase64
       })
     });
     const data = await res.json();
@@ -546,14 +589,21 @@ async function submitCheckInOnSite() {
     document.getElementById("app").style.display = "block";
 
     if (data.success) {
-      activeCheckin = { timeIn, mode: "onsite", method: "GPS" };
+      activeCheckin = {
+        timeIn,
+        mode: "onsite",
+        method: "GPS + Timestamp Photo",
+        lat: onsiteGPS.lat,
+        lng: onsiteGPS.lng,
+        projectName: project
+      };
       const body = document.getElementById("body");
       body.innerHTML = `
         <div class="status-card">
           <div class="status-title">Check In On Site เรียบร้อยค่ะ</div>
           <div class="status-sub">${timeIn} น. · ${project}
 
-ขอให้งานราบรื่นนะคะ</div>
+บันทึก GPS และรูปถ่าย Timestamp เรียบร้อยแล้วค่ะ</div>
         </div>
         <button class="btn btn-retry" style="margin-top:8px" onclick="liff.closeWindow()">ปิด</button>`;
     } else {
@@ -572,6 +622,7 @@ async function submitCheckInOnSite() {
 let onsiteCheckoutPhoto = null;
 let onsiteCheckoutGPS   = null;
 
+
 function startCheckOutOnSite() {
   onsiteCheckoutPhoto = null;
   onsiteCheckoutGPS   = null;
@@ -580,58 +631,62 @@ function startCheckOutOnSite() {
   body.innerHTML = `
     <div class="emergency-card" style="border-color:var(--blue)">
       <div class="emergency-title" style="color:var(--blue)">Check Out On Site</div>
-      <div class="emergency-sub">กรุณาถ่ายรูปเพื่อยืนยันการ Check Out ค่ะ</div>
+      <div class="emergency-sub">
+        กรุณาถ่ายรูปยืนยันก่อน Check Out ค่ะ<br>
+        ระบบจะบันทึก GPS และประทับ Timestamp ลงบนรูปให้อัตโนมัติ
+      </div>
     </div>
 
-    <div class="sec-label">ถ่ายรูปปัจจุบัน</div>
+    <div class="sec-label">รูปถ่ายยืนยัน</div>
     <div style="margin-bottom:14px">
-      <input type="file" id="onsite-out-photo" accept="image/*" capture="environment" style="display:none" onchange="onOnsiteOutPhoto(this)">
-      <button class="btn btn-retry" onclick="document.getElementById('onsite-out-photo').click()">ถ่ายรูป (ต้องถ่ายใหม่เท่านั้น)</button>
-      <div id="onsite-out-preview" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+      <input type="file" id="onsite-out-photo" accept="image/*" capture="environment"
+        style="display:none" onchange="onOnsiteOutPhoto(this)">
+      <button class="btn btn-retry" type="button"
+        onclick="document.getElementById('onsite-out-photo').click()">
+        ถ่ายรูป On Site Check Out
+      </button>
+      <div id="onsite-out-preview" style="margin-top:8px;font-size:12px;color:var(--muted)">
+        ระบบจะประทับวัน เวลา และ GPS ลงบนรูปตอนส่งค่ะ
+      </div>
     </div>
 
     <div id="gps-out-status" class="alert alert-warn">กำลังดึง GPS...</div>
     <div id="alert-box"></div>
-    <button class="btn btn-checkout" id="btn-onsite-out-submit" onclick="submitCheckOutOnSite()" disabled style="margin-top:12px">
+    <button class="btn btn-checkout" id="btn-onsite-out-submit"
+      onclick="submitCheckOutOnSite()" disabled style="margin-top:12px">
       Check Out On Site
     </button>
     <button class="btn btn-retry" style="margin-top:8px" onclick="renderMain()">ยกเลิก</button>`;
 
-  // ดึง GPS ทันที
+  // On Site Check Out บันทึก GPS ทุกครั้ง ไม่จำกัดระยะจากจุด Check In
   navigator.geolocation.getCurrentPosition(
     pos => {
       onsiteCheckoutGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       const el = document.getElementById("gps-out-status");
       if (el) {
-        if (activeCheckin && activeCheckin.lat && activeCheckin.lng) {
-          const dist = getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), onsiteCheckoutGPS.lat, onsiteCheckoutGPS.lng);
-          if (dist > 200) {
-            el.className = "alert alert-warn";
-            el.textContent = `คุณอยู่นอกรัศมีจากจุด Check In ${Math.round(dist)}m — ระบบจะให้เลือก Auto Check Out 1 ชม. หรือ Emergency Check Out ค่ะ`;
-          } else {
-            el.className = "alert alert-ok";
-            el.textContent = `GPS พร้อมแล้วค่ะ · อยู่ในรัศมี ${Math.round(dist)}m`;
-          }
-        } else {
-          el.className = "alert alert-ok";
-          el.textContent = `GPS พร้อมแล้วค่ะ`;
-        }
+        el.className = "alert alert-ok";
+        el.textContent = `GPS พร้อมแล้วค่ะ (${onsiteCheckoutGPS.lat.toFixed(5)}, ${onsiteCheckoutGPS.lng.toFixed(5)})`;
       }
       checkOnsiteOutReady();
     },
     err => {
       const el = document.getElementById("gps-out-status");
-      if (el) { el.className = "alert alert-err"; el.textContent = "ดึง GPS ไม่ได้ค่ะ กรุณาเปิด Location"; }
+      if (el) {
+        el.className = "alert alert-err";
+        el.textContent = "ดึง GPS ไม่ได้ค่ะ กรุณาเปิด Location แล้วลองใหม่";
+      }
+      checkOnsiteOutReady();
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 }
 
+
 function onOnsiteOutPhoto(input) {
   if (input.files && input.files[0]) {
     onsiteCheckoutPhoto = input.files[0];
     const el = document.getElementById("onsite-out-preview");
-    if (el) el.textContent = `รูปที่เลือก: ${input.files[0].name}`;
+    if (el) el.textContent = `ถ่ายรูปแล้ว: ${input.files[0].name} · ระบบจะประทับ Timestamp + GPS ตอนส่ง`;
     checkOnsiteOutReady();
   }
 }
@@ -646,42 +701,37 @@ function getOnsiteDistanceFromCheckin() {
   return getDistance(Number(activeCheckin.lat), Number(activeCheckin.lng), Number(onsiteCheckoutGPS.lat), Number(onsiteCheckoutGPS.lng));
 }
 
+
 function readOnsitePhotoBase64() {
-  return new Promise((resolve, reject) => {
-    if (!onsiteCheckoutPhoto) return reject(new Error("ยังไม่ได้ถ่ายรูปค่ะ"));
-    const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result.split(",")[1]);
-    reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่ได้ค่ะ"));
-    reader.readAsDataURL(onsiteCheckoutPhoto);
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!onsiteCheckoutPhoto) throw new Error("ยังไม่ได้ถ่ายรูปค่ะ");
+      if (!onsiteCheckoutGPS) throw new Error("ยังไม่ได้รับ GPS ค่ะ");
+      const watermarkedBlob = await watermarkPhoto(onsiteCheckoutPhoto, onsiteCheckoutGPS, "On Site Check Out");
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่ได้ค่ะ"));
+      reader.readAsDataURL(watermarkedBlob);
+    } catch(err) {
+      reject(err);
+    }
   });
 }
 
-function showOutOfRadiusOptions(dist) {
-  const body = document.getElementById("body");
-  body.innerHTML = `
-    <div class="emergency-card" style="border-color:var(--amber)">
-      <div class="emergency-title" style="color:var(--amber)">อยู่นอกรัศมี Check In</div>
-      <div class="emergency-sub">
-        คุณอยู่ห่างจากจุด Check In ประมาณ ${Math.round(dist)} เมตร<br>
-        กรุณาเลือกวิธีบันทึก Check Out ค่ะ
-      </div>
-    </div>
 
-    <button class="btn btn-checkout" style="margin-top:12px" onclick="submitCheckOutOnSite(true)">
-      ยอมรับ Auto Check Out 1 ชม.
-    </button>
-    <button class="btn btn-emergency" style="margin-top:8px" onclick="submitEmergencyCheckOutOnSite(${Math.round(dist)})">
-      ขอ Emergency Check Out เพื่อตรวจสอบเวลา
-    </button>
-    <button class="btn btn-retry" style="margin-top:8px" onclick="startCheckOutOnSite()">กลับไปถ่ายรูปใหม่</button>`;
+function showOutOfRadiusOptions(dist) {
+  // Legacy compatibility only — On Site ไม่มีเงื่อนไขรัศมีและไม่มี Auto 1 ชั่วโมงแล้ว
+  startCheckOutOnSite();
 }
 
-async function submitCheckOutOnSite(acceptAutoOut = false) {
-  if (!onsiteCheckoutPhoto || !onsiteCheckoutGPS) return;
-
-  const dist = getOnsiteDistanceFromCheckin();
-  if (dist !== null && dist > 200 && !acceptAutoOut) {
-    showOutOfRadiusOptions(dist);
+async 
+async function submitCheckOutOnSite() {
+  if (!onsiteCheckoutPhoto) {
+    showAlertInBody("err", "กรุณาถ่ายรูป On Site Check Out ก่อนค่ะ");
+    return;
+  }
+  if (!onsiteCheckoutGPS) {
+    showAlertInBody("err", "กรุณาเปิด Location และรอให้ระบบรับ GPS ก่อนค่ะ");
     return;
   }
 
@@ -691,7 +741,7 @@ async function submitCheckOutOnSite(acceptAutoOut = false) {
 
   try {
     const photoBase64 = await readOnsitePhotoBase64();
-    showLoading(acceptAutoOut ? "กำลังบันทึก Auto Check Out..." : "กำลัง Check Out On Site...");
+    showLoading("กำลังส่ง On Site Check Out ให้ HR/Admin ตรวจสอบ...");
 
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
@@ -703,8 +753,7 @@ async function submitCheckOutOnSite(acceptAutoOut = false) {
         lat: onsiteCheckoutGPS.lat,
         lng: onsiteCheckoutGPS.lng,
         photo: photoBase64,
-        checkoutMethod: acceptAutoOut ? "auto-onsite" : "On Site",
-        acceptAutoOut: acceptAutoOut
+        checkoutMethod: "On Site"
       })
     });
     const data = await res.json();
@@ -714,10 +763,7 @@ async function submitCheckOutOnSite(acceptAutoOut = false) {
 
     if (data.success) {
       activeCheckin = null;
-      if (data.autoOut || acceptAutoOut) showSuccess("onsite-autoout", data.timeOut || timeOut, hour);
-      else showSuccess("onsite-checkout", data.timeOut || timeOut, hour);
-    } else if (data.outOfRadius) {
-      showOutOfRadiusOptions(data.dist || dist || 0);
+      showSuccess("onsite-checkout", data.timeOut || timeOut, hour);
     } else {
       renderMain();
       showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
@@ -848,6 +894,7 @@ function showCheckOutWifiError() {
 }
 
 // ── SUCCESS SCREENS ──────────────────────────────────────────────
+
 function showSuccess(type, time, hour) {
   const body = document.getElementById("body");
   let title = "บันทึก Check Out แล้วค่ะ";
@@ -864,19 +911,11 @@ function showSuccess(type, time, hour) {
   }
 
   if (type === "onsite-checkout") {
-    title = "บันทึก Check Out แล้วค่ะ";
+    title = "ส่ง On Site Check Out แล้วค่ะ";
     msg = `${time} น.
 
-ระบบบันทึกเวลาทำงาน On Site เรียบร้อยแล้ว
-รายการนี้จะถูกส่งให้ HR/Admin ตรวจสอบในลำดับถัดไปค่ะ`;
-  }
-
-  if (type === "onsite-autoout") {
-    title = "บันทึก Auto Check Out แล้วค่ะ";
-    msg = `${time} น.
-
-คุณอยู่นอกรัศมีจากจุด Check In เกิน 200 เมตร
-ระบบจึงบันทึกเวลาทำงาน On Site เป็น 1 ชั่วโมงตามเงื่อนไขค่ะ`;
+ระบบบันทึก GPS และรูปถ่าย Timestamp เรียบร้อยแล้ว
+เวลานี้จะถูกส่งให้ HR/Admin ตรวจสอบก่อนบันทึกเป็นเวลาทำงานค่ะ`;
   }
 
   if (type === "onsite-emergency") {
