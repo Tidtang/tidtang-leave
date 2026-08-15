@@ -550,7 +550,6 @@ function getOnsiteGPS() {
   );
 }
 
-async 
 async function submitCheckInOnSite() {
   const project = document.getElementById("onsite-project").value.trim();
   if (!project) { showAlert("err", "กรุณากรอกชื่อโปรเจกต์ค่ะ"); return; }
@@ -724,7 +723,6 @@ function showOutOfRadiusOptions(dist) {
   startCheckOutOnSite();
 }
 
-async 
 async function submitCheckOutOnSite() {
   if (!onsiteCheckoutPhoto) {
     showAlertInBody("err", "กรุณาถ่ายรูป On Site Check Out ก่อนค่ะ");
