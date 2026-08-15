@@ -1264,11 +1264,12 @@ async function loadHistory() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  function waitLiff(cb) {
-    if (typeof liff !== "undefined") cb();
-    else setTimeout(() => waitLiff(cb), 100);
+  // LIFF SDK is loaded synchronously in <head>. Do not wait forever if it fails.
+  if (typeof liff === "undefined") {
+    setLoad("ไม่สามารถโหลด LINE LIFF ได้ค่ะ กรุณาปิดหน้านี้แล้วเปิดใหม่จาก LINE");
+    return;
   }
-  waitLiff(init);
+  init();
 });
 </script>
 </body>
