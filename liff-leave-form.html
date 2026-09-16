@@ -461,6 +461,15 @@ async function init() {
       const typeParam = urlParams.get("type");
       if (typeParam === "ลาฉุกเฉินพิเศษ") {
         setTimeout(() => initEmergencyLeave(), 200);
+      } else if (typeParam === "Leave Without Pay") {
+        setTimeout(() => {
+          initEmergencyLeave();
+          selEmergencyLeaveType("Leave Without Pay");
+          isEmergencyLeave = false;
+          document.getElementById('header-title').textContent = 'Leave Without Pay';
+          document.getElementById('header-sub').textContent = 'ระบุวันที่และเหตุผล เพื่อส่งคำขออนุมัติค่ะ';
+          document.getElementById('emergency-notice').classList.remove('show');
+        }, 200);
       } else if (typeParam === "swapDayOff" || typeParam === "Swap Day Off") {
         setTimeout(() => initSwapDayOff(), 200);
       } else if (typeParam) {
