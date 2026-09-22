@@ -120,6 +120,19 @@ const OFFICE_SUBNETS = ["192.168.11.", "192.168.14."];
 
 let userId = null, emp = null, activeCheckin = null;
 
+// NETWORK SAFE PATCH 2026-09-22
+// ป้องกันการกด Check In/Out ซ้ำ และไม่ปล่อยให้การตรวจ Public IP ค้างนาน
+let attendanceActionInProgress = false;
+const PUBLIC_IP_TIMEOUT_MS = 6000;
+
+function withTimeout_(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label || "Network timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function bangkokNow() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }));
 }
@@ -207,15 +220,30 @@ async function startCheckIn() {
 
 async function getPublicIP() {
   try {
-    const res = await fetch("https://api.ipify.org?format=json");
+    // จำกัดเวลาตรวจ IP เพื่อไม่ให้หน้า "กำลังตรวจสอบเครือข่าย WiFi..." ค้างเป็นนาที
+    // ไม่มีการเขียนข้อมูล Attendance ในขั้นตอนนี้ จึง timeout ได้อย่างปลอดภัย
+    const res = await withTimeout_(
+      fetch("https://api.ipify.org?format=json", { cache: "no-store" }),
+      PUBLIC_IP_TIMEOUT_MS,
+      "ตรวจสอบเครือข่ายใช้เวลานานเกินไป"
+    );
+    if (!res || !res.ok) return null;
+
     const data = await res.json();
-    return data.ip || null;
+    const ip = String(data && data.ip || "").trim();
+
+    // รับเฉพาะรูปแบบ IP ที่สมเหตุสมผล ป้องกัน browser/network response ผิดรูปแบบ
+    if (!ip || !/^[0-9a-fA-F:.]+$/.test(ip)) return null;
+    return ip;
   } catch(e) {
+    console.log("Public IP check failed:", e);
     return null;
   }
 }
 
 async function verifyAndCheckIn() {
+  if (attendanceActionInProgress) return;
+  attendanceActionInProgress = true;
   showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
 
   try {
@@ -226,6 +254,7 @@ async function verifyAndCheckIn() {
     if (!publicIp) {
       hide("loading");
       document.getElementById("app").style.display = "block";
+      attendanceActionInProgress = false;
       showWifiError();
       return;
     }
@@ -243,6 +272,7 @@ async function verifyAndCheckIn() {
     });
     const data = await res.json();
 
+    attendanceActionInProgress = false;
     hide("loading");
     document.getElementById("app").style.display = "block";
 
@@ -256,10 +286,12 @@ async function verifyAndCheckIn() {
       showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
   } catch(err) {
+    attendanceActionInProgress = false;
     hide("loading");
     document.getElementById("app").style.display = "block";
     renderMain();
-    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    showAlertInBody("err", "เชื่อมต่อระบบบันทึกเวลาไม่ได้ค่ะ กรุณาลองใหม่อีกครั้ง");
+    console.log("Office Check In error:", err);
   }
 }
 
@@ -836,6 +868,8 @@ async function startCheckOut() {
 }
 
 async function verifyAndCheckOut() {
+  if (attendanceActionInProgress) return;
+  attendanceActionInProgress = true;
   showLoading("กำลังตรวจสอบเครือข่าย WiFi...");
   try {
     const now = bangkokNow();
@@ -846,6 +880,7 @@ async function verifyAndCheckOut() {
     if (!publicIp) {
       hide("loading");
       document.getElementById("app").style.display = "block";
+      attendanceActionInProgress = false;
       showCheckOutWifiError();
       return;
     }
@@ -863,6 +898,7 @@ async function verifyAndCheckOut() {
     });
     const data = await res.json();
 
+    attendanceActionInProgress = false;
     hide("loading");
     document.getElementById("app").style.display = "block";
 
@@ -876,10 +912,12 @@ async function verifyAndCheckOut() {
       showAlertInBody("err", data.msg || "เกิดข้อผิดพลาดค่ะ");
     }
   } catch(err) {
+    attendanceActionInProgress = false;
     hide("loading");
     document.getElementById("app").style.display = "block";
     renderMain();
-    showAlertInBody("err", "เชื่อมต่อไม่ได้ค่ะ: " + err.message);
+    showAlertInBody("err", "เชื่อมต่อระบบบันทึกเวลาไม่ได้ค่ะ กรุณาลองใหม่อีกครั้ง");
+    console.log("Office Check Out error:", err);
   }
 }
 
