@@ -118,7 +118,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--bg);min-height:100vh;padd
         <div class="leave-dot" style="background:var(--amber)"></div>
         <div>
           <div class="leave-name">ลากิจ</div>
-          <div class="leave-sub">ต้องรออนุมัติจากผู้บังคับบัญชา</div>
+          <div class="leave-sub">ต้องรออนุมัติ · ล่วงหน้าอย่างน้อย 7 วัน · นับวันปฏิทิน</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -133,7 +133,7 @@ body{font-family:'Anuphan',sans-serif;background:var(--bg);min-height:100vh;padd
         <div class="leave-dot" style="background:var(--blue)"></div>
         <div>
           <div class="leave-name">ลาพักร้อน</div>
-          <div class="leave-sub" id="vacation-sub">ต้องรออนุมัติ</div>
+          <div class="leave-sub" id="vacation-sub">ต้องรออนุมัติ · ล่วงหน้าอย่างน้อย 30 วัน · นับวันปฏิทิน</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -274,7 +274,7 @@ function renderQuota(q, emp) {
     document.getElementById("badge-vacation").className = "leave-badge no";
   } else {
     const vLeft = q.vacationLeft ?? 0;
-    document.getElementById("vacation-sub").textContent = vLeft > 0 ? "ต้องรออนุมัติ" : "โควต้าหมดแล้วค่ะ";
+    document.getElementById("vacation-sub").textContent = vLeft > 0 ? "ต้องรออนุมัติ · ล่วงหน้าอย่างน้อย 30 วัน · นับวันปฏิทิน" : "โควต้าหมดแล้วค่ะ";
     if (vLeft <= 0) document.getElementById("card-vacation").classList.add("disabled");
   }
 }

@@ -287,12 +287,12 @@ html,body{
         <button class="lt-btn" data-type="ลาพักร้อน" onclick="selType(this)" id="btn-vacation">
           <span class="lt-icon"></span>
           <span class="lt-name">ลาพักร้อน</span>
-          <span class="lt-desc">ล่วงหน้า 30 วัน</span>
+          <span class="lt-desc">ล่วงหน้า 30 วัน · นับวันปฏิทิน</span>
         </button>
         <button class="lt-btn" data-type="ลากิจ" onclick="selType(this)">
           <span class="lt-icon"></span>
           <span class="lt-name">ลากิจ</span>
-          <span class="lt-desc">ล่วงหน้า 7 วัน</span>
+          <span class="lt-desc">ล่วงหน้า 7 วัน · นับวันปฏิทิน</span>
         </button>
         <button class="lt-btn full-width" data-type="On Site" onclick="openOnSite()" id="btn-onsite">
           <span class="lt-icon"></span>
@@ -356,11 +356,11 @@ html,body{
       <div class="date-wrap">
         <div class="date-field">
           <label class="date-label">เริ่ม</label>
-          <input class="f-input" type="date" id="date-start" onchange="calcDays()">
+          <input class="f-input" type="date" id="date-start" oninput="calcDays()" onchange="calcDays()">
         </div>
         <div class="date-field">
           <label class="date-label">สิ้นสุด</label>
-          <input class="f-input" type="date" id="date-end" onchange="calcDays()">
+          <input class="f-input" type="date" id="date-end" oninput="calcDays()" onchange="calcDays()">
         </div>
       </div>
     </div>
@@ -764,7 +764,7 @@ function calcDays() {
   const end   = new Date(e || s);
   if (end < start) {
     document.getElementById('date-end').value = s;
-    return;
+    return calcDays();
   }
 
   let days;
@@ -788,29 +788,60 @@ function calcDays() {
   document.getElementById('sum-left').textContent = `${selectedType} ·`;
   document.getElementById('sum-right').textContent = summaryText;
 
-  checkAdvance(start, days);
+  // ตรวจเงื่อนไขการแจ้งล่วงหน้าจาก "วันที่" โดยตรง
+  // เพื่อให้นับเป็นวันปฏิทินจริง และไม่ขึ้นกับ timezone ของ browser
+  checkAdvance(s);
 }
 
-function checkAdvance(start, days) {
+function calendarDayNumber(dateStr) {
+  const parts = String(dateStr || '').split('-').map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+  return Math.floor(Date.UTC(parts[0], parts[1] - 1, parts[2]) / 86400000);
+}
+
+function bangkokTodayString() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+
+  const map = {};
+  parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+function checkAdvance(startDateStr) {
   const alert = document.getElementById('alert-box');
+  const submitBtn = document.getElementById('submit-btn');
   const advance = { 'ลากิจ': 7, 'ลาพักร้อน': 30, 'Leave Without Pay': 30 };
   const req = isEmergencyLeave ? 0 : advance[selectedType];
 
   if (req) {
-    const today = bangkokNow();
-    today.setHours(0,0,0,0);
-    const diffDays = Math.round((start - today) / 86400000);
+    const startDay = calendarDayNumber(startDateStr);
+    const todayDay = calendarDayNumber(bangkokTodayString());
+
+    if (startDay === null || todayDay === null) {
+      alert.className = 'alert alert-err';
+      alert.textContent = 'กรุณาเลือกวันที่ลาให้ถูกต้องค่ะ';
+      alert.style.display = 'block';
+      submitBtn.disabled = true;
+      return;
+    }
+
+    const diffDays = startDay - todayDay;
     if (diffDays < req) {
       alert.className = 'alert alert-err';
-      alert.textContent = `Minimum advance notice required · ${req} working days`;
+      alert.textContent = `ต้องแจ้งล่วงหน้าอย่างน้อย ${req} วัน · นับตามวันปฏิทิน`;
       alert.style.display = 'block';
-      document.getElementById('submit-btn').disabled = true;
+      submitBtn.disabled = true;
       return;
     }
   }
 
   alert.style.display = 'none';
-  document.getElementById('submit-btn').disabled = false;
+  submitBtn.disabled = false;
 }
 
 //  Submit 
